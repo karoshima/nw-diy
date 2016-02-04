@@ -98,6 +98,15 @@ class NWDIY
       end
     end
 
+    ################
+    # socket operations
+    def close
+      @dev.close
+    end
+    def send(msg)
+      @dev.send(msg)
+    end
+
     ################################################################
     # pcap
     class Pcap < Linux
@@ -136,6 +145,10 @@ class NWDIY
       def close
         @sock.close
       end
+      def send(msg)
+        pp msg
+        msg.length
+      end
 
     end
 
@@ -158,11 +171,21 @@ class NWDIY
         @klass, @name = klass, name
         begin
           sock = UNIXSocket.new(DAEMON_SOCKFILE)
-        rescue Errno::ENOENT
-          raise Errno::ENOENT.new('Please run NW-DIY daemon')
+        rescue Errno::ENOENT, Errno::ECONNREFUSED => e
+          raise e.class.new('Please run NW-DIY daemon')
         end
         Marshal.dump(self, sock)
         @sock = sock;
+      end
+
+      ################
+      # socket operations
+      def close
+        @sock.close
+      end
+      def send(msg)
+        Marshal.dump(msg, @sock)
+        msg.length
       end
 
       ################################################################
@@ -170,7 +193,7 @@ class NWDIY
       class Daemon < Linux
 
         # NWDIY アプリからの接続を待ち受けるソケットを作る
-        def initialize
+        def run
           begin
             umask = File.umask
             File.umask(000)
@@ -188,10 +211,12 @@ class NWDIY
               File.umask(umask)
             end
           end
-        end
-        def run
-          while accept = @sock.accept
-            NWDIY::IFP::Proxy::Daemon::Client.new(accept).start
+          begin
+            while accept = @sock.accept
+              NWDIY::IFP::Proxy::Daemon::Client.new(accept).start
+            end
+          ensure
+            File.unlink(DAEMON_SOCKFILE)
           end
         end
 
@@ -199,9 +224,9 @@ class NWDIY
         # Daemon から NWDIY アプリを見る
         class Client
           def initialize(sock)
-            @sock = sock
+            @app = sock
             @dev = {}
-            puts "opened: #{@sock.to_i}"
+            puts "opened: #{@app.to_i}"
           end
           def start
             @thread = Thread.new { self.run }
@@ -212,8 +237,9 @@ class NWDIY
             rescue => e
               puts "ERROR: #{e}"
             ensure
-              @sock.close
-              @dev.values.each {|dev| dev.close }
+              puts "closed: #{@app.to_i}"
+              @app.close
+              @dev.close
               pp self
             end
           end
@@ -223,15 +249,15 @@ class NWDIY
           def recvall
             loop do
               begin
-                data = Marshal.load(@sock)
+                data = Marshal.load(@app)
               rescue EOFError
                 return
               end
               if data.kind_of?(NWDIY::IFP::Proxy)
-                data.klass ? self.create(data.klass, data.name) : self.delete(data.name)
+                self.create(data.klass, data.name)
                 next
               end
-              puts data
+              self.send(data)
             end
           end
 
@@ -239,13 +265,14 @@ class NWDIY
           # 新しいインターフェースを開く
           def create(klass, name)
             puts klass, name
-            @dev[name] = klass.new(name)
-            puts @dev[name]
+            @dev = klass.new(name)
+            puts @dev
           end
+
           ################
-          # もう使わないインターフェースを閉じる
-          def delete(name)
-            @dev.delete(name)
+          # socket operations
+          def send(msg)
+            @dev.send(msg)
           end
         end
       end

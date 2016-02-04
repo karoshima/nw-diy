@@ -28,7 +28,10 @@ describe NWDIY::IFP, 'を作るとき' do
   end
 
   it '{type: :pcap, name: <ifp>} を与えたら、そのインターフェースを pcap で開く' do
-    ifp = NWDIY::IFP.new({type: :pcap, name: 'lo'})
+    iflist = `ip link`.scan(/^\d+: (\w+):/).flatten
+    lo = iflist.grep(/^lo/)
+    lo = lo ? lo[0] : iflist[0]
+    ifp = NWDIY::IFP.new({type: :pcap, name: lo})
     expect(ifp).not_to be_nil
   end
 
@@ -40,6 +43,14 @@ describe NWDIY::IFP, 'を作るとき' do
   it '{type: :sock, name: <file>} を与えたら、ソケットファイルを作ってくる' do
     ifp = NWDIY::IFP.new({type: :sock, name: 'lo'})
     expect(ifp).not_to be_nil
+  end
+
+  it 'pcap にパケットを送ったら、インターフェースから出てくる' do
+    iflist = `ip link`.scan(/^\d+: (\w+):/).flatten
+    lo = iflist.grep(/^lo/)
+    lo = lo ? lo[0] : iflist[0]
+    ifp = NWDIY::IFP.new(lo)
+    expect(ifp.send('xxx')).to eq(3)
   end
 
 end
