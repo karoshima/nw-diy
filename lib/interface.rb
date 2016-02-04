@@ -3,6 +3,7 @@
 ################################################################
 # ruby で綴る VM interface
 
+require "pp"
 require "socket"
 
 ################
@@ -103,12 +104,11 @@ class NWDIY
       ################
       # Linux では AF_PACKET を使ってパケットを送受信する
       def initialize(name)
-        @index, @name = self.class.ifindexname(name)
+        index, name = self.class.ifindexname(name)
         @sock = Socket.new(PF_PACKET, SOCK_RAW, ETH_P_ALL.htons)
-        @sockaddr = self.class.pack_sockaddr_ll(@index)
-        @sock.bind(@sockaddr)
+        @sock.bind(self.class.pack_sockaddr_ll(index))
         self.clean
-        self.set_promisc
+        self.set_promisc(index)
       end
 
       ################
@@ -127,12 +127,12 @@ class NWDIY
 
       ################
       # パケット送受信モード
-      def set_promisc
-        @sock.setsockopt(SOL_PACKET, PACKET_ADD_MEMBERSHIP, [@index, PACKET_MR_PROMISC].pack("I!S!x10"))
+      def set_promisc(index)
+        @sock.setsockopt(SOL_PACKET, PACKET_ADD_MEMBERSHIP, [index, PACKET_MR_PROMISC].pack("I!S!x10"))
       end
 
       ################
-      # close
+      # socket operations
       def close
         @sock.close
       end
