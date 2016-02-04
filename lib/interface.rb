@@ -131,6 +131,12 @@ class NWDIY
         @sock.setsockopt(SOL_PACKET, PACKET_ADD_MEMBERSHIP, [@index, PACKET_MR_PROMISC].pack("I!S!x10"))
       end
 
+      ################
+      # close
+      def close
+        @sock.close
+      end
+
     end
 
     ################################################################
@@ -166,14 +172,20 @@ class NWDIY
         # NWDIY アプリからの接続を待ち受けるソケットを作る
         def initialize
           begin
+            umask = File.umask
+            File.umask(000)
             @sock = UNIXServer.new(DAEMON_SOCKFILE)
+            File.umask(umask)
           rescue Errno::EADDRINUSE => e
             begin
               UNIXSocket.new(DAEMON_SOCKFILE)
               raise e
             rescue Errno::ECONNREFUSED
+              umask = File.umask
+              File.umask(000)
               File.unlink(DAEMON_SOCKFILE)
               @sock = UNIXServer.new(DAEMON_SOCKFILE)
+              File.umask(umask)
             end
           end
         end
@@ -188,24 +200,52 @@ class NWDIY
         class Client
           def initialize(sock)
             @sock = sock
+            @dev = {}
+            puts "opened: #{@sock.to_i}"
           end
           def start
             @thread = Thread.new { self.run }
           end
           def run
-            self.recvall
+            begin
+              self.recvall
+            rescue => e
+              puts "ERROR: #{e}"
+            ensure
+              @sock.close
+              @dev.values.each {|dev| dev.close }
+              pp self
+            end
           end
 
           ################
           # NWDIY アプリからのメッセージを待ち受けてさばく
           def recvall
-            while data = Marshal.load(@sock)
+            loop do
+              begin
+                data = Marshal.load(@sock)
+              rescue EOFError
+                return
+              end
               if data.kind_of?(NWDIY::IFP::Proxy)
-                puts data.klass, data.name
+                data.klass ? self.create(data.klass, data.name) : self.delete(data.name)
                 next
               end
               puts data
             end
+          end
+
+          ################
+          # 新しいインターフェースを開く
+          def create(klass, name)
+            puts klass, name
+            @dev[name] = klass.new(name)
+            puts @dev[name]
+          end
+          ################
+          # もう使わないインターフェースを閉じる
+          def delete(name)
+            @dev.delete(name)
           end
         end
       end
