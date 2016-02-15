@@ -3,7 +3,6 @@
 ################################################################
 # ruby で綴る VM interface
 
-require "pp"
 require "socket"
 
 ################
@@ -146,8 +145,7 @@ class NWDIY
         @sock.close
       end
       def send(msg)
-        pp msg
-        msg.length
+        @sock.send(msg, 0)
       end
 
     end
@@ -194,6 +192,7 @@ class NWDIY
 
         # NWDIY アプリからの接続を待ち受けるソケットを作る
         def run
+          Thread.abort_on_exception = true
           begin
             umask = File.umask
             File.umask(000)
@@ -225,7 +224,7 @@ class NWDIY
         class Client
           def initialize(sock)
             @app = sock
-            @dev = {}
+            @dev = nil
             puts "opened: #{@app.to_i}"
           end
           def start
@@ -236,11 +235,12 @@ class NWDIY
               self.recvall
             rescue => e
               puts "ERROR: #{e}"
+              raise e
             ensure
               puts "closed: #{@app.to_i}"
               @app.close
-              @dev.close
-              pp self
+              @dev and
+                @dev.close
             end
           end
 
@@ -264,9 +264,7 @@ class NWDIY
           ################
           # 新しいインターフェースを開く
           def create(klass, name)
-            puts klass, name
             @dev = klass.new(name)
-            puts @dev
           end
 
           ################
