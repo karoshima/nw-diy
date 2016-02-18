@@ -2,7 +2,8 @@
 # -*- mode: ruby; coding: utf-8 -*-
 ################################################################
 
-require "interface"
+require 'interface'
+require 'iplink'
 
 describe NWDIY::IFP, 'を作るとき' do
   it 'インターフェース名として nil を与えたら、エラー' do
@@ -15,9 +16,8 @@ describe NWDIY::IFP, 'を作るとき' do
   end
 
   it '実在するインターフェース名を与えたら、そのインターフェースを pcap で開く' do
-    iflist = `ip link`.scan(/^\d+: (\w+):/).flatten
-    lo = iflist.grep(/^lo/)
-    lo = lo ? lo[0] : iflist[0]
+    link = NWDIY::IPLINK.new
+    lo = link['lo'] or link[0]
     ifp = NWDIY::IFP.new(lo)
     expect(ifp).not_to be_nil
   end
@@ -28,17 +28,11 @@ describe NWDIY::IFP, 'を作るとき' do
   end
 
   it '{type: :pcap, name: <ifp>} を与えたら、そのインターフェースを pcap で開く' do
-    iflist = `ip link`.scan(/^\d+: (\w+):/).flatten
-    lo = iflist.grep(/^lo/)
-    lo = lo ? lo[0] : iflist[0]
+    link = NWDIY::IPLINK.new
+    lo = link['lo'] or link[0]
     ifp = NWDIY::IFP.new({type: :pcap, name: lo})
     expect(ifp).not_to be_nil
   end
-
-  # it '{type: :tap, name: <file>} を与えたら、そのインターフェースを tap で作る' do
-  #   ifp = NWDIY::IFP.new({type: :tap, name: 'tap'})
-  #   expect(ifp).not_to be_nil
-  # end
 
   it '{type: :sock, name: <file>} を与えたら、ソケットファイルを作ってくる' do
     ifp = NWDIY::IFP.new({type: :sock, name: 'lo'})
@@ -46,11 +40,19 @@ describe NWDIY::IFP, 'を作るとき' do
   end
 
   it 'pcap にパケットを送ったら、インターフェースから出てくる' do
-    iflist = `ip link`.scan(/^\d+: (\w+):/).flatten
-    lo = iflist.grep(/^lo/)
-    lo = lo ? lo[0] : iflist[0]
+    link = NWDIY::IPLINK.new
+    lo = link['lo'] or link[0]
     ifp = NWDIY::IFP.new(lo)
-    expect(ifp.send('xxx')).to eq(3)
+    pkt = NWDIY::PKT::Ethernet.new({dst:"ff-ff-ff-ff-ff-ff", type:'IPv4', data:"Hello world"})
+    expect(ifp.send(pkt)).to eq(pkt.length)
+  end
+
+  it 'インターフェースにパケットを突っ込むと pcap から出てくる' do
+    link = NWDIY::IPLINK.new
+    lo = link['lo'] or link[0]
+    ifp = NWDIY::IFP.new(lo)
+    system("ping -c 3 #{lo.addr('IPv4')[0][:addr]} 2>&1 >/dev/null &");
+    expect(ifp.recv.class).to eq(NWDIY::PKT::Ethernet)
   end
 
 end

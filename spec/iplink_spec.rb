@@ -6,7 +6,7 @@ require 'iplink'
 
 describe 'ip link', 'のラッパー' do
 
-  it 'should インターフェース数が分かるべし' do
+  it 'should know the number of interfaces' do
     link = NWDIY::IPLINK.new
     expect(link.length).to be > 0
   end
@@ -14,6 +14,8 @@ describe 'ip link', 'のラッパー' do
   it 'should check loopback interface' do
     link = NWDIY::IPLINK.new
     expect(link['lo']).not_to be_nil
+    expect(link['lo']).to be == 1
+    expect(link['lo']).to be == 'lo'
   end
 
   it 'should exists 127.0.0.1' do

@@ -3,8 +3,6 @@
 ################################################################
 # ruby で使う ip link コマンド
 
-require 'pp'
-
 class NWDIY
   class IPLINK
     def initialize
@@ -30,13 +28,23 @@ class NWDIY
       @index.length
     end
     def [](key)
-      key.kind_of?(Integer) ? @index[key] : @name[key]
+      key.kind_of?(Integer) and
+        return @index[key]
+      key.kind_of?(String) and
+        return @name[key]
+      key.respond_to?(:to_i) and
+        return @index[key.to_i]
+      key.respond_to?(:to_s) and
+        return @index[key.to_s]
+      nil
     end
 
     class IFA
+      include Comparable
+
       attr_reader :index, :name, :flags, :mtu, :mtu, :state, :type, :mac
       def initialize(index, name)
-        @index, @name = index, name
+        @index, @name = index.to_i, name
       end
 
       def parse_link(line)
@@ -50,6 +58,22 @@ class NWDIY
         @ipv6 = line.scan(/inet6 ([\h\:]+)\/(\d+)/).map{|ifa| {addr: ifa[0], mask: ifa[1]}}
       end
 
+      def <=>(other)
+        case other
+        when String
+          @name <=> other
+        when Integer
+          @index - other
+        else
+          nil
+        end
+      end
+      def to_s
+        @name
+      end
+      def to_i
+        @index
+      end
       def addr(type = '')
         type.match(/ipv4/i) and
           return @ipv4
