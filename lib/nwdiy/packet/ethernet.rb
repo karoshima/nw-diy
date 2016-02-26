@@ -5,15 +5,11 @@
 require_relative '../../nwdiy'
 
 require 'nwdiy/util'
+require 'nwdiy/packet/uint16'
 require 'nwdiy/packet/mac'
 
 class NWDIY
   class PKT
-
-    autoload(:IPv4, 'nwdiy/packet/ipv4')
-    autoload(:ARP,  'nwdiy/packet/ipv4')
-    autoload(:IPv6, 'nwdiy/packet/ipv6')
-    autoload(:VLAN, 'nwdiy/packet/vlan')
 
     class Ethernet
 
@@ -50,7 +46,9 @@ class NWDIY
       end
 
       def type=(ethertype)
-        @type = NWDIY::PKT::Ethernet::Type.new(ethertype)
+        tmp = NWDIY::PKT::Ethernet::Type.new(ethertype)
+        (tmp > 1500) and
+          @type = tmp
       end
       def type
         @type and return @type
@@ -59,6 +57,17 @@ class NWDIY
         NWDIY::PKT::Ethernet::Type.new(@data ?
                                        @data.length :
                                        0).to_i
+      end
+      class Type < NWDIY::PKT::UINT16
+        TYPES = {
+          'IPv4' => 0x0800,
+          'ARP'  => 0x0806,
+          'IPv6' => 0x86dd,
+          'VLAN' => 0x8100 }
+
+        def initialize(val)
+          super(TYPES[val] || val)
+        end
       end
 
       def data=(body)
@@ -78,42 +87,6 @@ class NWDIY
 
       def to_pkt
         self.dst.to_pkt + self.src.to_pkt + self.type.to_pkt + self.data.to_pkt
-      end
-
-      class Type
-        @@proto = { 0x0800 => 'IPv4',
-                    0x0806 => 'ARP',
-                    0x86dd => 'IPv6',
-                    0x8100 => 'VLAN' }
-
-        def initialize(type=0)
-          case type
-          when Integer
-            @type = type
-          when String
-            @type = type.to_i
-            @type > 0 and return
-            @type = @@proto.key(type)
-            @type and return
-            @type = type.unpack('S!')[0]
-          when nil
-            @type = 0
-          else
-            raise ArgumentError.new("invalid Ethertype: #{type}")
-          end
-        end
-        def <=>(other)
-          @type - other
-        end
-        def to_i
-          @type
-        end
-        def to_pkt
-          [@type.htons].pack('S!')
-        end
-        def to_s
-          @@proto[@type] || sprintf('0x%04x', @type.ntohs)
-        end
       end
 
     end
