@@ -2,11 +2,19 @@
 # -*- mode: ruby; coding: utf-8 -*-
 ################################################################
 
-require_relative '../util'
-require_relative 'mac'
+require_relative '../../nwdiy'
+
+require 'nwdiy/util'
+require 'nwdiy/packet/mac'
 
 class NWDIY
   class PKT
+
+    autoload(:IPv4, 'nwdiy/packet/ipv4')
+    autoload(:ARP,  'nwdiy/packet/ipv4')
+    autoload(:IPv6, 'nwdiy/packet/ipv6')
+    autoload(:VLAN, 'nwdiy/packet/vlan')
+
     class Ethernet
 
       def initialize(pkt = nil)
@@ -14,7 +22,8 @@ class NWDIY
           self.dst = pkt[0..5]
           self.src = pkt[6..11]
           self.type = pkt[12..13]
-          self.data = pkt[14..10000000000]
+          pkt[0..13] = ''
+          self.data = pkt
         elsif pkt.kind_of?(Hash)
           self.dst = pkt[:dst]
           self.src  = pkt[:src]
@@ -44,21 +53,23 @@ class NWDIY
         @type = NWDIY::PKT::Ethernet::Type.new(ethertype)
       end
       def type
-        @type ||
-          NWDIY::PKT::Ethernet::Type.new(@data ?
-                                         @data.bytesize :
-                                         0)
+        @type and return @type
+        # ↑ Ethernet
+        # ↓ 802.3
+        NWDIY::PKT::Ethernet::Type.new(@data ?
+                                       @data.length :
+                                       0).to_i
       end
 
       def data=(body)
-        @data = body
+        @data = NWDIY::PKT::Binary.new(body)
       end
       def data
         @data
       end
 
       def length
-        14 + @data.bytesize
+        14 + @data.length
       end
 
       def to_s
@@ -66,20 +77,14 @@ class NWDIY
       end
 
       def to_pkt
-        self.dst.to_pkt + self.src.to_pkt + self.type.to_pkt + self.data
+        self.dst.to_pkt + self.src.to_pkt + self.type.to_pkt + self.data.to_pkt
       end
 
       class Type
-        include Comparable
-
         @@proto = { 0x0800 => 'IPv4',
                     0x0806 => 'ARP',
-                    0x8137 => 'IPX',
                     0x86dd => 'IPv6',
-                    0x8863 => 'PPPoE-Discovery',
-                    0x8864 => 'PPPoE-Session',
-                    0x8100 => 'VLAN',
-                    0x88a8 => '802.1AD' }
+                    0x8100 => 'VLAN' }
 
         def initialize(type=0)
           case type
@@ -100,11 +105,14 @@ class NWDIY
         def <=>(other)
           @type - other
         end
+        def to_i
+          @type
+        end
         def to_pkt
           [@type.htons].pack('S!')
         end
         def to_s
-          @@proto[@type] || sprintf('0x%04x', @type)
+          @@proto[@type] || sprintf('0x%04x', @type.ntohs)
         end
       end
 

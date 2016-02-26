@@ -3,7 +3,7 @@
 ################################################################
 # ruby で綴る、AF_UNIX による VM interface
 
-require_relative '../util'
+require_relative '../../nwdiy'
 
 class NWDIY
   class IFP

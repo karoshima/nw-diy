@@ -2,8 +2,8 @@
 # -*- mode: ruby; coding: utf-8 -*-
 ################################################################
 
-require 'interface'
-require 'iplink'
+require 'nwdiy/interface'
+require 'nwdiy/iplink'
 
 describe NWDIY::IFP, 'を作るとき' do
   it 'インターフェース名として nil を与えたら、エラー' do

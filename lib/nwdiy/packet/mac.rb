@@ -2,7 +2,9 @@
 # -*- mode: ruby; coding: utf-8 -*-
 ################################################################
 
-require_relative '../util'
+require_relative '../../nwdiy'
+
+require 'nwdiy/util'
 
 class NWDIY
   class PKT

@@ -3,6 +3,8 @@
 ################################################################
 # ruby で使う ip link コマンド
 
+require_relative '../nwdiy'
+
 class NWDIY
   class IPLINK
     def initialize

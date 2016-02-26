@@ -3,11 +3,14 @@
 ################################################################
 # ruby で綴る VM interface
 
+require_relative '../nwdiy'
+
 require 'socket'
-require_relative 'iplink'
-require_relative 'interface/pcap'
-require_relative 'interface/sock'
-require_relative 'interface/proxy'
+
+require 'nwdiy/iplink'
+require 'nwdiy/interface/pcap'
+require 'nwdiy/interface/sock'
+require 'nwdiy/interface/proxy'
 
 class NWDIY
   ################################################################

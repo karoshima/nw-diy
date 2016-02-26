@@ -3,8 +3,9 @@
 ################################################################
 # ruby で綴る Virtual Machine
 
-require_relative "interface"
-require_relative "error"
+require_relative '../nwdiy'
+
+require "nwdiy/interface"
 
 class NWDIY
   class VM
@@ -43,5 +44,5 @@ class NWDIY
   end
 end
 
-class DuplicateInterface < Exception
-end
+#class DuplicateInterface < Exception
+#end

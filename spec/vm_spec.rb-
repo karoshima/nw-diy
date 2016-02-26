@@ -2,7 +2,7 @@
 # -*- mode: ruby; coding: utf-8 -*-
 ################################################################
 
-require "vm"
+require "nwdiy/vm"
 
 def realifp
   iflist = `ip link`.scan(/^\d+: (\w+):/)

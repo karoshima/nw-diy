@@ -3,8 +3,10 @@
 ################################################################
 # ruby で綴る、AF_PACKET による VM interface
 
-require_relative '../util'
-require_relative '../packet'
+require_relative '../../nwdiy'
+
+require 'nwdiy/util'
+require 'nwdiy/packet'
 
 class NWDIY
   class IFP

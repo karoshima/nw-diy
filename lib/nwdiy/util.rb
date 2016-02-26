@@ -2,8 +2,11 @@
 # -*- mode: ruby; coding: utf-8 -*-
 ################################################################
 
+require_relative '../nwdiy';
+
 require 'socket'
-require_relative 'iplink'
+
+require 'nwdiy/iplink'
 
 ################
 # Integer にバイトオーダー変換の機能を追加
@@ -28,7 +31,7 @@ class NWDIY
   module Linux
 
     # /usr/include/linux/if_ether.h
-    ETH_P_ALL = "0x0003".hex
+    ETH_P_ALL = 0x0003
 
     # /usr/include/bits/socket.h
     PF_PACKET = 17

@@ -2,7 +2,7 @@
 # -*- mode: ruby; coding: utf-8 -*-
 ################################################################
 
-require 'iplink'
+require 'nwdiy/iplink'
 
 describe 'ip link', 'のラッパー' do
 

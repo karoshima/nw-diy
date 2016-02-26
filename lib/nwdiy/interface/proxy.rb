@@ -3,7 +3,9 @@
 ################################################################
 # ruby で綴る、デーモン (root権限持ち) に頼った VM interface
 
-require_relative '../util'
+require_relative '../../nwdiy'
+
+require 'nwdiy/util'
 
 class NWDIY
   class IFP

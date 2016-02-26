@@ -3,8 +3,9 @@
 ################################################################
 # ruby で綴る VM interface のための、root 権限持ちデーモン
 
-require_relative '../lib/util'
-require_relative '../lib/interface'
+require_relative '../lib/nwdiy'
+
+require 'nwdiy/interface'
 
 class NWDIY
   class IFP
@@ -84,6 +85,8 @@ class NWDIY
         while pkt = @dev.recv
           Marshal.dump(pkt, @cli)
         end
+      rescue Errno::ECONNRESET
+        @daemon.debug("Client[#{@id}] closes #{@klass}(#{@name})")
       ensure
         @cli2dev.kill
       end
