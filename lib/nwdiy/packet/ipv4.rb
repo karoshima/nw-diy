@@ -1,0 +1,287 @@
+#!/usr/bin/env ruby
+# -*- mode: ruby; coding: utf-8 -*-
+################################################################
+
+class NWDIY
+  class PKT
+
+    autoload(:UINT8,  'nwdiy/packet/uint8')
+    autoload(:TCP,    'nwdiy/packet/ip/udp')
+    autoload(:UDP,    'nwdiy/packet/ip/udp')
+    autoload(:ICMP4,  'nwdiy/packet/ip/icmp4')
+    autoload(:ICMP6,  'nwdiy/packet/ip/icmp6')
+    autoload(:OSPFv2, 'nwdiy/packet/ip/ospf')
+    autoload(:OSPFv3, 'nwdiy/packet/ip/ospf')
+
+    class IPv4
+      include NWDIY::Linux
+
+      ################################################################
+      # パケット生成
+      ################################################################
+      # 受信データあるいはハッシュデータからパケットを作る
+      def initialize(pkt = nil)
+        if pkt.kind_of?(String)
+          self.version = pkt[0]
+          pkt.bytesize >= 20 or
+            raise NWDIY::PKT::TooShort.new("packet TOO short for IPv4: #{pkt.dump}")
+          self.hlen = pkt[0]
+          (pkt.bytesize >= self.hlen) or
+            raise NWDIY::PKT::TooShort.new("packet TOO short for IPv4: #{pkt.dump}")
+          self.tos = pkt[1]
+          self.length = pkt[2..3]
+          self.id = pkt[4..5]
+          self.fragment = pkt[6..7]
+          self.ttl = pkt[8]
+          self.protocol = pkt[9]
+          self.checksum = pkt[10..11]
+          self.src = pkt[12..15]
+          self.dst = pkt[16..19]
+          self.option = pkt[20, self.hlen*4-20]
+          pkt[0, self.hlen*4] = ''
+          self.data = pkt;
+        elsif pkt.kind_of?(Hash)
+          pkt[:version] and pkt.version = pkt[:version]
+          pkt[:hlen] and pkt.version = pkt[:hlen]
+          pkt[:type] and pkt.version = pkt[:type]
+          pkt[:length] and pkt.version = pkt[:length]
+          pkt[:id] and pkt.version = pkt[:id]
+          pkt[:fragment] and pkt.version = pkt[:fragment]
+          pkt[:ttl] and pkt.version = pkt[:ttl]
+          pkt[:protocol] and pkt.version = pkt[:protocol]
+          pkt[:checksum] and pkt.version = pkt[:checksum]
+          pkt[:src] and pkt.version = pkt[:src]
+          pkt[:dst] and pkt.version = pkt[:dst]
+          pkt[:option] and pkt.version = pkt[:option]
+        end
+      end
+
+      ################################################################
+      # 各フィールドの値の操作
+      ################################################################
+      # バージョン
+      def version=(val)
+        case val
+        when Integer
+          @version = val
+          when String
+          val.bytesize == 1 or
+            raise TooLong("not IPv4 version: #{val}")
+          @version = val.unpack('C')[0] >> 4
+        else
+          raise Invaliddata.new("not IPv4 version: #{val}")
+        end
+      end
+      def version
+        @version
+      end
+
+      ################
+      # ヘッダ長
+      def hlen=(val)
+        case val
+        when Integer
+          tmp = val
+          when String
+          val.bytesize == 1 or
+            raise TooLong("not IPv4 version: #{val}")
+          tmp = val.unpack('C')[0] >> 4
+        else
+          raise InvalidData.new("not IPv4 version: #{val}")
+        end
+        # ヘッダ長が変わったら、option とデータの境目も変わる
+        # @len の更新に合わせて、再パースする
+        if tmp != @hlen && @opt && @data
+          pkt = @opt.to_pkt + @data.to_pkt
+          @hlen = tmp
+          self.option = pkt[0, self.hlen*4-20]
+          pkt[0, self.hlen-20] = ''
+          self.data = pkt
+        end
+      end
+      def hlen
+        @hlen || 5
+      end
+
+      ################
+      # ToS
+      def tos=(val)
+        @tos = NWDIY::PKT::UINT8.new(val)
+      end
+      def tos
+        @tos.to_i
+      end
+
+      ################
+      # length
+      def length=(val)
+        @length = NWDIY::PKT::UINT16.new(val)
+      end
+      def length
+        @length.to_i
+      end
+
+      ################
+      # id
+      def id=(val)
+        @id = NWDIY::PKT::UINT16.new(val)
+      end
+      def id
+        @id.to_i
+      end
+
+      ################
+      # fragment
+      def fragment=(val)
+        @frag = NWDIY::PKT::UINT16.new(val)
+      end
+      def fragment
+        @frag
+      end
+      def donotfragment=(bool)
+        if bool
+          @frag |= 0x0400
+        else
+          @frag &= ~0x0400
+        end
+      end
+      def donotfragment
+        (@frag & 0x0400) ? true : false
+      end
+      def morefrag=(bool)
+        if bool
+          @frag |= 0x0200
+        else
+          @frag &= ~0x0200
+        end
+      end
+      def morefrag
+        (@frag & 0x0200) ? true : false
+      end
+      def fragoffset=(val)
+        @frag = (@frag & 0x0600) | (val & 0x1fff)
+      end
+      def fragoffset
+        @frag & 0x1fff
+      end
+
+      ################
+      # ttl
+      def ttl=(val)
+        @ttl = NWDIY::PKT::UINT8.new(val)
+      end
+      def ttl
+        @ttl
+      end
+
+      ################
+      # protocol
+      def protocol=(val)
+        val = resolv('/etc/protocols', val, :to_i)
+        @proto = NWDIY::PKT::UINT8.new(val)
+        # data 部は、型が変わるならフォーマット適用やり直し
+        (@data && @data.class != self.dataKlass) and
+          self.data = @data.to_pkt
+      end
+      def protocol
+        @proto
+      end
+
+      ################
+      # checksum
+      def checksum=(val)
+        @cksum = val ? NWDIY::PKT::UINT16.new(val) : nil
+      end
+      def checksum
+        @cksum and return @cksum
+        raise NotImplementedError.new('chotto matte yo!')
+      end
+
+      ################
+      # IP addr
+      def src=(val)
+        @src = NWDIY::PKT::IPv4Addr.new(val)
+      end
+      def src
+        @src
+      end
+      def dst=(val)
+        @dst = NWDIY::PKT::IPv4Addr.new(val)
+      end
+      def dst
+        @dst
+      end
+
+      ################
+      # option
+      def option=(val)
+      end
+      def option
+        nil
+      end
+
+      ################
+      # データ
+      def dataKlass
+        # (autoload が効くように、配列やハッシュにせずコードで列挙する)
+        case @type
+        when  1 then NWDIY::PKT::ICMP4
+        when  6 then NWDIY::PKT::TCP
+        when 17 then NWDIY::PKT::UDP
+        else         NWDIY::PKT::Binary
+        end
+      end
+      def data=(val)
+        @data = self.dataKlass.new(val)
+      end
+      def data
+        @data
+      end
+
+      ################################################################
+      # その他の諸々
+      def to_s
+        "[IPv4 version=#{self.version} headerLen=#{self.hlen} ToS=#{self.tos} totalLength=#{self.length} id=${'%02x'%self.id} DNF=${self.donotfragment} more=#{self.morefrag} offset=${self.fragoffset} ttl=#{self.ttl} protocol=#{self.protocol} checksum=#{'%04x'%self.checksum} src=#{self.src} dst=#{self.dst} option=#{self.option} data=#{self.data}]"
+      end
+
+    end
+
+    class IPv4Addr
+      def initialize(addr = nil)
+        case addr
+        when String
+          if addr.bytesize == 4
+            @addr = addr
+          else
+            match = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/.match(addr)
+            match or
+              raise ArgumentError.new("invalid IPv4 adr: #{addr}")
+            addr = match[1..4].map {|m| m.to_i}
+            addr.each do |a|
+              (0<=a && a<=255) or
+                raise ArgumentError.new("invalid IPv4 adr: #{addr}")
+            end
+            @addr = addr.pack('C4')
+          end
+        when NWDIY::PKT::IPv4Addr
+          @addr = addr.to_pkt
+        when nil
+          @addr = [0,0,0,0].pack('C4')
+        else
+          raise ArgumentError.new("invalid IPv4 adr: #{addr}")
+        end
+      end
+
+      # パケットに埋め込むデータ
+      def to_pkt
+        @addr
+      end
+
+      # 文字列表現
+      def to_s
+        @addr.unpack('C4').map {|a| a.to_s }.join('.')
+      end
+
+    end
+  end
+end
