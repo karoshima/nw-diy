@@ -23,8 +23,14 @@ class NWDIY
 
       def to_s
         unless @txt
-          #@txt = @bin.scan(/.{1,4}/m).map(&:dump).map{|s|s.gsub(/^"|"$/m,'')}.join(' ')
-          @txt = @bin.scan(/.{1,4}/m).map{|s|s.unpack('C*').map{|c|sprintf("%02x",c)}.join}.join(' ')
+          @txt = ''
+          @bin.unpack('N*a*').each do |val|
+            if val.kind_of?(Integer)
+              @txt += '%08x ' % val
+            else
+              val.each_byte {|c| @txt += sprintf('%02x', c) }
+            end
+          end
         end
         @txt
       end

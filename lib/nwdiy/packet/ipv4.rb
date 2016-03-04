@@ -21,7 +21,8 @@ class NWDIY
       ################################################################
       # 受信データあるいはハッシュデータからパケットを作る
       def initialize(pkt = nil)
-        if pkt.kind_of?(String)
+        case pkt
+        when String
           self.version = pkt[0]
           pkt.bytesize >= 20 or
             raise NWDIY::PKT::TooShort.new("packet TOO short for IPv4: #{pkt.dump}")
@@ -40,19 +41,36 @@ class NWDIY
           self.option = pkt[20, self.hlen*4-20]
           pkt[0, self.hlen*4] = ''
           self.data = pkt;
-        elsif pkt.kind_of?(Hash)
-          pkt[:version] and pkt.version = pkt[:version]
-          pkt[:hlen] and pkt.version = pkt[:hlen]
-          pkt[:type] and pkt.version = pkt[:type]
-          pkt[:length] and pkt.version = pkt[:length]
-          pkt[:id] and pkt.version = pkt[:id]
-          pkt[:fragment] and pkt.version = pkt[:fragment]
-          pkt[:ttl] and pkt.version = pkt[:ttl]
-          pkt[:protocol] and pkt.version = pkt[:protocol]
-          pkt[:checksum] and pkt.version = pkt[:checksum]
-          pkt[:src] and pkt.version = pkt[:src]
-          pkt[:dst] and pkt.version = pkt[:dst]
-          pkt[:option] and pkt.version = pkt[:option]
+        when Hash
+          self.version = pkt[:version] || 4
+          self.hlen = pkt[:hlen] || 5
+          self.tos = pkt[:tos] if pkt[:tos]
+          self.length = pkt[:length] if pkt[:length]
+          self.id = pkt[:id] if pkt[:id]
+          self.fragment = pkt[:fragment] if pkt[:fragment]
+          self.ttl = pkt[:ttl] || 64
+          self.protocol = pkt[:protocol] if pkt[:protocol]
+          self.checksum = pkt[:checksum] if pkt[:checksum]
+          self.src = pkt[:src] if pkt[:src]
+          self.dst = pkt[:dst] if pkt[:dst]
+          self.option = pkt[:option] if pkt[:option]
+          self.data = pkt[:data] if pkt[:data]
+        when nil
+          self.version = 4
+          self.hlen = 5
+          self.tos = 0
+          self.length = 20
+          self.id = 0
+          self.fragment = 0
+          self.ttl = 64
+          self.protocol = 0
+          self.checksum = 0
+          self.src = "\0\0\0\0"
+          self.dst = "\0\0\0\0"
+          self.opt = ""
+          self.data = nil
+        else
+          raise InvalidData.new("not IPv4 packet: #{pkt}")
         end
       end
 
@@ -68,6 +86,8 @@ class NWDIY
           val.bytesize == 1 or
             raise TooLong("not IPv4 version: #{val}")
           @version = val.unpack('C')[0] >> 4
+          @version == 4 or
+            raise InvalidData.new("not IPV4 version: #{val}")
         else
           raise Invaliddata.new("not IPv4 version: #{val}")
         end
@@ -79,28 +99,29 @@ class NWDIY
       ################
       # ヘッダ長
       def hlen=(val)
+        oldhlen = @hlen
         case val
         when Integer
           tmp = val
           when String
           val.bytesize == 1 or
-            raise TooLong("not IPv4 version: #{val}")
-          tmp = val.unpack('C')[0] >> 4
+            raise TooLong("not IPv4 header length: #{val}")
+          @hlen = val.unpack('C')[0] >> 4
         else
-          raise InvalidData.new("not IPv4 version: #{val}")
+          raise InvalidData.new("not IPv4 header legnth: #{val}")
         end
+        @hlen >= 5 or
         # ヘッダ長が変わったら、option とデータの境目も変わる
         # @len の更新に合わせて、再パースする
-        if tmp != @hlen && @opt && @data
+        if @hlen != oldhlen && @opt && @data
           pkt = @opt.to_pkt + @data.to_pkt
-          @hlen = tmp
           self.option = pkt[0, self.hlen*4-20]
-          pkt[0, self.hlen-20] = ''
+          pkt[0, self.hlen*4-20] = ''
           self.data = pkt
         end
       end
       def hlen
-        @hlen || 5
+        @hlen
       end
 
       ################
@@ -232,7 +253,15 @@ class NWDIY
         end
       end
       def data=(val)
-        @data = self.dataKlass.new(val)
+        @data = nil
+        case val
+        when nil then return
+        #when NWDIY::PKT::ICMP4 then @proto =  1
+        #when NWDIY::PKT::TCP   then @proto =  6
+        #when NWDIY::PKT::UDP   then @proto = 11
+        else val = self.dataKlass.new(val)
+        end
+        @data = val
       end
       def data
         @data
@@ -243,7 +272,9 @@ class NWDIY
       def to_s
         "[IPv4 version=#{self.version} headerLen=#{self.hlen} ToS=#{self.tos} totalLength=#{self.length} id=${'%02x'%self.id} DNF=${self.donotfragment} more=#{self.morefrag} offset=${self.fragoffset} ttl=#{self.ttl} protocol=#{self.protocol} checksum=#{'%04x'%self.checksum} src=#{self.src} dst=#{self.dst} option=#{self.option} data=#{self.data}]"
       end
-
+      def to_pkt
+        ""
+      end
     end
 
     class IPv4Addr

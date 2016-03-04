@@ -15,10 +15,10 @@ class NWDIY
           @value = val
         when String
           val.bytesize == 2 or
-            raise ArgumentError.new("not uint16_t: too long: #{val}");
+            raise TooLong.new("not uint16_t: too long: #{val}");
           @value = (val.unpack('n')[0])
         else
-          raise ArgumentError.new("not uint16_t: unavailable: #{val}");
+          raise InvalidData.new("not uint16_t: unavailable: #{val}");
         end
       end
 
@@ -27,6 +27,9 @@ class NWDIY
       end
       def <=>(other)
         @value <=> other
+      end
+      def &(val)
+        @value & val
       end
 
       def to_pkt

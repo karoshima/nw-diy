@@ -61,5 +61,29 @@ class NWDIY
     def pack_sockaddr_ll(index)
       [AF_PACKET, ETH_P_ALL, index].pack("S!nIx12")
     end
+
+    ################
+    # /etc/services などから番号を得る
+    def resolv(path, name, trans)
+      begin
+        open(path) do |file|
+          n2 = name.downcase
+          file.each do |line|
+            line.gsub!(/#.*/, '')
+            title, id, *alt = line.split(/\s+/)
+            id or next
+            title.downcase == n2 and
+              return id.send(trans)
+            alt.each do |t2|
+              t2.downcase == n2 and
+                return id.send(trans)
+            end
+          end
+        end
+      rescue
+      end
+      name
+    end
   end
+
 end

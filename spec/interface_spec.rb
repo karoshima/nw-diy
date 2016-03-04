@@ -43,7 +43,7 @@ describe NWDIY::IFP, 'を作るとき' do
     link = NWDIY::IPLINK.new
     lo = link['lo'] or link[0]
     ifp = NWDIY::IFP.new(lo)
-    pkt = NWDIY::PKT::Ethernet.new({dst:"ff-ff-ff-ff-ff-ff", type:'IPv4', data:"Hello world"})
+    pkt = NWDIY::PKT::Ethernet.new({dst:"ff-ff-ff-ff-ff-ff", type:'IPv4', data:"\x45\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"})
     expect(ifp.send(pkt)).to eq(pkt.length)
   end
 
