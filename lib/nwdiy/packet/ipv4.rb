@@ -59,7 +59,6 @@ class NWDIY
           self.version = 4
           self.hlen = 5
           self.tos = 0
-          self.length = 20
           self.id = 0
           self.fragment = 0
           self.ttl = 64
@@ -67,7 +66,7 @@ class NWDIY
           self.checksum = 0
           self.src = "\0\0\0\0"
           self.dst = "\0\0\0\0"
-          self.opt = ""
+          self.option = ""
           self.data = nil
         else
           raise InvalidData.new("not IPv4 packet: #{pkt}")
@@ -102,8 +101,8 @@ class NWDIY
         oldhlen = @hlen
         case val
         when Integer
-          tmp = val
-          when String
+          @hlen = val
+        when String
           val.bytesize == 1 or
             raise TooLong("not IPv4 header length: #{val}")
           @hlen = val.unpack('C')[0] >> 4
@@ -136,10 +135,9 @@ class NWDIY
       ################
       # length
       def length=(val)
-        @length = NWDIY::PKT::UINT16.new(val)
       end
       def length
-        @length.to_i
+        @hlen * 4 + (@data ? @data.length : 0)
       end
 
       ################

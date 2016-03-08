@@ -5,11 +5,6 @@
 require 'nwdiy/packet'
 
 describe NWDIY::PKT, 'を作るとき' do
-  it '中身のない Ethernet Frame を作る' do
-    eth = NWDIY::PKT::Ethernet.new
-    expect(eth).not_to be nil
-  end
-
   it '中身のない Ethernet Frame を作って、あとから修正する' do
     eth = NWDIY::PKT::Ethernet.new
     expect(eth).not_to be nil
@@ -22,5 +17,16 @@ describe NWDIY::PKT, 'を作るとき' do
     expect(eth.type).to be == data.length
     # Ethertype を指定しないときは 802.3 フォーマットで
     # type 部が length になる
+  end
+
+  it '中身のない IPv4 packet を作って、あとから修正する' do
+    ipv4 = NWDIY::PKT::IPv4.new
+    expect(ipv4).not_to be nil
+    data = "xxxxxxxxxxxxxxxx"
+    ipv4.src = '127.0.0.1'
+    ipv4.data = data
+    expect(ipv4.src.to_s).to be == '127.0.0.1'
+    expect(ipv4.data.to_pkt).to be == data
+    expect(ipv4.length).to be == 20 + data.length
   end
 end
