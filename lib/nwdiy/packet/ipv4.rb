@@ -81,7 +81,7 @@ class NWDIY
           @version = val
           when String
           val.bytesize == 1 or
-            raise TooLong("not IPv4 version: #{val}")
+            raise TooLong.new("not IPv4 version: #{val}")
           @version = val.unpack('C')[0] >> 4
           @version == 4 or
             raise InvalidData.new("not IPV4 version: #{val}")
