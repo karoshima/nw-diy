@@ -9,9 +9,7 @@ class NWDIY
     autoload(:TCP,    'nwdiy/packet/ip/udp')
     autoload(:UDP,    'nwdiy/packet/ip/udp')
     autoload(:ICMP4,  'nwdiy/packet/ip/icmp4')
-    autoload(:ICMP6,  'nwdiy/packet/ip/icmp6')
     autoload(:OSPFv2, 'nwdiy/packet/ip/ospf')
-    autoload(:OSPFv3, 'nwdiy/packet/ip/ospf')
 
     class IPv4
       include NWDIY::Linux

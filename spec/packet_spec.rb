@@ -29,4 +29,18 @@ describe NWDIY::PKT, 'を作るとき' do
     expect(ipv4.data.to_pkt).to be == data
     expect(ipv4.length).to be == 20 + data.length
   end
+
+  it 'IPv4 over Ethernet' do
+    eth = NWDIY::PKT::Ethernet.new
+    expect(eth).not_to be nil
+    eth.data = ipv4 = NWDIY::PKT::IPv4.new
+    expect(ipv4).not_to be nil
+    data = "xxxxxxxxxxxxxxxx"
+    ipv4.src = '127.0.0.1'
+    ipv4.data = data
+    expect(ipv4.src.to_s).to be == '127.0.0.1'
+    expect(ipv4.data.to_pkt).to be == data
+    expect(ipv4.length).to be == 20 + data.length
+    expect(eth.length).to be == 34 + data.length
+  end
 end
