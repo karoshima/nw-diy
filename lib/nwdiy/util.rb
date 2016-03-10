@@ -8,27 +8,63 @@ require 'socket'
 
 require 'nwdiy/iplink'
 
-################
-# Integer にバイトオーダー変換の機能を追加
-class Integer
-  def htonl
-    [self].pack("L!").unpack("N")[0]
-  end
-  def htons
-    [self].pack("S!").unpack("n")[0]
-  end
-  def ntohl
-    [self].pack("N").unpack("L!")[0]
-  end
-  def ntohs
-    [self].pack("n").unpack("S!")[0]
-  end
-end
-
 ################################################################
 # Linux 関連
 class NWDIY
   module Linux
+
+    # バイナリデータと uintX_t 数値との相互変換
+    class String
+      def btoh32
+        self.unpack('N')[0]
+      end
+      def btoh16
+        self.unpack('n')[0]
+      end
+      def btoh8
+        self.unpack('C')[0]
+      end
+    end
+    class Integer
+      def btoh32
+        self
+      end
+      def btoh16
+	self
+      end
+      def btoh8
+	self
+      end
+      def htob32
+	[self].pack('N')
+      end
+      def htob16
+	[self].pack('n')
+      end
+      def htob8
+        [self].pack('C')
+      end
+    end
+    class NilClass
+      def btoh32
+        nil
+      end
+      def btoh16
+	nil
+      end
+      def btoh8
+	nil
+      end
+    end      
+    # Integer にバイトオーダー変換の機能を追加
+    class Integer
+      def htonl
+        self.htobl.unpack("L")[0]
+      end
+      def htons
+        self.htobs.unpack("S")[0]
+      end
+    end
 
     # /usr/include/linux/if_ether.h
     ETH_P_ALL = 0x0003
@@ -64,7 +100,7 @@ class NWDIY
 
     ################
     # /etc/services などから番号を得る
-    def resolv(path, name, trans)
+    def resolv(path, name)
       begin
         open(path) do |file|
           n2 = name.downcase
@@ -73,10 +109,10 @@ class NWDIY
             title, id, *alt = line.split(/\s+/)
             id or next
             title.downcase == n2 and
-              return id.send(trans)
+              return id
             alt.each do |t2|
               t2.downcase == n2 and
-                return id.send(trans)
+                return id
             end
           end
         end

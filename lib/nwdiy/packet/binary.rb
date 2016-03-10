@@ -13,14 +13,18 @@ class NWDIY
     # なにかのバイナリデータ
     class Binary
 
-      def initialize(pkt = '')
+      def initialize(pkt = nil)
         @bin = pkt
+      end
+      def compile
       end
 
       def to_pkt
         @bin
       end
-
+      def bytesize
+        @bin.bytesize
+      end
       def to_s
         unless @txt
           @txt = ''
@@ -35,13 +39,6 @@ class NWDIY
         @txt
       end
 
-      def self.kind
-        'Binary'
-      end
-
-      def length
-        @bin.bytesize
-      end
     end
   end
 end

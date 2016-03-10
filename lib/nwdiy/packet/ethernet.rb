@@ -9,7 +9,6 @@ require 'nwdiy/util'
 class NWDIY
   class PKT
 
-    autoload(:UINT16,  'nwdiy/packet/uint16')
     autoload(:IPv4,    'nwdiy/packet/ipv4')
     autoload(:ARP,     'nwdiy/packet/ipv4')
     autoload(:IPv6,    'nwdiy/packet/ipv6')
@@ -23,103 +22,112 @@ class NWDIY
       ################################################################
       # 受信データあるいはハッシュデータからパケットを作る
       def initialize(pkt = nil)
-        if pkt.kind_of?(String)
-          pkt.bytesize >= 14 or
-            raise NWDIY::PKT::TooShort.new("packet TOO short for Ethernet: #{pkt.dump}")
+        case pkt
+        when String
+          pkt.bytesize > 14 or
+            raise TooShort.new(pkt)
           self.dst = pkt[0..5]
           self.src = pkt[6..11]
           self.type = pkt[12..13]
           pkt[0..13] = ''
           self.data = pkt
-        elsif pkt.kind_of?(Hash)
-          self.dst = pkt[:dst]
-          self.src  = pkt[:src]
-          pkt[:type] and self.type = pkt[:type]
-          pkt[:data] and self.data = pkt[:data]
+        when nil
+          # do nothing
         else
-          self.dst = nil
-          self.src = nil
+          raise InvalidData(val)
         end
       end
 
       ################################################################
-      # 各フィールドの値の操作
+      # 各フィールドの値
       ################################################################
-      # 宛先 MAC
-      def dst=(mac)
-        @dst = NWDIY::PKT::MacAddr.new(mac)
+
+      def dst=(val)
+        @dst = NWDIY::PKT::MacAddr.new(val)
       end
       def dst
         @dst
       end
 
-      ################
-      # 送信先 MAC
-      def src=(mac)
-        @src = NWDIY::PKT::MacAddr.new(mac)
+      def src=(val)
+        @src = NWDIY::PKT::MacAddr.new(val)
       end
       def src
         @src
       end
 
-      ################
-      # Ethernet の type あるいは IEEE802.3 の length
       def type=(val)
-        val = resolv('/etc/ethertypes', val, :hex)
-        val = NWDIY::PKT::UINT16.new(val)
-        if val > 1500
+        case val
+        when String
+          if val.bytesize == 2
+            @type = val.btoh16
+          else
+            @type = resolv('/etc/ethertypes', val)
+            @type or
+              raise InvaliData.new(val)
+            @type = @type.to_i(16)
+          end
+        when Integer
           @type = val
         else
-          @type = nil
+          raise InvaliData.new(val)
         end
-        # data 部は、型が変わるならフォーマット適用やり直し
-        (@data && @data.class != self.dataKlass) and
-          self.data = @data.to_pkt
       end
       def type
-        # Ethernet       802.3
-        # ↓              ↓
-        @type || (@data ? @data.length : 0)
+        @type
       end
 
-      ################
-      # データ部
-      def dataKlass
-        # (autoload が効くように、配列やハッシュにせずコードで列挙する)
-        case @type
-        #when 0x0806 then NWDIY::PKT::ARP
-        when 0x0800 then NWDIY::PKT::IPv4
-        #when 0x86dd then NWDIY::PKT::IPv6
-        #when 0x8100 then NWDIY::PKT::VLAN
-        else             NWDIY::PKT::Binary
-        end
-      end
-      def data=(body)
-        @data = nil
-        case body
-        when nil then return
-        #when NWDIY::PKT::ARP  then @type = 0x0806
-        when NWDIY::PKT::IPv4 then @type = 0x0800
-        #when NWDIY::PKT::IPv6 then @type = 0x86dd
-        #when NWDIY::PKT::VLAN then @type = 0x8100
-        else body = self.dataKlass.new(body)
-        end
-        @data = body
+      def data=(val)
+        @data = val
       end
       def data
         @data
       end
 
       ################################################################
+      # 設定されたデータを元に、設定されてないデータを補完する
+      def compile(overwrite=false)
+        # autoload で不要なモジュールの読み込みを防ぐため
+        # @type と @data 型の関係は構造化せず case 処理する
+        case @data
+        when VLAN then klass = 0x8100
+        when ARP  then klass = 0x0806
+        when IPv4 then klass = 0x0800
+        when IPv6 then klass = 0x86dd
+        else           klass = nil
+        end
+        if klass
+          if overwrite
+            @type = klass
+          else
+            raise InvalidData.new("type:#@type != data:#{@data.class}")
+          end
+        else
+          case @type
+          when 0x8100 then @data = VLAN.new(@data).compile
+          when 0x0806 then @data = ARP.new(@data).compile
+          when 0x0800 then @data = IPv4.new(@data).compile
+          when 0x86dd then @data = IPv6.new(@data).compile
+          else
+            @data = Binary.new(@data)
+            (@type && @type > 1500) or
+              @type = 14 + @data.bytesize
+          end
+        end
+        self
+      end
+
+      ################################################################
       # その他の諸々
-      def length
-        14 + @data.length
+      def to_pkt
+        self.compile
+        self.dst.to_pkt + self.src.to_pkt + self.type.htobs + self.data.to_pkt
+      end
+      def bytesize
+        14 + @data.bytesize
       end
       def to_s
-        '[Ethernet dst=' + @dst.to_s + ' src=' + @src.to_s + ' type=' + self.type.to_s + ' data=' + @data.to_s + ']'
-      end
-      def to_pkt
-        self.dst.to_pkt + self.src.to_pkt + self.type.to_pkt + self.data.to_pkt
+        "[Ethernet dst=#{@dst} src=#{@src} type=#{type} data=#{@data}]"
       end
 
     end
