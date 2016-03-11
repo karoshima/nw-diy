@@ -7,6 +7,8 @@ require_relative '../nwdiy'
 
 class NWDIY
   class IPLINK
+    include Enumerable
+
     def initialize
       @index = []
       @name = {}
@@ -40,11 +42,14 @@ class NWDIY
         return @index[key.to_s]
       nil
     end
+    def each
+      @index.each {|link| yield link}
+    end
 
     class IFA
       include Comparable
 
-      attr_reader :index, :name, :flags, :mtu, :mtu, :state, :type, :mac
+      attr_reader :index, :name, :flags, :mtu, :state, :type, :mac
       def initialize(index, name)
         @index, @name = index.to_i, name
       end

@@ -6,6 +6,7 @@
 require_relative '../../nwdiy'
 
 require 'nwdiy/util'
+require 'nwdiy/iplink'
 require 'nwdiy/packet'
 
 class NWDIY
@@ -52,12 +53,23 @@ class NWDIY
         NWDIY::PKT::Ethernet.new(pkt)
       end
       def send(pkt)
+        pkt.src.to_s == '00:00:00:00:00:00' and
+          pkt.src = self.mac
         pkt.respond_to?(:to_pkt) and
           pkt = pkt.to_pkt
         @sock.send(pkt, 0)
       end
       def close
         @sock.close
+      end
+
+      ################
+      # 自分の MAC アドレスを調べる
+      def mac
+        unless @mac
+          @mac = NWDIY::IPLINK.new[@index].mac
+        end
+        @mac
       end
     end
   end

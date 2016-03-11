@@ -22,4 +22,9 @@ describe 'ip link', 'のラッパー' do
     link = NWDIY::IPLINK.new
     expect(link['lo'].addr.grep('127.0.0.1')).not_to be_nil
   end
+
+  it 'should be 00:00:00:00:00:00 of lo mac addr' do
+    link = NWDIY::IPLINK.new
+    expect(link['lo'].mac).to be == "00:00:00:00:00:00"
+  end
 end

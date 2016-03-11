@@ -41,7 +41,7 @@ describe NWDIY::IFP, 'を作るとき' do
 
   it 'pcap にパケットを送ったら、インターフェースから出てくる' do
     link = NWDIY::IPLINK.new
-    lo = link['enp0s9']
+    lo = link['lo']
     ifp = NWDIY::IFP.new(lo)
     pkt = NWDIY::PKT::Ethernet.new
     pkt.dst = "ff-ff-ff-ff-ff-ff"
