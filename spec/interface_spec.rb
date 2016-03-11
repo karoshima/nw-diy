@@ -41,10 +41,16 @@ describe NWDIY::IFP, 'を作るとき' do
 
   it 'pcap にパケットを送ったら、インターフェースから出てくる' do
     link = NWDIY::IPLINK.new
-    lo = link['lo'] or link[0]
+    lo = link['enp0s9']
     ifp = NWDIY::IFP.new(lo)
-    pkt = NWDIY::PKT::Ethernet.new({dst:"ff-ff-ff-ff-ff-ff", type:'IPv4', data:"\x45\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"})
-    expect(ifp.send(pkt)).to eq(pkt.length)
+    pkt = NWDIY::PKT::Ethernet.new
+    pkt.dst = "ff-ff-ff-ff-ff-ff"
+    pkt.data = NWDIY::PKT::IPv4.new
+    pkt.data.proto = 89
+    pkt.data.src = '127.0.0.1'
+    pkt.data.dst = '127.255.255.255'
+    pkt.data.data = "xxxxxxxxxxxxxxxx"
+    expect(ifp.send(pkt)).to eq(pkt.bytesize)
   end
 
   it 'インターフェースにパケットを突っ込むと pcap から出てくる' do

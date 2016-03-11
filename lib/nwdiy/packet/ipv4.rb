@@ -36,6 +36,7 @@ class NWDIY
           pkt[0..self.hlen] = ''
           self.data = pkt
         when nil
+          @option = ''
         else
           raise InvalidData.new(pkt)
         end
@@ -89,7 +90,7 @@ class NWDIY
       attr_reader :ttl
 
       def proto=(val)
-        @protocol = val.btoh8
+        @protocol = val.htob8
       end
       attr_reader :proto
 

@@ -28,7 +28,7 @@ class NWDIY
       end
       def send(pkt)
         Marshal.dump(pkt, @sock)
-        pkt.length
+        pkt.bytesize
       end
     end
   end

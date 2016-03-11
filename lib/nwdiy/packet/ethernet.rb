@@ -32,9 +32,12 @@ class NWDIY
           pkt[0..13] = ''
           self.data = pkt
         when nil
-          # do nothing
+          self.dst = nil
+          self.src = nil
+          self.type = nil
+          self.data = nil
         else
-          raise InvalidData(val)
+          raise InvalidData.new(pkt)
         end
       end
 
@@ -67,7 +70,7 @@ class NWDIY
               raise InvaliData.new(val)
             @type = @type.to_i(16)
           end
-        when Integer
+        when Integer, nil
           @type = val
         else
           raise InvaliData.new(val)
@@ -97,10 +100,12 @@ class NWDIY
         else           klass = nil
         end
         if klass
-          if overwrite
-            @type = klass
-          else
-            raise InvalidData.new("type:#@type != data:#{@data.class}")
+          if klass != @type
+            if !@type or overwrite
+              @type = klass
+            else
+              raise InvalidData.new(sprintf("type:0x%04x != data:%s", @type, @data.class))
+            end
           end
         else
           case @type
@@ -121,7 +126,7 @@ class NWDIY
       # その他の諸々
       def to_pkt
         self.compile
-        self.dst.to_pkt + self.src.to_pkt + self.type.htobs + self.data.to_pkt
+        self.dst.to_pkt + self.src.to_pkt + self.type.htob16 + self.data.to_pkt
       end
       def bytesize
         14 + @data.bytesize
