@@ -13,7 +13,10 @@ class NWDIY
     # なにかのバイナリデータ
     class Binary
 
-      def initialize(pkt = nil)
+      def self.create(pkt = nil)
+        pkt.kind_of?(self) ? pkt : self.new(pkt)
+      end
+      def initialize(pkt)
         @bin = pkt
       end
       def compile
@@ -28,7 +31,7 @@ class NWDIY
       def to_s
         unless @txt
           @txt = ''
-          @bin.unpack('N*a*').each do |val|
+          @bin[0..15].unpack('N*a*').each do |val|
             if val.kind_of?(Integer)
               @txt += '%08x ' % val
             else

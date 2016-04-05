@@ -11,24 +11,12 @@ require 'nwdiy/iplink'
 ################################################################
 # バイナリデータと uintX_t 数値との相互変換
 class String
-  def btoh32
-    self.unpack('N')[0]
-  end
-  def btoh16
-    self.unpack('n')[0]
-  end
-  def btoh8
-    self.unpack('C')[0]
+  def btoh
+    self.bytes.inject(0) {|result,item| (result << 8) | item }
   end
 end
 class Integer
-  def btoh32
-    self
-  end
-  def btoh16
-    self
-  end
-  def btoh8
+  def btoh
     self
   end
   def htob32
@@ -42,20 +30,14 @@ class Integer
   end
 end
 class NilClass
-  def btoh32
+  def btoh
     nil
   end
   def htob32
     "\0\0\0\0"
   end
-  def btoh16
-    nil
-  end
   def htob16
     "\0\0"
-  end
-  def btoh8
-    nil
   end
   def htob8
     "\0"

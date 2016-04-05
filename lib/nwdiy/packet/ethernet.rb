@@ -5,6 +5,7 @@
 require_relative '../../nwdiy'
 
 require 'nwdiy/util'
+require 'nwdiy/macaddr'
 
 class NWDIY
   class PKT
@@ -26,16 +27,13 @@ class NWDIY
         when String
           pkt.bytesize > 14 or
             raise TooShort.new(pkt)
-          self.dst = pkt[0..5]
-          self.src = pkt[6..11]
+          self.dst = MacAddr.new(pkt[0..5])
+          self.src = MacAddr.new(pkt[6..11])
           self.type = pkt[12..13]
           pkt[0..13] = ''
           self.data = pkt
+          self.compile
         when nil
-          self.dst = nil
-          self.src = nil
-          self.type = nil
-          self.data = nil
         else
           raise InvalidData.new(pkt)
         end
@@ -45,25 +43,14 @@ class NWDIY
       # 各フィールドの値
       ################################################################
 
-      def dst=(val)
-        @dst = NWDIY::PKT::MacAddr.new(val)
-      end
-      def dst
-        @dst
-      end
-
-      def src=(val)
-        @src = NWDIY::PKT::MacAddr.new(val)
-      end
-      def src
-        @src
-      end
+      attr_accessor :dst, :src, :data
+      attr_reader :type
 
       def type=(val)
         case val
         when String
           if val.bytesize == 2
-            @type = val.btoh16
+            @type = val.btoh
           else
             @type = resolv('/etc/ethertypes', val)
             @type or
@@ -76,15 +63,8 @@ class NWDIY
           raise InvaliData.new(val)
         end
       end
-      def type
-        @type
-      end
-
-      def data=(val)
-        @data = val
-      end
-      def data
-        @data
+      def type4
+        sprintf("%04x", @type)
       end
 
       ################################################################
@@ -112,9 +92,9 @@ class NWDIY
           when 0x8100 then @data = VLAN.new(@data).compile
           when 0x0806 then @data = ARP.new(@data).compile
           when 0x0800 then @data = IPv4.new(@data).compile
-          when 0x86dd then @data = IPv6.new(@data).compile
+#          when 0x86dd then @data = IPv6.new(@data).compile
           else
-            @data = Binary.new(@data)
+            @data = Binary.create(@data)
             (@type && @type > 1500) or
               @type = 14 + @data.bytesize
           end
@@ -132,47 +112,8 @@ class NWDIY
         14 + @data.bytesize
       end
       def to_s
-        "[Ethernet dst=#{@dst} src=#{@src} type=#{type} data=#{@data}]"
-      end
-
-    end
-
-    class MacAddr
-
-      # バイナリ (6byte), String, NWDIY::PKT::MAC を元に MAC アドレスを生成する
-      def initialize(mac = nil)
-        case mac
-        when String
-          if (mac.bytesize == 6)
-            @addr = mac
-          else
-            match = /^(\h\h?):(\h\h?):(\h\h?):(\h\h?):(\h\h?):(\h\h?)$/.match(mac)
-            match or
-              match = /^(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)$/.match(mac)
-            match or
-              match = /^(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)$/.match(mac)
-            match or
-              raise ArgumentError.new("invalid MAC addr: #{mac}")
-            mac = match[1..6].map {|m| m.hex}
-            @addr = mac.pack('C6')
-          end
-        when NWDIY::PKT::MacAddr
-          @addr = mac.to_pkt
-        when nil
-          @addr = [0,0,0,0,0,0].pack('C6')
-        else
-          raise ArgumentError.new("invalid MAC addr: #{mac}");
-        end
-      end
-
-      # パケットに埋め込むデータ
-      def to_pkt
-        @addr
-      end
-
-      # MAC の文字列表現
-      def to_s
-        @addr.unpack('C6').map{|h|sprintf('%02x',h)}.join(':')
+        self.compile
+        "[Ethernet #@dst > #@src #{self.type4} #@data]"
       end
 
     end

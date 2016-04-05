@@ -2,6 +2,8 @@
 # -*- mode: ruby; coding: utf-8 -*-
 ################################################################
 
+require 'ipaddr'
+
 class NWDIY
   class PKT
 
@@ -22,21 +24,21 @@ class NWDIY
         when String
           pkt.bytesize > 20 or
             raise TooShort.new(pkt)
-          self.vhl = pkt[0].unpack('C')[0]
-          self.tos = pkt[1]
-          self.length = pkt[2..3]
-          self.id = pkt[4..5]
-          self.offset = pkt[6..7]
-          self.ttl = pkt[8]
-          self.protocol = pkt[9]
-          self.checksum = pkt[10..11]
-          self.src = pkt[12..15]
-          self.dst = pkt[16..19]
-          self.option = pkt[20..self.hlen]
-          pkt[0..self.hlen] = ''
+          @vhl = pkt[0].btoh
+          @tos = pkt[1].btoh
+          @length = pkt[2..3].btoh
+          @id = pkt[4..5].btoh
+          @offset = pkt[6..7].btoh
+          @ttl = pkt[8].btoh
+          @proto = pkt[9].btoh
+          @cksum = pkt[10..11].btoh
+          @src = IPAddr.new_ntoh(pkt[12..15])
+          @dst = IPAddr.new_ntoh(pkt[16..19])
+          @option = pkt[20..(self.hlen-1)]
+          pkt[0..(self.hlen-1)] = ''
           self.data = pkt
+          self.compile
         when nil
-          @option = ''
         else
           raise InvalidData.new(pkt)
         end
@@ -46,9 +48,6 @@ class NWDIY
       # 各フィールドの値
       ################################################################
 
-      def vhl=(val)
-        @vhl = pkt[0].btohc
-      end
       def version
         @vhl >> 4
       end
@@ -56,24 +55,8 @@ class NWDIY
         (@vhl & 0xf) * 4
       end
 
-      def tos=(val)
-        @tos = val.btoh8
-      end
-      attr_reader :tos
+      attr_accessor :tos, :length, :id, :ttl, :proto, :cksum, :src, :dst, :option, :data
 
-      def length=(val)
-        @length = val.btoh16
-      end
-      attr_reader :length
-
-      def id=(val)
-        @id = val.btoh16
-      end
-      attr_reader :id
-
-      def offset=(val)
-        @offset = val.btoh16
-      end
       def df
         !!(@offset & 0x4000)
       end
@@ -83,38 +66,6 @@ class NWDIY
       def fragmentOffset
         @offset & 0x1fff
       end
-
-      def ttl=(val)
-        @ttl = val.btoh8
-      end
-      attr_reader :ttl
-
-      def proto=(val)
-        @protocol = val.htob8
-      end
-      attr_reader :proto
-
-      def cksum=(val)
-        @cksum = val.btoh16
-      end
-      attr_reader :cksum
-
-      def src=(val)
-        @src = NWDIY::PKT::IPv4Addr.new(val)
-      end
-      attr_reader :src
-
-      def dst=(val)
-        @dst = NWDIY::PKT::IPv4Addr.new(val)
-      end
-      attr_reader :dst
-
-      def option=(val)
-        @option = ''
-      end
-      attr_reader :option
-
-      attr_accessor :data
 
       ################################################################
       # 設定されたデータを元に、設定されてないデータを補完する
@@ -144,8 +95,9 @@ class NWDIY
 
         # @length 確認
         begin
-          @length - self.hlen < @data.bytesize and
-            raise TooLong.new("IP data too long")
+          #@length - self.hlen < @data.bytesize and
+          #  raise TooLong.new("IP data too long")
+          #不要なtrailerが付いちゃうケース散見される
           @length - self.hlen > @data.bytesize and
             raise TooShort.new("IP data too short")
         rescue => e
@@ -171,10 +123,11 @@ class NWDIY
           end
         else
           case @proto
-          when  1 then @data = ICMP4.new(@data).compile
-          when  6 then @data = TCP.new(@data).compile
-          when 17 then @data = UDP.new(@data).compile
-          else         @data = Binary.new(@data)
+#          when  1 then @data = ICMP4.new(@data).compile
+#          when  6 then @data = TCP.new(@data).compile
+#          when 17 then @data = UDP.new(@data).compile
+          when 89 then @data = Binary.create(@data)
+          else         @data = Binary.create(@data)
           end
         end
         self
@@ -200,46 +153,8 @@ class NWDIY
       ################################################################
       # その他の諸々
       def to_s
-        "[IPv4 version=#{self.version} headerLen=#{self.hlen} ToS=#@tos length=#@length id="+sprintf('%02x',self.id)+"#{self.df&&' DF'}#{self.more&&' more'}offset=#{self.fragmentOffset} ttl=#@ttl protocol=#@protocol checksum="+sprintf('%04x',self.checksum)+" src=#@src dst=#@dst option=#@option data=#@data]"
+        "[IPv4 #@src > #@dst #@proto #@data]"
       end
-    end
-
-    class IPv4Addr
-      def initialize(addr = nil)
-        case addr
-        when String
-          if addr.bytesize == 4
-            @addr = addr
-          else
-            match = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/.match(addr)
-            match or
-              raise ArgumentError.new("invalid IPv4 adr: #{addr}")
-            addr = match[1..4].map {|m| m.to_i}
-            addr.each do |a|
-              (0<=a && a<=255) or
-                raise ArgumentError.new("invalid IPv4 adr: #{addr}")
-            end
-            @addr = addr.pack('C4')
-          end
-        when NWDIY::PKT::IPv4Addr
-          @addr = addr.to_pkt
-        when nil
-          @addr = [0,0,0,0].pack('C4')
-        else
-          raise ArgumentError.new("invalid IPv4 adr: #{addr}")
-        end
-      end
-
-      # パケットに埋め込むデータ
-      def to_pkt
-        @addr
-      end
-
-      # 文字列表現
-      def to_s
-        @addr.unpack('C4').map {|a| a.to_s }.join('.')
-      end
-
     end
 
     class ARP
