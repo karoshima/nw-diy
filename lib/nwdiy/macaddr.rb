@@ -16,6 +16,10 @@ class NWDIY
     end
 
     def initialize(addr)
+      if addr === self.class
+        @addr = addr.hton
+        return
+      end
       if addr.size == 6
         @addr = addr
         return

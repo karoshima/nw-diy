@@ -55,7 +55,15 @@ class NWDIY
         (@vhl & 0xf) * 4
       end
 
-      attr_accessor :tos, :length, :id, :ttl, :proto, :cksum, :src, :dst, :option, :data
+      attr_accessor :tos, :length, :id, :ttl, :proto, :cksum, :option, :data
+      attr_reader :src, :dst
+
+      def src=(val)
+        @src = IPAddr.new(val)
+      end
+      def dst=(val)
+        @dst = IPAddr.new(val)
+      end
 
       def df
         !!(@offset & 0x4000)
@@ -130,6 +138,7 @@ class NWDIY
           else         @data = Binary.create(@data)
           end
         end
+        @option or @option = ''
         self
       end
 
@@ -140,7 +149,7 @@ class NWDIY
         @vhl.htob8 + @tos.htob8 + @length.htob16 +
           @id.htob16 + @offset.htob16 +
           @ttl.htob8 + @proto.htob8 + @cksum.htob16 +
-          @src.to_pkt + @dst.to_pkt + @option +
+          @src.hton + @dst.hton + @option +
           @data.to_pkt
       end
 

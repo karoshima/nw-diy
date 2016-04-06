@@ -27,11 +27,11 @@ class NWDIY
         when String
           pkt.bytesize > 14 or
             raise TooShort.new(pkt)
-          self.dst = MacAddr.new(pkt[0..5])
-          self.src = MacAddr.new(pkt[6..11])
+          @dst = MacAddr.new(pkt[0..5])
+          @src = MacAddr.new(pkt[6..11])
           self.type = pkt[12..13]
           pkt[0..13] = ''
-          self.data = pkt
+          @data = pkt
           self.compile
         when nil
         else
@@ -43,8 +43,15 @@ class NWDIY
       # 各フィールドの値
       ################################################################
 
-      attr_accessor :dst, :src, :data
-      attr_reader :type
+      attr_accessor :data
+      attr_reader :dst, :src, :type
+
+      def dst=(val)
+        @dst = MacAddr.new(val)
+      end
+      def src=(val)
+        @src = MacAddr.new(val)
+      end
 
       def type=(val)
         case val
@@ -70,6 +77,9 @@ class NWDIY
       ################################################################
       # 設定されたデータを元に、設定されてないデータを補完する
       def compile(overwrite=false)
+        @dst or @dst = MacAddr.new("\0\0\0\0\0\0")
+        @src or @src = MacAddr.new("\0\0\0\0\0\0")
+
         # autoload で不要なモジュールの読み込みを防ぐため
         # @type と @data 型の関係は構造化せず case 処理する
         case @data
@@ -106,7 +116,7 @@ class NWDIY
       # その他の諸々
       def to_pkt
         self.compile
-        self.dst.to_pkt + self.src.to_pkt + self.type.htob16 + self.data.to_pkt
+        @dst.hton + @src.hton + @type.htob16 + @data.to_pkt
       end
       def bytesize
         14 + @data.bytesize
