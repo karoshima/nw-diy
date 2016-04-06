@@ -117,8 +117,9 @@ class NWDIY
 end
 
 ################################################################
-# recvfrom や Socket::getifaddrs のための
-# Addrinfo の sockaddr_ll 向け拡張
+# recvfrom や Socket::getifaddrs の結果として
+# 生成される Addrinfo (sockaddr_ll) を読みたいので、
+# Addrinfo を sockaddr_ll 向けに拡張する
 class Addrinfo
 
   def ether?
