@@ -14,6 +14,12 @@ class NWDIY
     class Pcap
       include NWDIY::Linux
 
+      # /usr/include/linux/if_arp.h
+      ARPHRD_LOOPBACK = 772
+
+      # /usr/incluce/netpacket/packet.h
+      PACKET_OUTGOING = 4
+
       def initialize(name)
         @index, @name = ifindexname(name)
         @sock = Socket.new(PF_PACKET, SOCK_RAW, ETH_P_ALL.htons)
@@ -49,8 +55,11 @@ class NWDIY
       ################
       # socket op
       def recv
-        pkt = @sock.recv(65540)
-        NWDIY::PKT::Ethernet.new(pkt)
+        loop do
+          pkt, ll = @sock.recvfrom(65540)
+          (ll.hatype == ARPHRD_LOOPBACK && ll.pkttype == PACKET_OUTGOING) or
+            return NWDIY::PKT::Ethernet.new(pkt)
+        end
       end
       def send(pkt)
         pkt.src.to_s == '00:00:00:00:00:00' and

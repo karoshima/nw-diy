@@ -85,9 +85,9 @@ class NWDIY
     end
 
     ################
-    # sockaddr_ll を作る
-    def pack_sockaddr_ll(index)
-      [AF_PACKET, ETH_P_ALL, index].pack("S!nIx12")
+    # sockaddr_ll の操作
+    def pack_sockaddr_ll(protocol = ETH_P_ALL, index)
+      [AF_PACKET, protocol, index].pack("S!nI!x12")
     end
 
     ################
@@ -114,4 +114,42 @@ class NWDIY
     end
   end
 
+end
+
+################################################################
+# recvfrom や Socket::getifaddrs のための
+# Addrinfo の sockaddr_ll 向け拡張
+class Addrinfo
+
+  def ether?
+    self.afamily == Socket::AF_PACKET
+  end
+
+  alias ipproto protocol
+  def protocol
+    self.ether? and
+      return self.ethertype
+    self.ipproto
+  end
+
+  def ifindex
+    self.unpack[2]
+  end
+  def hatype
+    self.unpack[3]
+  end
+  def pkttype
+    self.unpack[4]
+  end
+  def halen
+    self.unpack[5]
+  end
+  def mac
+    self.unpack[6]
+  end
+
+  def unpack
+    @mac and return @mac
+    @mac = self.to_sockaddr.unpack("S!nI!S!CCa*")
+  end
 end
