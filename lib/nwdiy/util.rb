@@ -95,16 +95,18 @@ class NWDIY
     def resolv(path, name)
       begin
         open(path) do |file|
-          n2 = name.downcase
+          case name
+          when Integer then n2 = name.to_s
+          when String  then n2 = name.downcase
+          else              n2 = name
+          end
           file.each do |line|
             line.gsub!(/#.*/, '')
-            title, id, *alt = line.split(/\s+/)
-            id or next
-            title.downcase == n2 and
-              return id
-            alt.each do |t2|
-              t2.downcase == n2 and
-                return id
+            words = line.split(/\s+/)
+            words.length > 0 or next
+            words.each do |w|
+              w.downcase == n2 and
+                return words
             end
           end
         end

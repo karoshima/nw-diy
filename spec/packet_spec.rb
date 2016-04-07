@@ -26,7 +26,7 @@ describe NWDIY::PKT, 'を作るとき' do
     data = "xxxxxxxxxxxxxxxx"
     ipv4.src = '127.0.0.1'
     ipv4.data = data
-    ipv4.compile
+    ipv4.compile(true)
     expect(ipv4.src.to_s).to be == '127.0.0.1'
     expect(ipv4.data.to_pkt).to be == data
     expect(ipv4.bytesize).to be == 20 + data.length
@@ -40,7 +40,7 @@ describe NWDIY::PKT, 'を作るとき' do
     data = "xxxxxxxxxxxxxxxx"
     ipv4.src = '127.0.0.1'
     ipv4.data = data
-    ipv4.compile
+    ipv4.compile(true)
     expect(ipv4.src.to_s).to be == '127.0.0.1'
     expect(ipv4.data.to_pkt).to be == data
     expect(ipv4.bytesize).to be == 20 + data.length

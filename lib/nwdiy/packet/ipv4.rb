@@ -44,7 +44,7 @@ class NWDIY
       def initialize(pkt = nil)
         case pkt
         when String
-          pkt.bytesize > 20 or
+          pkt.bytesize >= 20 or
             raise TooShort.new(pkt)
           @vhl = pkt[0].btoh
           @tos = pkt[1].btoh
@@ -113,10 +113,10 @@ class NWDIY
       end
 
       def src=(val)
-        @src = IPAddr.new(val)
+        @src = IPAddr.new(val, Socket::AF_INET)
       end
       def dst=(val)
-        @dst = IPAddr.new(val)
+        @dst = IPAddr.new(val, Socket::AF_INET)
       end
 
       def data=(val)
@@ -158,16 +158,11 @@ class NWDIY
         end
 
         # @length 確認
-        begin
-          #@length - self.hlen < @data.bytesize and 不要なtrailerが
-          #  raise TooLong.new("IP data too long")  付いちゃうケースあり
-          @length - self.hlen > @data.bytesize and
-            raise TooShort.new("IP data too short")
-        rescue => e
-          if !@length or overwrite
+        if !@length || self.hlen + @data.bytesize < @length
+          if overwrite
             @length = self.hlen + @data.bytesize
           else
-            raise e
+            raise TooShort.new("IP data too short")
           end
         end
 
@@ -182,7 +177,7 @@ class NWDIY
       ################################################################
       # その他の諸々
       def to_pkt
-        self.compile
+        self.compile(true)
         @vhl.htob8 + @tos.htob8 + @length.htob16 +
           @id.htob16 + @offset.htob16 +
           @ttl.htob8 + @proto.htob8 + @cksum.htob16 +
@@ -196,7 +191,10 @@ class NWDIY
       end
 
       def to_s
-        "[IPv4 #@src > #@dst #@proto #@data]"
+        name = resolv('/etc/protocols', @proto)
+        name.kind_of?(Array) and
+          name = name[0]
+        "[IPv4 #@src > #@dst #{name} #@data]"
       end
     end
 

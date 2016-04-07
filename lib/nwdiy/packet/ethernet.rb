@@ -33,7 +33,8 @@ class NWDIY
         @@clsid and return @@clsid
         @@clsid = NWDIY::ClassId.new({ VLAN => 0x8100,
                                        ARP  => 0x0806,
-                                       IPv4 => 0x0800 })
+                                       IPv4 => 0x0800,
+                                       IPv6 => 0x86dd })
       end
 
       ################################################################
@@ -78,9 +79,7 @@ class NWDIY
             @type = val.btoh
           else
             res = resolv('/etc/ethertypes', val)
-            res or
-              raise InvalidData.new("unknown ether type: #{val}")
-            @type = res.to_i(16)
+            @type = res.kind_of?(Array) ? res[1].to_i(16) : val
           end
         when Integer, nil
           @type = val
@@ -130,7 +129,10 @@ class NWDIY
       end
       def to_s
         self.compile
-        "[Ethernet #@dst > #@src #{self.type4} #@data]"
+        name = resolv('/etc/ethertypes', self.type4)
+        name.kind_of?(Array) and
+          name = name[0]
+        "[Ethernet #@dst > #@src #{name} #@data]"
       end
 
     end
