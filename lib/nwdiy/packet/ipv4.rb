@@ -28,7 +28,7 @@ class NWDIY
       @@clsid = nil
       def self.clsid
         @@clsid and return @@clsid
-        @@clsid = NWDIY::ClassId.new({})
+        @@clsid = NWDIY::ClassId.new({ ICMP4 => 1 })
       end
 
       ################################################################
@@ -128,8 +128,7 @@ class NWDIY
           @data  = val
           return
         end
-        klass = self.class.id2class(@proto)
-        @data = klass.cast(val)
+        @data = self.class.id2class(@proto).cast(val)
       end
 
       ################################################################
