@@ -19,6 +19,33 @@ class NWDIY
       include NWDIY::Linux
 
       ################################################################
+      # プロトコル番号とプロトコルクラスの対応表
+      # (遅延初期化することで、使わないクラス配下のデータクラスまで
+      #  無駄に読み込んでしまうことを防ぐ)
+      @@class2id = nil
+      def self.class2id(arg = nil)
+        arg === Class or arg = arg.class
+        unless @@class2id
+          @@class2id = Hash.new
+          @@class2id[VLAN] = 0x8100
+          @@class2id[ARP]  = 0x0806
+          @@class2id[IPv4] = 0x0800
+#          @@class2id[IPv6] = 0x86dd
+        end
+        @@class2id[arg]
+      end
+      @@id2class = nil
+      def self.id2class(type)
+        type or return Binary
+        unless @@id2class
+          @@id2class = Array.new
+          @@class2id or self.class2id
+          @@class2id.each {|cl,id| @@id2class[id] = cl}
+        end
+        @@id2class[type] || Binary
+      end
+
+      ################################################################
       # パケット生成
       ################################################################
       # 受信データあるいはハッシュデータからパケットを作る
@@ -78,21 +105,18 @@ class NWDIY
       def data=(val)
         # 代入されたら @type の値も変わる
         # 逆に val の型が不明なら、@type に沿って @data の型が変わる
-        case val
-        when VLAN then @type = 0x8100
-        when ARP  then @type = 0x0806
-        when IPv4 then @type = 0x0800
-        when IPv6 then @type = 0x86dd
-        else
-          case @type
-          when 0x8100 then val = VLAN.cast(val)
-          when 0x0806 then val = ARP.cast(val)
-          when 0x0800 then val = IPv4.cast(val)
-#          when 0x86dd then val = IPv6.cast(val)
-          else             val = Binary.cast(val)
-          end
+        dtype = self.class.class2id(val)
+        if dtype
+          @type = dtype
+          @data = val
+          return
         end
-        @data = val
+        klass = self.class.id2class(@type)
+        begin
+          @data = klass.new(val)
+        rescue => e
+          raise e.class.new("#{klass}:#{e.message}")
+        end
       end
 
       ################################################################
