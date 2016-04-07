@@ -22,27 +22,18 @@ class NWDIY
       # プロトコル番号とプロトコルクラスの対応表
       # (遅延初期化することで、使わないクラス配下のデータクラスまで
       #  無駄に読み込んでしまうことを防ぐ)
-      @@class2id = nil
-      def self.class2id(arg = nil)
-        arg === Class or arg = arg.class
-        unless @@class2id
-          @@class2id = Hash.new
-          @@class2id[VLAN] = 0x8100
-          @@class2id[ARP]  = 0x0806
-          @@class2id[IPv4] = 0x0800
-#          @@class2id[IPv6] = 0x86dd
-        end
-        @@class2id[arg]
+      def self.class2id(cls = nil)
+        self.clsid.class2id(cls)
       end
-      @@id2class = nil
-      def self.id2class(type)
-        type or return Binary
-        unless @@id2class
-          @@id2class = Array.new
-          @@class2id or self.class2id
-          @@class2id.each {|cl,id| @@id2class[id] = cl}
-        end
-        @@id2class[type] || Binary
+      def self.id2class(id)
+        self.clsid.id2class(id) || Binary
+      end
+      @@clsid = nil
+      def self.clsid
+        @@clsid and return @@clsid
+        @@clsid = NWDIY::ClassId.new({ VLAN => 0x8100,
+                                       ARP  => 0x0806,
+                                       IPv4 => 0x0800 })
       end
 
       ################################################################

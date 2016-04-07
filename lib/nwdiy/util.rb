@@ -154,3 +154,32 @@ class Addrinfo
     @mac = self.to_sockaddr.unpack("S!nI!S!CCa*")
   end
 end
+
+################################################################
+# class と id の対応表を動的に作る
+class NWDIY
+  class ClassId
+    def initialize(hash)
+      hash.kind_of?(Hash) or
+        raise "illegal data #{hash}"
+      @ids = Hash.new
+      @cls = Hash.new
+      hash.each do |key,val|
+        if    key.kind_of?(Class) && val.kind_of?(Integer)
+          @ids[key] = val
+          @cls[val] = key
+        elsif key.kind_of?(Integer) && val.kind_of?(Class)
+          @ids[val] = key
+          @cls[key] = val
+        end
+      end
+    end
+    def class2id(cls)
+      cls == Class or cls = cls.class
+      @ids[cls]
+    end
+    def id2class(id)
+      @cls[id]
+    end
+  end
+end
