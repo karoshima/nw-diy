@@ -53,12 +53,9 @@ class NWDIY
 
     ################################################################
     # エラー関連
-    class TooShort < Exception
-    end
-    class TooLong < Exception
-    end
-    class InvalidData < Exception
-    end
+    class TooShort < Exception; end
+    class TooLong < Exception; end
+    class InvalidData < Exception; end
   end
 
 end

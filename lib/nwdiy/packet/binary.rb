@@ -13,8 +13,10 @@ class NWDIY
     # なにかのバイナリデータ
     class Binary
 
-      def self.create(pkt = nil)
-        pkt.kind_of?(self) ? pkt : self.new(pkt)
+      def self.cast(pkt = nil)
+        pkt.kind_of?(self) and
+          return pkt
+        self.new(pkt.respond_to?(:to_pkt) ? pkt.to_pkt : pkt)
       end
       def initialize(pkt)
         @bin = pkt

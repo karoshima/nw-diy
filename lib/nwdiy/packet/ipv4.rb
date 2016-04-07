@@ -18,7 +18,13 @@ class NWDIY
       ################################################################
       # パケット生成
       ################################################################
-      # 受信データあるいはハッシュデータからパケットを作る
+      def self.cast(pkt = nil)
+        pkt.kind_of?(self) and
+          return pkt
+        self.new(pkt.respond_to?(:to_pkt) ? pkt.to_pkt : pkt)
+      end
+
+      # 受信データからパケットを作る
       def initialize(pkt = nil)
         case pkt
         when String
@@ -28,16 +34,15 @@ class NWDIY
           @tos = pkt[1].btoh
           @length = pkt[2..3].btoh
           @id = pkt[4..5].btoh
-          @offset = pkt[6..7].btoh
+          @off = pkt[6..7].btoh
           @ttl = pkt[8].btoh
-          @proto = pkt[9].btoh
+          self.proto = pkt[9].btoh
           @cksum = pkt[10..11].btoh
           @src = IPAddr.new_ntoh(pkt[12..15])
           @dst = IPAddr.new_ntoh(pkt[16..19])
           @option = pkt[20..(self.hlen-1)]
           pkt[0..(self.hlen-1)] = ''
           self.data = pkt
-          self.compile
         when nil
         else
           raise InvalidData.new(pkt)
@@ -48,6 +53,9 @@ class NWDIY
       # 各フィールドの値
       ################################################################
 
+      attr_accessor :tos, :length, :id, :ttl, :cksum, :option
+      attr_reader :proto, :cksum, :src, :dst, :data
+
       def version
         @vhl >> 4
       end
@@ -55,8 +63,38 @@ class NWDIY
         (@vhl & 0xf) * 4
       end
 
-      attr_accessor :tos, :length, :id, :ttl, :proto, :cksum, :option, :data
-      attr_reader :src, :dst
+      def df
+        !!(@offset & 0x4000)
+      end
+      def df=(val)
+        if val
+          @off |=  0x4000
+        else
+          @off &=~ 0x4000
+        end
+      end
+      def more
+        !!(@off & 0x2000)
+      end
+      def more=(val)
+        if val
+          @off |=  0x2000
+        else
+          @off &=~ 0x2000
+        end
+      end
+      def offset
+        @off & 0x1fff
+      end
+      def offset=(val)
+        @off = (@off & 0x6000) | (val & 0x1fff)
+      end
+
+      def proto=(val)
+        # 代入されたら @data の型も変わる
+        @proto = val
+        self.data = @data
+      end
 
       def src=(val)
         @src = IPAddr.new(val)
@@ -65,14 +103,24 @@ class NWDIY
         @dst = IPAddr.new(val)
       end
 
-      def df
-        !!(@offset & 0x4000)
-      end
-      def more
-        !!(@offset & 0x2000)
-      end
-      def fragmentOffset
-        @offset & 0x1fff
+      def data=(val)
+        # 代入されたら @proto の値も変わる
+        # 逆に val の型が不明なら、@proto に沿って @data の型が変わる
+        case val
+        when ICMP4 then @proto =  1
+        when TCP   then @proto =  6
+        when UDP   then @proto = 17
+        else
+          case @proto
+#          when  1 then val = ICMP4.cast(val)
+          when  6 then val = TCP.cast(val)
+          when 17 then val = UDP.cast(val)
+          else         val = Binary.cast(val)
+          end
+        end
+        @data = val
+        @data.respond_to?(:wrapper) and # チェックサム計算などのため
+          @data.wrapper(self)           # @data からヘッダを読ませる
       end
 
       ################################################################
@@ -103,9 +151,8 @@ class NWDIY
 
         # @length 確認
         begin
-          #@length - self.hlen < @data.bytesize and
-          #  raise TooLong.new("IP data too long")
-          #不要なtrailerが付いちゃうケース散見される
+          #@length - self.hlen < @data.bytesize and 不要なtrailerが
+          #  raise TooLong.new("IP data too long")  付いちゃうケースあり
           @length - self.hlen > @data.bytesize and
             raise TooShort.new("IP data too short")
         rescue => e
@@ -116,29 +163,11 @@ class NWDIY
           end
         end
 
-        # @proto 確認
-        case @data
-        when ICMP4 then klass =  1
-        when TCP   then klass =  6
-        when UDP   then klass = 17
-        else            klass = nil
-        end
-        if klass
-          if overwrite
-            @proto = klass
-          else
-            raise InvalidData.new("proto:#{@proto} != data:#{@data.class}")
-          end
-        else
-          case @proto
-#          when  1 then @data = ICMP4.new(@data).compile
-#          when  6 then @data = TCP.new(@data).compile
-#          when 17 then @data = UDP.new(@data).compile
-          when 89 then @data = Binary.create(@data)
-          else         @data = Binary.create(@data)
-          end
-        end
+        # 「option なし」の言い換え
         @option or @option = ''
+
+        # 最後にチェックサムを計算する (TBD)
+        @cksum or @cksum = 0
         self
       end
 
@@ -158,9 +187,6 @@ class NWDIY
         @length
       end
 
-
-      ################################################################
-      # その他の諸々
       def to_s
         "[IPv4 #@src > #@dst #@proto #@data]"
       end

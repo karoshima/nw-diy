@@ -31,7 +31,7 @@ class NWDIY
           @src = MacAddr.new(pkt[6..11])
           self.type = pkt[12..13]
           pkt[0..13] = ''
-          @data = pkt
+          self.data = pkt
           self.compile
         when nil
         else
@@ -43,8 +43,7 @@ class NWDIY
       # 各フィールドの値
       ################################################################
 
-      attr_accessor :data
-      attr_reader :dst, :src, :type
+      attr_reader :dst, :src, :type, :data
 
       def dst=(val)
         @dst = MacAddr.new(val)
@@ -54,24 +53,46 @@ class NWDIY
       end
 
       def type=(val)
+        # 代入されたら @data も変わる
         case val
         when String
           if val.bytesize == 2
             @type = val.btoh
           else
-            @type = resolv('/etc/ethertypes', val)
-            @type or
-              raise InvaliData.new(val)
-            @type = @type.to_i(16)
+            res = resolv('/etc/ethertypes', val)
+            res or
+              raise InvalidData.new("unknown ether type: #{val}")
+            @type = res.to_i(16)
           end
         when Integer, nil
           @type = val
         else
-          raise InvaliData.new(val)
+          raise InvalidData.new("unknown ether type: #{val}")
         end
+        self.data = @data
       end
       def type4
         sprintf("%04x", @type)
+      end
+
+      def data=(val)
+        # 代入されたら @type の値も変わる
+        # 逆に val の型が不明なら、@type に沿って @data の型が変わる
+        case val
+        when VLAN then @type = 0x8100
+        when ARP  then @type = 0x0806
+        when IPv4 then @type = 0x0800
+        when IPv6 then @type = 0x86dd
+        else
+          case @type
+          when 0x8100 then val = VLAN.cast(val)
+          when 0x0806 then val = ARP.cast(val)
+          when 0x0800 then val = IPv4.cast(val)
+#          when 0x86dd then val = IPv6.cast(val)
+          else             val = Binary.cast(val)
+          end
+        end
+        @data = val
       end
 
       ################################################################
@@ -80,35 +101,10 @@ class NWDIY
         @dst or @dst = MacAddr.new("\0\0\0\0\0\0")
         @src or @src = MacAddr.new("\0\0\0\0\0\0")
 
-        # autoload で不要なモジュールの読み込みを防ぐため
-        # @type と @data 型の関係は構造化せず case 処理する
-        case @data
-        when VLAN then klass = 0x8100
-        when ARP  then klass = 0x0806
-        when IPv4 then klass = 0x0800
-        when IPv6 then klass = 0x86dd
-        else           klass = nil
-        end
-        if klass
-          if klass != @type
-            if !@type or overwrite
-              @type = klass
-            else
-              raise InvalidData.new(sprintf("type:0x%04x != data:%s", @type, @data.class))
-            end
-          end
-        else
-          case @type
-          when 0x8100 then @data = VLAN.new(@data).compile
-          when 0x0806 then @data = ARP.new(@data).compile
-          when 0x0800 then @data = IPv4.new(@data).compile
-#          when 0x86dd then @data = IPv6.new(@data).compile
-          else
-            @data = Binary.create(@data)
-            (@type && @type > 1500) or
-              @type = 14 + @data.bytesize
-          end
-        end
+        @data or
+          raise InvalidData.new('Ether data is necessary')
+        (!@type || @type <= 1500) and
+          @type = 14 + @data.bytesize
         self
       end
 
