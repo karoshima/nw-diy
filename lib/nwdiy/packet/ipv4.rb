@@ -16,6 +16,22 @@ class NWDIY
       include NWDIY::Linux
 
       ################################################################
+      # プロトコル番号とプロトコルクラスの対応表
+      # (遅延初期化することで、使わないクラス配下のデータクラスまで
+      #  無駄に読み込んでしまうことを防ぐ)
+      def self.class2id(cls = nil)
+        self.clsid.class2id(cls)
+      end
+      def self.id2class(id)
+        self.clsid.id2class(id) || Binary
+      end
+      @@clsid = nil
+      def self.clsid
+        @@clsid and return @@clsid
+        @@clsid = NWDIY::ClassId.new({})
+      end
+
+      ################################################################
       # パケット生成
       ################################################################
       def self.cast(pkt = nil)
@@ -106,21 +122,14 @@ class NWDIY
       def data=(val)
         # 代入されたら @proto の値も変わる
         # 逆に val の型が不明なら、@proto に沿って @data の型が変わる
-        case val
-        when ICMP4 then @proto =  1
-        when TCP   then @proto =  6
-        when UDP   then @proto = 17
-        else
-          case @proto
-#          when  1 then val = ICMP4.cast(val)
-          when  6 then val = TCP.cast(val)
-          when 17 then val = UDP.cast(val)
-          else         val = Binary.cast(val)
-          end
+        dtype = self.class.class2id(val)
+        if dtype
+          @proto = dtype
+          @data  = val
+          return
         end
-        @data = val
-        @data.respond_to?(:wrapper) and # チェックサム計算などのため
-          @data.wrapper(self)           # @data からヘッダを読ませる
+        klass = self.class.id2class(@proto)
+        @data = klass.cast(val)
       end
 
       ################################################################

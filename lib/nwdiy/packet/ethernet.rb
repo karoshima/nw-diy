@@ -103,11 +103,7 @@ class NWDIY
           return
         end
         klass = self.class.id2class(@type)
-        begin
-          @data = klass.new(val)
-        rescue => e
-          raise e.class.new("#{klass}:#{e.message}")
-        end
+        @data = klass.cast(val)
       end
 
       ################################################################
