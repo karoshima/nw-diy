@@ -10,10 +10,10 @@ require 'nwdiy/macaddr'
 class NWDIY
   class PKT
 
-    autoload(:IPv4,    'nwdiy/packet/ipv4')
-    autoload(:ARP,     'nwdiy/packet/ipv4')
-    autoload(:IPv6,    'nwdiy/packet/ipv6')
-    autoload(:VLAN,    'nwdiy/packet/vlan')
+    autoload(:IPv4, 'nwdiy/packet/ipv4')
+    autoload(:ARP,  'nwdiy/packet/ipv4')
+    autoload(:IPv6, 'nwdiy/packet/ipv6')
+    autoload(:VLAN, 'nwdiy/packet/vlan')
 
     class Ethernet
       include NWDIY::Linux

@@ -177,7 +177,7 @@ class NWDIY
       end
     end
     def class2id(cls)
-      cls == Class or cls = cls.class
+      cls.kind_of?(Class) or cls = cls.class
       @ids[cls]
     end
     def id2class(id)

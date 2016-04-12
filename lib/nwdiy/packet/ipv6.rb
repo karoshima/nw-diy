@@ -52,6 +52,7 @@ class NWDIY
           pkt[0..39] = ''
           self.data = pkt
         when nil
+          @vtf = 0x60000000
         else
           raise InvalidData.new(pkt)
         end
@@ -61,8 +62,8 @@ class NWDIY
       # 各フィールドの値
       ################################################################
 
-      attr_accessor :length, :hlim
-      attr_reader :next, :src, :dst
+      attr_accessor :hlim
+      attr_reader :length, :next, :src, :dst
 
       def version
         (@vtf & 0xf0000000) >> 28
@@ -83,7 +84,8 @@ class NWDIY
       def next=(val)
         # 代入されたら @data の型も変わる
         @next = val
-        self.data = @data
+        @data and
+          self.data = @data
       end
 
       def src=(val)
@@ -94,15 +96,16 @@ class NWDIY
       end
 
       def data=(val)
-        # 代入されたら @next の値も変わる
+        # 代入されたら @length, @next の値も変わる
         # 逆に val の型が不明なら、@next に沿って @data の型が変わる
         dtype = self.class.class2id(val)
         if dtype
           @next = dtype
           @data = val
-          return
+        else
+          @data = self.class.id2class(@proto).cast(val)
         end
-        @data = self.class.id2class(@proto).cast(val)
+        @length = 40 + @data.bytesize
       end
 
       ################################################################

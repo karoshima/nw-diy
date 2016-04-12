@@ -57,9 +57,9 @@ class NWDIY
           @src = IPAddr.new_ntoh(pkt[12..15])
           @dst = IPAddr.new_ntoh(pkt[16..19])
           @option = pkt[20..(self.hlen-1)]
-          pkt[0..(self.hlen-1)] = ''
-          self.data = pkt
+          self.data = pkt[self.hlen..@length]
         when nil
+          @vhl = 0x45
         else
           raise InvalidData.new(pkt)
         end
@@ -69,14 +69,14 @@ class NWDIY
       # 各フィールドの値
       ################################################################
 
-      attr_accessor :tos, :length, :id, :ttl, :cksum, :option
-      attr_reader :proto, :cksum, :src, :dst, :data
+      attr_accessor :tos, :id, :ttl, :cksum, :option
+      attr_reader :length, :proto, :cksum, :src, :dst, :data
 
       def version
         @vhl >> 4
       end
       def hlen
-        (@vhl & 0xf) * 4
+        (@vhl & 0xf) << 2
       end
 
       def df
@@ -109,7 +109,8 @@ class NWDIY
       def proto=(val)
         # 代入されたら @data の型も変わる
         @proto = val
-        self.data = @data
+        @data and
+          self.data = @data
       end
 
       def src=(val)
@@ -120,15 +121,16 @@ class NWDIY
       end
 
       def data=(val)
-        # 代入されたら @proto の値も変わる
+        # 代入されたら @length, @proto の値も変わる
         # 逆に val の型が不明なら、@proto に沿って @data の型が変わる
         dtype = self.class.class2id(val)
         if dtype
           @proto = dtype
           @data  = val
-          return
+        else
+          @data = self.class.id2class(@proto).cast(val)
         end
-        @data = self.class.id2class(@proto).cast(val)
+        @length = self.hlen + @data.bytesize
       end
 
       ################################################################
