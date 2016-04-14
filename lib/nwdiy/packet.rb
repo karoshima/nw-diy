@@ -8,6 +8,13 @@ class NWDIY
   class PKT
 
     ################################################################
+    # NWDIY::PKT::* に必要な定数
+    # DATA_TYPE = { タイプ値 => データ部のクラス }
+    #    バイナリデータからタイプ値を求めたり
+    #    タイプ値の入力を受けてバイナリデータを書き換えたり
+    #    するのに使う
+
+    ################################################################
     # NWDIY::PKT::* に必須なメソッド
 
     # def initialize(packet_binary)
@@ -50,6 +57,38 @@ class NWDIY
     # 最初に必要な NWDIY::PKT の子クラスを下記に定義しておく
     autoload(:Binary,   'nwdiy/packet/binary')
     autoload(:Ethernet, 'nwdiy/packet/ethernet')
+
+    ################################################################
+    # 定数 DATA_TYPE を使って、クラスからタイプ値を求める
+    module Util
+      @@types = nil
+      @@klass = nil
+      def class2type(cls)
+        cls.kind_of?(Class) or cls = cls.class
+        @@types or self.check_data_type
+        @@types[cls]
+      end
+      def type2class(id)
+        @@klass or self.check_data_type
+        @@klass[id]
+      end
+      def check_data_type
+        table = self.data_type
+        table.kind_of?(Hash) or
+          raise "Illegal hash data #{table}"
+        @@types = Hash.new
+        @@klass = Hash.new(Binary)
+        table.each do |key,val|
+          if    key.kind_of?(Class) && val.kind_of?(Integer)
+            @@types[key] = val
+            @@klass[val] = key
+          elsif key.kind_of?(Integer) && val.kind_of?(Class)
+            @@types[val] = key
+            @@klass[key] = val
+          end
+        end
+      end
+    end
 
     ################################################################
     # エラー関連

@@ -14,21 +14,14 @@ class NWDIY
 
     class IPv4
       include NWDIY::Linux
+      extend NWDIY::PKT::Util
 
       ################################################################
       # プロトコル番号とプロトコルクラスの対応表
       # (遅延初期化することで、使わないクラス配下のデータクラスまで
       #  無駄に読み込んでしまうことを防ぐ)
-      def self.class2id(cls = nil)
-        self.clsid.class2id(cls)
-      end
-      def self.id2class(id)
-        self.clsid.id2class(id) || Binary
-      end
-      @@clsid = nil
-      def self.clsid
-        @@clsid and return @@clsid
-        @@clsid = NWDIY::ClassId.new({ ICMP4 => 1 })
+      def self.data_type
+        { ICMP4 => 1 }
       end
 
       ################################################################
@@ -123,12 +116,12 @@ class NWDIY
       def data=(val)
         # 代入されたら @length, @proto の値も変わる
         # 逆に val の型が不明なら、@proto に沿って @data の型が変わる
-        dtype = self.class.class2id(val)
+        dtype = self.class.class2type(val)
         if dtype
           @proto = dtype
           @data  = val
         else
-          @data = self.class.id2class(@proto).cast(val)
+          @data = self.class.type2class(@proto).cast(val)
         end
         @length = self.hlen + @data.bytesize
       end

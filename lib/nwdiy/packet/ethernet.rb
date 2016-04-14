@@ -17,24 +17,15 @@ class NWDIY
 
     class Ethernet
       include NWDIY::Linux
+      extend NWDIY::PKT::Util
 
       ################################################################
       # プロトコル番号とプロトコルクラスの対応表
-      # (遅延初期化することで、使わないクラス配下のデータクラスまで
-      #  無駄に読み込んでしまうことを防ぐ)
-      def self.class2id(cls = nil)
-        self.clsid.class2id(cls)
-      end
-      def self.id2class(id)
-        self.clsid.id2class(id) || Binary
-      end
-      @@clsid = nil
-      def self.clsid
-        @@clsid and return @@clsid
-        @@clsid = NWDIY::ClassId.new({ VLAN => 0x8100,
-                                       ARP  => 0x0806,
-                                       IPv4 => 0x0800,
-                                       IPv6 => 0x86dd })
+      def self.data_type
+        { VLAN => 0x8100,
+          ARP  => 0x0806,
+          IPv4 => 0x0800,
+          IPv6 => 0x86dd }
       end
 
       ################################################################
@@ -95,13 +86,13 @@ class NWDIY
       def data=(val)
         # 代入されたら @type の値も変わる
         # 逆に val の型が不明なら、@type に沿って @data の型が変わる
-        dtype = self.class.class2id(val)
+        dtype = self.class.class2type(val)
         if dtype
           @type = dtype
           @data = val
           return
         end
-        klass = self.class.id2class(@type)
+        klass = self.class.type2class(@type)
         @data = klass.cast(val)
       end
 
