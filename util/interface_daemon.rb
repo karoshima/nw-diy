@@ -82,7 +82,7 @@ class NWDIY
       end
 
       def dev2cli
-        while pkt = @dev.recv
+        while pkt = @dev.recv_raw
           Marshal.dump(pkt, @cli)
         end
       rescue Errno::ECONNRESET

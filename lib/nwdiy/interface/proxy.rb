@@ -18,13 +18,14 @@ class NWDIY
         rescue Errno::ENOENT, Errno::ECONNREFUSED => e
           raise e.class.new('Please run NW-DIY daemon')
         end
+        @klass = klass
         Marshal.dump({klass: klass, name: name}, @sock)
       end
 
       ################
       # socket op
       def recv
-        Marshal.load(@sock)
+        @klass.packet.new(Marshal.load(@sock))
       end
       def send(pkt)
         Marshal.dump(pkt, @sock)

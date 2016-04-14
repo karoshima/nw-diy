@@ -20,6 +20,10 @@ class NWDIY
       # /usr/incluce/netpacket/packet.h
       PACKET_OUTGOING = 4
 
+      def self.packet
+        NWDIY::PKT::Ethernet
+      end
+
       def initialize(name)
         @index, @name = ifindexname(name)
         @sock = Socket.new(PF_PACKET, SOCK_RAW, ETH_P_ALL.htons)
@@ -55,10 +59,14 @@ class NWDIY
       ################
       # socket op
       def recv
+        self.class.packet.new(self.recv_raw)
+      end
+      def recv_raw
         loop do
           pkt, ll = @sock.recvfrom(65540)
-          (ll.hatype == ARPHRD_LOOPBACK && ll.pkttype == PACKET_OUTGOING) or
-            return NWDIY::PKT::Ethernet.new(pkt)
+          (ll.hatype == ARPHRD_LOOPBACK && ll.pkttype == PACKET_OUTGOING) and
+            redo
+          return pkt
         end
       end
       def send(pkt)
