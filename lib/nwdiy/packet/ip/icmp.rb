@@ -50,13 +50,13 @@ class NwDiy
       def data=(val)
         # 代入されたら @proto の値も変わる
         # 逆に val の型が不明なら、@proto に沿って @data の型が変わる
-        dtype = self.class.class2id(val)
+        dtype = self.class.kt.type(val)
         if dtype
           @type = dtype
           @data = val
           return
         end
-        @data = self.class.id2class(@type).cast(val)
+        @data = self.class.kt.klass(@type).cast(val)
       end
 
       ################################################################

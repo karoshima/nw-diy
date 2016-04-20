@@ -8,6 +8,10 @@ class NwDiy
   class Packet
     class ICMP4 < ICMP
       # ほとんどは icmp.rb にある
+      @@kt = KlassType.new({})
+      def self.kt
+        @@kt
+      end
       def to_s
         "[ICMP #{super}]"
       end

@@ -17,16 +17,13 @@ class NwDiy
 
     class Ethernet
       include NwDiy::Linux
-      extend NwDiy::Packet::Util
 
       ################################################################
       # プロトコル番号とプロトコルクラスの対応表
-      def self.data_type
-        { VLAN => 0x8100,
-          ARP  => 0x0806,
-          IPv4 => 0x0800,
-          IPv6 => 0x86dd }
-      end
+      @@kt = KlassType.new({ VLAN => 0x8100,
+                             ARP  => 0x0806,
+                             IPv4 => 0x0800,
+                             IPv6 => 0x86dd })
 
       ################################################################
       # パケット生成
@@ -86,13 +83,13 @@ class NwDiy
       def data=(val)
         # 代入されたら @type の値も変わる
         # 逆に val の型が不明なら、@type に沿って @data の型が変わる
-        dtype = self.class.class2type(val)
+        dtype = @@kt.type(val)
         if dtype
           @type = dtype
           @data = val
           return
         end
-        klass = self.class.type2class(@type)
+        klass = @@kt.klass(@type)
         @data = klass.cast(val)
       end
 

@@ -14,15 +14,12 @@ class NwDiy
 
     class IPv4
       include NwDiy::Linux
-      extend NwDiy::Packet::Util
 
       ################################################################
       # プロトコル番号とプロトコルクラスの対応表
       # (遅延初期化することで、使わないクラス配下のデータクラスまで
       #  無駄に読み込んでしまうことを防ぐ)
-      def self.data_type
-        { ICMP4 => 1 }
-      end
+      @@kt = KlassType.new({ ICMP4 => 1 })
 
       ################################################################
       # パケット生成
@@ -116,12 +113,12 @@ class NwDiy
       def data=(val)
         # 代入されたら @length, @proto の値も変わる
         # 逆に val の型が不明なら、@proto に沿って @data の型が変わる
-        dtype = self.class.class2type(val)
+        dtype = @@kt.type(val)
         if dtype
           @proto = dtype
           @data  = val
         else
-          @data = self.class.type2class(@proto).cast(val)
+          @data = @@kt.klass(@proto).cast(val)
         end
         @length = self.hlen + @data.bytesize
       end

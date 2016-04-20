@@ -60,33 +60,34 @@ class NwDiy
 
     ################################################################
     # 定数 DATA_TYPE を使って、クラスからタイプ値を求める
-    module Util
-      @@types = nil
-      @@klass = nil
-      def class2type(cls)
-        cls.kind_of?(Class) or cls = cls.class
-        @@types or self.check_data_type
-        @@types[cls]
-      end
-      def type2class(id)
-        @@klass or self.check_data_type
-        @@klass[id]
-      end
-      def check_data_type
-        table = self.data_type
-        table.kind_of?(Hash) or
-          raise "Illegal hash data #{table}"
-        @@types = Hash.new
-        @@klass = Hash.new(Binary)
-        table.each do |key,val|
+    class KlassType
+      # 変換テーブルを作っとく
+      def initialize(hash)
+        hash.kind_of?(Hash) or
+          raise "Illegal hash data #{hash}"
+        @type = Hash.new
+        @klass = Hash.new(Binary)
+        hash.each do |key,val|
           if    key.kind_of?(Class) && val.kind_of?(Integer)
-            @@types[key] = val
-            @@klass[val] = key
-          elsif key.kind_of?(Integer) && val.kind_of?(Class)
-            @@types[val] = key
-            @@klass[key] = val
+            @type[key] = val
+            @klass[val] = key
+          elsif val.kind_of?(Class) && key.kind_of?(Integer)
+            @type[val] = key
+            @klass[key] = val
           end
         end
+        puts @type, @klass
+      end
+
+      # データからタイプ値を求める
+      def type(klass)
+        klass.kind_of?(Class) or klass = klass.class
+        @type[klass]
+      end
+
+      # タイプ値からデータクラスを求める
+      def klass(type)
+        @klass[type]
       end
     end
 
