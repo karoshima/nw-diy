@@ -48,6 +48,8 @@ class NwDiy
           @dst = IPAddr.new_ntoh(pkt[16..19])
           @option = pkt[20..(self.hlen-1)]
           self.data = pkt[self.hlen..@length]
+          pkt[0..@length] = ''
+          @trailer = pkt
         when nil
           @vhl = 0x45
         else

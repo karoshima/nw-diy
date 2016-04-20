@@ -93,7 +93,7 @@ class NwDiy
           @next = dtype
           @data = val
         else
-          @data = @@kt.klass(@proto).cast(val)
+          @data = @@kt.klass(@next).cast(val)
         end
         @length = 40 + @data.bytesize
       end

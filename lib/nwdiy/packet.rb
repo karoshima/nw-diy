@@ -76,7 +76,6 @@ class NwDiy
             @klass[key] = val
           end
         end
-        puts @type, @klass
       end
 
       # データからタイプ値を求める
@@ -88,6 +87,11 @@ class NwDiy
       # タイプ値からデータクラスを求める
       def klass(type)
         @klass[type]
+      end
+
+      # debug
+      def to_s
+        "[#@type] [#@klass]"
       end
     end
 
