@@ -89,8 +89,7 @@ class NwDiy
           @data = val
           return
         end
-        klass = @@kt.klass(@type)
-        @data = klass.cast(val)
+        @data = @@kt.klass(@type).cast(val)
       end
 
       ################################################################

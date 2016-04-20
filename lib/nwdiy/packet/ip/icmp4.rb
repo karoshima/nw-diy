@@ -9,8 +9,8 @@ class NwDiy
     class ICMP4 < ICMP
       # ほとんどは icmp.rb にある
       @@kt = KlassType.new({})
-      def self.kt
-        @@kt
+      def data=(val)
+        super(@@kt, val)
       end
       def to_s
         "[ICMP #{super}]"
