@@ -55,7 +55,7 @@ end
 
 ################################################################
 # Linux 関連
-class NWDIY
+class NwDiy
   module Linux
 
     # /usr/include/linux/if_ether.h
@@ -78,7 +78,7 @@ class NWDIY
     ################
     # 数値あるいは文字列から ifindex と ifname を求める
     def ifindexname(arg)
-      ifp = NWDIY::IPLINK.new[arg]
+      ifp = NwDiy::IpLink.new[arg]
       ifp or
         raise ArgumentError.new("Unknown device: #{arg}");
       [ifp.index, ifp.name]

@@ -7,10 +7,10 @@ require_relative '../../nwdiy'
 
 require 'nwdiy/util'
 
-class NWDIY
-  class IFP
+class NwDiy
+  class Interface
     class Proxy
-      include NWDIY::Linux
+      include NwDiy::Linux
 
       def initialize(klass, name)
         begin

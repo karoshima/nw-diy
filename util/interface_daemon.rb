@@ -7,13 +7,13 @@ require_relative '../lib/nwdiy'
 
 require 'nwdiy/interface'
 
-class NWDIY
-  class IFP
+class NwDiy
+  class Interface
 
     ################
     # NWDIY の VM インターフェースからの接続を待つデーモン
     class ProxyDaemon
-      include NWDIY::Linux
+      include NwDiy::Linux
 
       def initialize(argv)
         Thread.abort_on_exception = true
@@ -106,5 +106,5 @@ class NWDIY
 end
 
 if $0 == __FILE__
-  NWDIY::IFP::ProxyDaemon.new(ARGV).run
+  NwDiy::Interface::ProxyDaemon.new(ARGV).run
 end

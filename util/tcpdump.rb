@@ -7,7 +7,7 @@ require_relative '../lib/nwdiy'
 
 require 'nwdiy/interface'
 
-ifp = NWDIY::IFP.new(ARGV[0])
+ifp = NwDiy::Interface.new(ARGV[0])
 loop do
   puts ifp.recv
 end

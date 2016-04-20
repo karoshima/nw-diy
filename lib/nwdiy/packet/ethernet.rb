@@ -7,8 +7,8 @@ require_relative '../../nwdiy'
 require 'nwdiy/util'
 require 'nwdiy/macaddr'
 
-class NWDIY
-  class PKT
+class NwDiy
+  class Packet
 
     autoload(:IPv4, 'nwdiy/packet/ipv4')
     autoload(:ARP,  'nwdiy/packet/ipv4')
@@ -16,8 +16,8 @@ class NWDIY
     autoload(:VLAN, 'nwdiy/packet/vlan')
 
     class Ethernet
-      include NWDIY::Linux
-      extend NWDIY::PKT::Util
+      include NwDiy::Linux
+      extend NwDiy::Packet::Util
 
       ################################################################
       # プロトコル番号とプロトコルクラスの対応表

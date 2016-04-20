@@ -6,8 +6,8 @@ require_relative '../../nwdiy'
 
 require 'nwdiy/util'
 
-class NWDIY
-  class PKT
+class NwDiy
+  class Packet
 
     # 型がよく分からない
     # なにかのバイナリデータ

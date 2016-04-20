@@ -5,10 +5,10 @@
 
 require_relative '../../nwdiy'
 
-class NWDIY
-  class IFP
+class NwDiy
+  class Interface
     class Sock
-      include NWDIY::Linux
+      include NwDiy::Linux
 
       def initialize(name)
       end

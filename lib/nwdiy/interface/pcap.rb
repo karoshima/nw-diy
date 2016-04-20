@@ -9,10 +9,10 @@ require 'nwdiy/util'
 require 'nwdiy/iplink'
 require 'nwdiy/packet'
 
-class NWDIY
-  class IFP
+class NwDiy
+  class Interface
     class Pcap
-      include NWDIY::Linux
+      include NwDiy::Linux
 
       # /usr/include/linux/if_arp.h
       ARPHRD_LOOPBACK = 772
@@ -21,7 +21,7 @@ class NWDIY
       PACKET_OUTGOING = 4
 
       def self.packet
-        NWDIY::PKT::Ethernet
+        NwDiy::Packet::Ethernet
       end
 
       def initialize(name)
@@ -84,7 +84,7 @@ class NWDIY
       # 自分の MAC アドレスを調べる
       def mac
         unless @mac
-          @mac = NWDIY::IPLINK.new[@index].mac
+          @mac = Nwdiy::IpLink.new[@index].mac
         end
         @mac
       end

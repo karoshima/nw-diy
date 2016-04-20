@@ -4,8 +4,8 @@
 
 require 'ipaddr'
 
-class NWDIY
-  class PKT
+class NwDiy
+  class Packet
 
     autoload(:TCP,    'nwdiy/packet/ip/tcp')
     autoload(:UDP,    'nwdiy/packet/ip/udp')
@@ -13,8 +13,8 @@ class NWDIY
     autoload(:OSPFv2, 'nwdiy/packet/ip/ospf')
 
     class IPv4
-      include NWDIY::Linux
-      extend NWDIY::PKT::Util
+      include NwDiy::Linux
+      extend NwDiy::Packet::Util
 
       ################################################################
       # プロトコル番号とプロトコルクラスの対応表

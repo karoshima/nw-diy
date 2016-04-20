@@ -5,8 +5,8 @@
 
 require_relative '../nwdiy'
 
-class NWDIY
-  class IPLINK
+class NwDiy
+  class IpLink
     include Enumerable
 
     def initialize
@@ -15,7 +15,7 @@ class NWDIY
       `ip link`.gsub(/\n\s+/, ' ').lines.each do |line|
         dummy, index, name = *(/^(\d+): ([^:]+):/.match(line))
         index or next
-        ifa = NWDIY::IPLINK::IFA.new(index, name)
+        ifa = NwDiy::IpLink::IfAddr.new(index, name)
         @index[index.to_i] = ifa;
         @name[name] = ifa;
         ifa.parse_link(line)
@@ -46,7 +46,7 @@ class NWDIY
       @index.each {|link| yield link}
     end
 
-    class IFA
+    class IfAddr
       include Comparable
 
       attr_reader :index, :name, :flags, :mtu, :state, :type, :mac

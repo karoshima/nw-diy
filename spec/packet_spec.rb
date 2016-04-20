@@ -4,9 +4,9 @@
 
 require 'nwdiy/packet'
 
-describe NWDIY::PKT, 'を作るとき' do
+describe NwDiy::Packet, 'を作るとき' do
   it '中身のない Ethernet Frame を作って、あとから修正する' do
-    eth = NWDIY::PKT::Ethernet.new
+    eth = NwDiy::Packet::Ethernet.new
     expect(eth).not_to be nil
     data = "xxxxxxxxxx"
     eth.dst = "ff:ff:ff:ff:ff:ff"
@@ -21,7 +21,7 @@ describe NWDIY::PKT, 'を作るとき' do
   end
 
   it '中身のない IPv4 packet を作って、あとから修正する' do
-    ipv4 = NWDIY::PKT::IPv4.new
+    ipv4 = NwDiy::Packet::IPv4.new
     expect(ipv4).not_to be nil
     data = "xxxxxxxxxxxxxxxx"
     ipv4.src = '127.0.0.1'
@@ -33,9 +33,9 @@ describe NWDIY::PKT, 'を作るとき' do
   end
 
   it 'IPv4 over Ethernet' do
-    eth = NWDIY::PKT::Ethernet.new
+    eth = NwDiy::Packet::Ethernet.new
     expect(eth).not_to be nil
-    eth.data = ipv4 = NWDIY::PKT::IPv4.new
+    eth.data = ipv4 = NwDiy::Packet::IPv4.new
     expect(ipv4).not_to be nil
     data = "xxxxxxxxxxxxxxxx"
     ipv4.src = '127.0.0.1'

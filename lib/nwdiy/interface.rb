@@ -12,10 +12,10 @@ require 'nwdiy/interface/pcap'
 require 'nwdiy/interface/sock'
 require 'nwdiy/interface/proxy'
 
-class NWDIY
+class NwDiy
   ################################################################
   # インターフェース
-  class IFP
+  class Interface
     ################
     # new 引数はインターフェース名、あるいは情報付与したハッシュ
     def initialize(arg)
@@ -26,9 +26,9 @@ class NWDIY
       if arg.kind_of?(Hash)
         case arg[:type]
         when :pcap
-          klass = NWDIY::IFP::Pcap
+          klass = NwDiy::Interface::Pcap
         when :sock
-          klass = NWDIY::IFP::Sock
+          klass = NwDiy::Interface::Sock
         else
           raise ArgumentError.new("unknown interface type: #{arg[:type]}")
         end
@@ -37,7 +37,7 @@ class NWDIY
 
       # ifindex あるいは ifname を決める
       case arg
-      when Integer, String, NWDIY::IPLINK::IFA
+      when Integer, String, NwDiy::IpLink::IfAddr
         # do nothing
       else
         if arg.respond_to?(:to_i) and arg.to_i > 0
@@ -51,14 +51,14 @@ class NWDIY
 
       # 実在するか否かで klass を決める
       unless klass
-        klass = NWDIY::IPLINK.new[arg] ? NWDIY::IFP::Pcap : NWDIY::IFP::Sock
+        klass = NwDiy::IpLink.new[arg] ? NwDiy::Interface::Pcap : NwDiy::Interface::Sock
       end
 
       # 接続する
       begin
         @dev = klass.new(arg)
       rescue Errno::EPERM
-        @dev = NWDIY::IFP::Proxy.new(klass, arg)
+        @dev = NwDiy::Interface::Proxy.new(klass, arg)
       end
     end
 

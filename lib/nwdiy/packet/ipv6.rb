@@ -2,16 +2,16 @@
 # -*- mode: ruby; coding: utf-8 -*-
 ################################################################
 
-class NWDIY
-  class PKT
+class NwDiy
+  class Packet
 
     autoload(:TCP,    'nwdiy/packet/ip/tcp')
     autoload(:UDP,    'nwdiy/packet/ip/udp')
     autoload(:ICMP6,  'nwdiy/packet/ip/icmp6')
 
     class IPv6
-      include NWDIY::Linux
-      extend NWDIY::PKT::Util
+      include NwDiy::Linux
+      extend NwDiy::Packet::Util
 
       ################################################################
       # プロトコル番号とプロトコルクラスの対応表

@@ -2,8 +2,8 @@
 # -*- mode: ruby; coding: utf-8 -*-
 ################################################################
 
-class NWDIY
-  class PKT
+class NwDiy
+  class Packet
     class TCP
     end
   end

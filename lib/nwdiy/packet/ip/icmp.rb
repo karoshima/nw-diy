@@ -2,22 +2,12 @@
 # -*- mode: ruby; coding: utf-8 -*-
 ################################################################
 
-class NWDIY
-  class PKT
+class NwDiy
+  class Packet
     class ICMP
 
       ################################################################
       # プロトコル番号とプロトコルクラスの対応表
-      def self.class2id(cls = nil)
-        self.clsid.class2id(cls)
-      end
-      def self.id2class(id)
-        self.clsid.id2class(id) || Binary
-      end
-      @@clsid = nil
-      def self.clsid
-        raise "Implement on ICMPv4, ICMPv6"
-      end
 
       ################################################################
       # パケット生成

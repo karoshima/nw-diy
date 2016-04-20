@@ -7,7 +7,7 @@ require_relative '../nwdiy'
 
 require "nwdiy/interface"
 
-class NWDIY
+class NwDiy
   class VM
     # いくつかのインターフェースを持つ VM を作る
     # in: インターフェースのリスト
@@ -35,7 +35,7 @@ class NWDIY
         end
       end
 
-      @iflist.push(NWDIP::IFP.new(ifp))
+      @iflist.push(NwDiy::Interface.new(ifp))
     end
 
     def iflist

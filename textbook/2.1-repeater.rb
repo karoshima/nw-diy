@@ -5,7 +5,7 @@
 
 require_relative "../lib/vm"
 
-class Repeater < NWDIY::VM
+class Repeater < NwDiy::VM
   # この VM は、インターフェース一覧を指定して作成する
   # 詳しくは NWDIY::VM の initialize を参照
   
