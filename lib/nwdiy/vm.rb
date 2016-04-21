@@ -5,7 +5,8 @@
 
 require_relative '../nwdiy'
 
-require "nwdiy/interface"
+require 'nwdiy/iplink'
+require 'nwdiy/interface'
 
 class NwDiy
   class VM
@@ -26,13 +27,8 @@ class NwDiy
 
       # 単純文字列なら、インターフェース名と見做す
       if (ifp.kind_of?(String))
-        @iflist.grep(ifp) and raise Errno::EEXIST.new("interface #{ifp} already exists.");
-        real = `ip link`.scan(/^\d+: (\w+):/);
-        if (real.grep(ifp))
-          ifp = { type: :pcap, name: ifp }
-        else
-          ifp = { type: :file, name: ifp }
-        end
+        @iflist.index(ifp) and raise Errno::EEXIST.new("interface #{ifp} already exists.");
+        ifp = { name: ifp, type: (NwDiy::IpLink.new[ifp] ? :pcap : :sock) }
       end
 
       @iflist.push(NwDiy::Interface.new(ifp))
