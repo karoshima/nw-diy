@@ -21,8 +21,6 @@ class NwDiy
       def initialize(pkt)
         @bin = pkt
       end
-      def compile
-      end
 
       def to_pkt
         @bin

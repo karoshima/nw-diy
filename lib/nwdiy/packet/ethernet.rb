@@ -36,11 +36,14 @@ class NwDiy
             raise TooShort.new(pkt)
           @dst = MacAddr.new(pkt[0..5])
           @src = MacAddr.new(pkt[6..11])
-          self.type = pkt[12..13]
+          self.type = pkt[12..13].btoh
           pkt[0..13] = ''
           self.data = pkt
-          self.compile
         when nil
+          @dst = MacAddr.new("\0\0\0\0\0\0")
+          @src = MacAddr.new("\0\0\0\0\0\0")
+          @type = nil
+          @data = ''
         else
           raise InvalidData.new(pkt)
         end
@@ -50,7 +53,7 @@ class NwDiy
       # 各フィールドの値
       ################################################################
 
-      attr_reader :dst, :src, :type, :data
+      attr_reader :dst, :src, :data
 
       def dst=(val)
         @dst = MacAddr.new(val)
@@ -61,61 +64,35 @@ class NwDiy
 
       def type=(val)
         # 代入されたら @data も変わる
-        case val
-        when String
-          if val.bytesize == 2
-            @type = val.btoh
-          else
-            res = resolv('/etc/ethertypes', val)
-            @type = res.kind_of?(Array) ? res[1].to_i(16) : val
-          end
-        when Integer, nil
-          @type = val
-        else
-          raise InvalidData.new("unknown ether type: #{val}")
-        end
-        self.data = @data
+        @type = val
+        @data and
+          self.data = @data
+      end
+      def type
+        @type || 14 + @data.bytesize
       end
       def type4
-        sprintf("%04x", @type)
+        sprintf("%04x", self.type)
       end
 
       def data=(val)
         # 代入されたら @type の値も変わる
         # 逆に val の型が不明なら、@type に沿って @data の型が変わる
         dtype = @@kt.type(val)
-        if dtype
+        dtype and
           @type = dtype
-          @data = val
-          return
-        end
         @data = @@kt.klass(@type).cast(val)
-      end
-
-      ################################################################
-      # 設定されたデータを元に、設定されてないデータを補完する
-      def compile(overwrite=false)
-        @dst or @dst = MacAddr.new("\0\0\0\0\0\0")
-        @src or @src = MacAddr.new("\0\0\0\0\0\0")
-
-        @data or
-          raise InvalidData.new('Ether data is necessary')
-        (!@type || @type <= 1500) and
-          @type = 14 + @data.bytesize
-        self
       end
 
       ################################################################
       # その他の諸々
       def to_pkt
-        self.compile
         @dst.hton + @src.hton + @type.htob16 + @data.to_pkt
       end
       def bytesize
         14 + @data.bytesize
       end
       def to_s
-        self.compile
         name = resolv('/etc/ethertypes', self.type4)
         name.kind_of?(Array) and
           name = name[0]

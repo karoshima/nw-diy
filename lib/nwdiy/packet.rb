@@ -32,15 +32,6 @@ class NwDiy
     #    NWDIY::PKT の特定フィールドのデータを参照する
     # end
 
-    # def compile(overwrite=false)
-    #    設定されたデータを元に、設定されてないデータを補完する
-    #    不整合があれば、それを raise するか、もしくは
-    #    数値を overwrite する
-    #    ICMP などの不完全データを含むパケットを扱うときは、
-    #    呼び出し元で rescue TooShort で対応してもらう
-    #    返値は self
-    # end
-
     # def to_pkt
     #   パケットデータである String を出力する
     # end

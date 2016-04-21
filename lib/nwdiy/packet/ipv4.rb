@@ -7,10 +7,12 @@ require 'ipaddr'
 class NwDiy
   class Packet
 
-    autoload(:TCP,    'nwdiy/packet/ip/tcp')
-    autoload(:UDP,    'nwdiy/packet/ip/udp')
-    autoload(:ICMP4,  'nwdiy/packet/ip/icmp4')
-    autoload(:OSPFv2, 'nwdiy/packet/ip/ospf')
+    class IP
+      autoload(:TCP,    'nwdiy/packet/ip/tcp')
+      autoload(:UDP,    'nwdiy/packet/ip/udp')
+      autoload(:ICMP4,  'nwdiy/packet/ip/icmp4')
+      autoload(:OSPFv2, 'nwdiy/packet/ip/ospf')
+    end
 
     class IPv4
       include NwDiy::Linux
@@ -19,7 +21,7 @@ class NwDiy
       # プロトコル番号とプロトコルクラスの対応表
       # (遅延初期化することで、使わないクラス配下のデータクラスまで
       #  無駄に読み込んでしまうことを防ぐ)
-      @@kt = KlassType.new({ ICMP4 => 1 })
+      @@kt = KlassType.new({ IP::ICMP4 => 1 })
 
       ################################################################
       # パケット生成
@@ -52,6 +54,10 @@ class NwDiy
           @trailer = pkt
         when nil
           @vhl = 0x45
+          @tos = @id = @off = @ttl = @proto = @cksum = 0
+          @length = 20
+          @src = @dst = IPAddr.new('0.0.0.0')
+          @option = @data = ''
         else
           raise InvalidData.new(pkt)
         end
@@ -72,7 +78,7 @@ class NwDiy
       end
 
       def df
-        !!(@offset & 0x4000)
+        !!(@off & 0x4000)
       end
       def df=(val)
         if val
@@ -116,71 +122,23 @@ class NwDiy
         # 代入されたら @length, @proto の値も変わる
         # 逆に val の型が不明なら、@proto に沿って @data の型が変わる
         dtype = @@kt.type(val)
-        if dtype
+        dtype and
           @proto = dtype
-          @data  = val
-        else
-          @data = @@kt.klass(@proto).cast(val)
-        end
+        @data = @@kt.klass(@proto).cast(val)
         @length = self.hlen + @data.bytesize
-      end
-
-      ################################################################
-      # 設定されたデータを元に、設定されてないデータを補完する
-      def compile(overwrite = false)
-        # data 確認
-        @data && @data.bytesize > 0 or
-          raise TooShort.new("IP data is necessary")
-
-        # @vhl 確認
-        begin
-          self.version == 4 or
-            raise InvalidData.new("Invalid Version: #{self.version}")
-          self.hlen >= 20 or
-            raise InvalidData.new("Invalid Header length: #{self.hlen}")
-          optlen = @option ? @option.bytesize : 0
-          self.hlen - 20 < optlen and
-            raise TooLong.new("IP option too long")
-          self.hlen - 20 > optlen and
-            raise TooShort.new("IP option too short")
-        rescue => e
-          if !@vhl or overwrite
-            @vhl = 0x45 + (@option ? @option.bytesize / 4 : 0)
-          else
-            raise e
-          end
-        end
-
-        # @length 確認
-        if !@length || self.hlen + @data.bytesize < @length
-          if overwrite
-            @length = self.hlen + @data.bytesize
-          else
-            raise TooShort.new("IP data too short")
-          end
-        end
-
-        # 「option なし」の言い換え
-        @option or @option = ''
-
-        # 最後にチェックサムを計算する (TBD)
-        @cksum or @cksum = 0
-        self
       end
 
       ################################################################
       # その他の諸々
       def to_pkt
-        self.compile(true)
         @vhl.htob8 + @tos.htob8 + @length.htob16 +
-          @id.htob16 + @offset.htob16 +
+          @id.htob16 + @off.htob16 +
           @ttl.htob8 + @proto.htob8 + @cksum.htob16 +
           @src.hton + @dst.hton + @option +
           @data.to_pkt
       end
 
       def bytesize
-        self.compile
         @length
       end
 

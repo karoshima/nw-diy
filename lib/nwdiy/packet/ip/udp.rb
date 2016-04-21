@@ -4,7 +4,9 @@
 
 class NwDiy
   class Packet
-    class UDP
+    class IP
+      class UDP
+      end
     end
   end
 end

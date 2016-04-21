@@ -5,9 +5,11 @@
 class NwDiy
   class Packet
 
-    autoload(:TCP,    'nwdiy/packet/ip/tcp')
-    autoload(:UDP,    'nwdiy/packet/ip/udp')
-    autoload(:ICMP6,  'nwdiy/packet/ip/icmp6')
+    class IP
+      autoload(:TCP,    'nwdiy/packet/ip/tcp')
+      autoload(:UDP,    'nwdiy/packet/ip/udp')
+      autoload(:ICMP6,  'nwdiy/packet/ip/icmp6')
+    end
 
     class IPv6
       include NwDiy::Linux
@@ -16,7 +18,7 @@ class NwDiy
       # プロトコル番号とプロトコルクラスの対応表
       # (遅延初期化することで、使わないクラス配下のデータクラスまで
       #  無駄に読み込んでしまうことを防ぐ)
-      @@kt = KlassType.new({ ICMP6 => 58 })
+      @@kt = KlassType.new({ IP::ICMP6 => 58 })
 
       ################################################################
       # パケット生成
@@ -43,6 +45,9 @@ class NwDiy
           self.data = pkt
         when nil
           @vtf = 0x60000000
+          @length = 40
+          @hlim = 0
+          @src = @dst = IPAddr.new('::')
         else
           raise InvalidData.new(pkt)
         end
@@ -89,52 +94,20 @@ class NwDiy
         # 代入されたら @length, @next の値も変わる
         # 逆に val の型が不明なら、@next に沿って @data の型が変わる
         dtype = @@kt.type(val)
-        if dtype
+        dtype and
           @next = dtype
-          @data = val
-        else
-          @data = @@kt.klass(@next).cast(val)
-        end
+        @data = @@kt.klass(@next).cast(val)
         @length = 40 + @data.bytesize
-      end
-
-      ################################################################
-      # 設定されたデータを元に、設定されてないデータを補完する
-      def compile(overwrite = false)
-        @data or
-          raise TooShort.new('no data')
-        unless self.version == 6
-          if overwrite
-            @vtf = 0x60000000 | (@vtf & 0x0fffffff)
-          else
-            raise InvalidData.new("Invalid version: #{self.version}")
-          end
-        end
-
-        # @length 確認
-        if 40 + @data.bytesize < @length
-          if overwrite
-            @length = 40 + @data.bytesize
-          else
-            raise TooShort.new("IP data too short")
-          end
-        end
-
-        # 最後にチェックサムを計算する (TBD)
-        @cksum or @cksum = 0
-        self
       end
 
       ################################################################
       # その他の諸々
       def to_pkt
-        self.compile
         @vtf.htob32 + @length.htob16 + @nh.htob8 + @hlim.htob8 +
           @src.hton + @dst.hton + @data.to_pkt
       end
 
       def bytesize
-        self.compile
         @length
       end
 

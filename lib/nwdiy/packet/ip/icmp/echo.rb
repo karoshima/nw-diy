@@ -4,7 +4,7 @@
 
 require 'nwdiy/packet/ip/icmp'
 
-class NwDiy::Packet::ICMP
+class NwDiy::Packet::IP::ICMP
   class EchoRequest
     ################################################################
     # パケット生成
@@ -26,7 +26,8 @@ class NwDiy::Packet::ICMP
         pkt[0..3] = ''
         @data = pkt
       when nil
-        # no default value
+        @id = @seq = 0
+        @data = ''
       else
         raise InvalidData.new(pkt)
       end
@@ -37,8 +38,6 @@ class NwDiy::Packet::ICMP
     ################################################################
 
     attr_accessor :id, :seq, :data
-    def compile(overwrite = false)
-    end
 
     ################################################################
     # その他

@@ -29,20 +29,23 @@ class Integer
     [self].pack('C')
   end
 end
-class NilClass
-  def btoh
-    nil
-  end
-  def htob32
-    "\0\0\0\0"
-  end
-  def htob16
-    "\0\0"
-  end
-  def htob8
-    "\0"
-  end
-end      
+# class NilClass
+#   def btoh
+#     nil
+#   end
+#   def htob32
+#     "\0\0\0\0"
+#   end
+#   def htob16
+#     "\0\0"
+#   end
+#   def htob8
+#     "\0"
+#   end
+#   def to_pkt
+#     ''
+#   end
+# end
 # Integer にバイトオーダー変換の機能を追加
 class Integer
   def htonl
