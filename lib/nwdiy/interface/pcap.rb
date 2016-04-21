@@ -84,7 +84,7 @@ class NwDiy
       # 自分の MAC アドレスを調べる
       def mac
         unless @mac
-          @mac = Nwdiy::IpLink.new[@index].mac
+          @mac = NwDiy::IpLink.new[@index].mac
         end
         @mac
       end
