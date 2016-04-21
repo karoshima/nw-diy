@@ -58,7 +58,7 @@ class NwDiy
       ################################################################
 
       attr_accessor :hlim
-      attr_reader :length, :next, :src, :dst
+      attr_reader :length, :next, :src, :dst, :data
 
       def version
         (@vtf & 0xf0000000) >> 28

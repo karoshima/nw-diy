@@ -57,4 +57,20 @@ describe NwDiy::Packet, 'を作るとき' do
     eth.data.data.data.id = id = rand
     expect(eth.data.data.data.id).to be == id
   end
+
+  it 'ping6' do
+    eth = NwDiy::Packet::Ethernet.new
+    expect(eth).not_to be nil
+    eth.data = NwDiy::Packet::IPv6.new
+    expect(eth.type).to be == 0x86dd
+    expect(eth.data.class).to be NwDiy::Packet::IPv6
+    eth.data.data = NwDiy::Packet::IP::ICMP6.new
+    expect(eth.data.next).to be 58
+    expect(eth.data.data.class).to be NwDiy::Packet::IP::ICMP6
+    eth.data.data.data = NwDiy::Packet::IP::ICMP::EchoRequest.new
+    expect(eth.data.data.type).to be == 128
+    expect(eth.data.data.data.class).to be NwDiy::Packet::IP::ICMP::EchoRequest
+    eth.data.data.data.id = id = rand
+    expect(eth.data.data.data.id).to be == id
+  end
 end
