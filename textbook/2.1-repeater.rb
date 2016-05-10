@@ -3,7 +3,7 @@
 ################################################################
 # 練習問題 2.1.リピータ
 
-require_relative "../lib/vm"
+require_relative "../lib/nwdiy/vm"
 
 class Repeater < NwDiy::VM
   # この VM は、インターフェース一覧を指定して作成する
@@ -13,8 +13,9 @@ class Repeater < NwDiy::VM
   def job
     loop do
       rifp, rpkt = self.recv               # パケットを受信したら
-      self.ifp.delete(rifp).each do |ifp| # その他のインターフェースに
-        ifp.send(rpkt)                     # パケットを送信する
+      self.iflist.each do |ifp|
+        (ifp == rifp) or                   # その他のインターフェースに
+          ifp.send(rpkt)                   # パケットを送信する
       end
     end
   end

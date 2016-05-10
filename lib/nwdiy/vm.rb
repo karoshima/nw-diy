@@ -17,25 +17,61 @@ class NwDiy
     #     { type: :tap,  name: "tap0" }: tap でリンクを作って送受信する
     #     { type: :file, name: <file> }: ソケットファイルを作って送受信する
     def initialize(ifp = [])
-      @iflist = []
-      self.newif(ifp)
+      @ifs = Hash.new
+      @threads = Hash.new
+      @pktqueue = SizedQueue.new(64)
+      self.addif(ifp)
     end
-    def newif(ifp)
+
+    def ifhash(ifp)
+      ifp.kind_of?(Hash) and
+        return ifp
+      { name: ifp, type: (NwDiy::IpLink.new[ifp] ? :pcap : :sock) }
+    end
+
+    def addif(ifp)
       # リストなら、リスト内の各インターフェースについて処理する
       ifp.kind_of?(Array) and
-        return ifp.each {|ife| self.newif(ife)}
+        return ifp.each {|ifp2| self.newif(ifp2)}
 
-      # 単純文字列なら、インターフェース名と見做す
-      if (ifp.kind_of?(String))
-        @iflist.index(ifp) and raise Errno::EEXIST.new("interface #{ifp} already exists.");
-        ifp = { name: ifp, type: (NwDiy::IpLink.new[ifp] ? :pcap : :sock) }
+      # インターフェース名→インターフェース種別ハッシュ
+      ifh = ifhash(ifp)
+      @ifs[ifh] and
+        raise Errno::EEXIST.new("interface #{ifp} already exists")
+
+      nwif = NwDiy::Interface.new(ifp)
+      @ifs[ifh] = nwif
+      @threads[ifh] = Thread.new(nwif) do |nwif2|
+        begin
+          loop do
+            @pktqueue.push([nwif2, nwif2.recv])
+          end
+        ensure
+          # kill されても静かに終了する
+        end
       end
+    end
 
-      @iflist.push(NwDiy::Interface.new(ifp))
+    def delif(ifp)
+      # リストなら、リスト内の各インターフェースについて処理する
+      ifp.kind_of?(Array) and
+        return ifp.each {|ifp2| self.delif(ifp2)}
+
+      ifh = ifhash(ifp)
+      @ifs[ifh] or
+        raise Errno::ENOENT.new("interfacd #{ifp} does not exist")
+
+      @threads[ifh].kill.join
+      @threads.delete(ifh)
+      @ifs.delete(ifh)
     end
 
     def iflist
-      @iflist
+      @ifs.values
+    end
+
+    def recv
+      @pktqueue.pop
     end
   end
 end
