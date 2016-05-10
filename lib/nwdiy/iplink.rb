@@ -13,7 +13,7 @@ class NwDiy
       @index = []
       @name = {}
       `ip link`.gsub(/\n\s+/, ' ').lines.each do |line|
-        dummy, index, name = *(/^(\d+): ([^:]+):/.match(line))
+        dummy, index, name = *(/^(\d+): ([^:@]+)/.match(line))
         index or next
         ifa = NwDiy::IpLink::IfAddr.new(index, name)
         @index[index.to_i] = ifa;
