@@ -56,5 +56,13 @@ class NwDiy
     def local?
       !self.global?
     end
+
+    # hash のキーにするために
+    def hash
+      @addr.unpack('C6').inject {|a,b| a*256+b}
+    end
+    def eql?(other)
+      other.kind_of?(NwDiy::MacAddr) && self.hash == other.hash
+    end
   end
 end
