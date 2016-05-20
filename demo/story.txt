@@ -1,0 +1,185 @@
+ruby build.rb
+\G7
+cat > /dev/null
+NW-DIY のデモを行ないます。よろしくお願いします。
+画面中央の装置でスイッチを動かして
+上の装置から下の装置への ping を通します。
+このスイッチに簡単な改造を加えるだけで
+新しい機能が有効になる様子をご覧ください。
+
+まず、デモ環境について解説します。
+中央の装置は、周囲の東西南北の装置に対して
+east0, west0, south0, north0 という
+イーサネットで接続しています。
+周囲の装置は、中央の装置に対して
+center0 というイーサネットで接続しています。
+
+それではデモを行ないます。
+
+まず、なにも動いていない環境で、
+north から south に ping を打ちます。
+\G8
+ping 10.0.0.2
+\G7
+他の機器では tcpdump を仕掛けておきます。
+\G2
+tcpdump -ni center0
+\G4
+tcpdump -ni center0
+\G6
+tcpdump -ni center0
+\G7
+center が挟まっているので届きません。
+center で Switch を動かします。
+\G9
+rm switch.rb; vi switch.rb
+i
+require_relative '../lib/nwdiy'
+require 'nwdiy/vm'
+
+class Switch < NwDiy::VM
+\G7
+Switch クラスでスイッチを作ります
+\G9
+  def job
+    loop do
+\G7
+job というメソッドでループをまわし、
+そのなかで、
+\G9
+      rifp, pkt = self.recv     # 受信したら
+      self.iflist.each do |ifp| # 各ifpのうち
+        (ifp == rifp) or        # 受信ifp以外に
+          ifp.send(pkt)         # 送信する
+      end
+\G7
+パケットを受信したら、
+受信インターフェース以外に
+転送します
+\G9
+    end
+  end
+end
+^[:w
+\G7
+ではこれを center で動かしましょう。
+\G5
+irb
+require_relative 'switch.rb'
+sw = Switch.new('north0')
+\G7
+Switch を作りました。
+north0 インターフェースに繋がってます。
+それではこの Switch を動かします。
+\G5
+Thread.new { sw.job }
+\G7
+別スレッドでSwitch の job を動かしました。
+右上画面のエディタにあるコードが裏で動いています。
+
+ここで、east と west を繋ぎ込みます。
+\G5
+sw.addif(['east0', 'west0'])
+\G7
+east や west に ARP が届くようになりました。
+しかしまだ 'south0' を加えてないので、
+south には届いていません。
+south も繋ぎ込みましょう。
+\G5
+sw.addif('south0')
+\G7
+south を繋ぐと ping 応答が得られます。
+これでひとまず完成です。
+
+まるで昔のリピータのように
+余計なパケットが東西に漏れていますね。
+イマドキのスイッチはこれを漏らさないよう
+学習テーブルの機能があります。
+これからその拡張を行ないます。
+
+リピータは止めておきましょう。
+tcpdump の画面はちょっとずらします。
+\G5
+^D
+\G2
+...
+\G4
+...
+\G6
+...
+\G7
+それではコードを改造します。
+装置を作ったときに学習テーブルを用意します。
+\G9
+require 'nwdiy/timerhash'
+  def initialize(*arg)
+    super(*arg)
+\G7
+インスタンス生成時に
+時限ハッシュ (学習テーブル) を作ります
+\G9
+    @macdb = NwDiy::TimerHash.new
+    @macdb.age = 10
+  end
+\G7
+学習したデータは 10 秒で ageout させましょう。
+次にパケット送受信部を改造します。
+\G9
+(スペースを開ける)
+\G7
+パケットを受信したらまず
+送信元 MAC をキーに
+受信インターフェースを登録します
+\G9
+      # 受信インターフェース登録
+      @macdb.overwrite(pkt.src, rifp)
+\G7
+今度は送信先 MAC をキーに
+送信インターフェースを検索します。
+見つかったら、そこだけに転送します
+\G9
+      # 送信インターフェース確認
+      sifp = @macdb.value(pkt.dst)
+      if sifp
+        sifp.send(pkt)
+        next
+      end
+
+      # 見つからなければ、従来どおり。
+(全体が見えるようcentering)
+^[:w
+\G7
+これで学習テーブルが効くようになったハズです。
+ではこれを動かしてみましょう。
+\G5
+irb
+require_relative 'switch'
+sw = Switch.new('north0')
+Thread.new { sw.job }
+\G7
+先ほどと同様に Switch を作って
+動かし始めました。
+
+ここに east と west を繋ぎ込みます。
+\G5
+sw.addif(['east0', 'west0'])
+\G7
+east や west に ARP が届くようになりました。
+まだ south を繋いでいないので、
+さっきと挙動が同じです。
+
+では south を繋ぎ込みます。
+\G5
+sw.addif('south0')
+\G7
+south を繋ぐと ping 応答が得られます。
+そして east や west のパケットが止まりました。
+これで学習の機能も完成です。
+
+10 秒ごとに 1 発づつ東西に出てきています。
+学習テーブルが 10 秒ごとに  ageout している
+様子が見てとれます。
+
+【まとめ】
+このように、ハードやカーネルを改造しなくても
+既存の機能を拡張することが容易です。

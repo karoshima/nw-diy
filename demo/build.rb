@@ -63,63 +63,92 @@ end
 #system "screen -c #{File.dirname $0}/.screenrc"
 # screen の準備
 File.open(__dir__+"/.screen", "w") do |rc|
-  rc.puts "source ~/.screenrc"
-  # 画面の 9 分割とシェルの割り当て
-  rc.puts "split"      # 南北3分割
-  rc.puts "split"      # 南北3分割
-  rc.puts "split -v"   # 北の東西3分割
-  rc.puts "split -v"   # 北の東西3分割
-  rc.puts "focus down"
-  rc.puts "split -v"   # 中の東西3分割
-  rc.puts "split -v"   # 中の東西3分割
-  rc.puts "focus down"
-  rc.puts "split -v"   # 南の東西3分割
-  rc.puts "split -v"   # 南の東西3分割
-  rc.puts "focus top"
+  rc.print <<'ENDOFSCREENRC'
+# 操作性のため
+source ~/.screenrc
 
-  # north
-  rc.puts "focus next"
-  rc.puts "screen -t north"
-  rc.puts "stuff \"exec sudo ip netns exec north bash\\n\""
-  rc.puts "stuff \"export PS1='north# '\\n\""
-  rc.puts "stuff \"ip addr add 10.0.0.2/24 dev center0\\n\""
-#  rc.puts "stuff \"clear\\n\""
+# 画面の 9 分割とシェルの割り当て
+split	      # 南北3分割
+split	      # 南北3分割
+split -v      # 北の東西3分割
+split -v      # 北の東西3分割
+focus down
+split -v      # 中の東西3分割
+split -v      # 中の東西3分割
+focus down
+split -v      # 南の東西3分割
+split -v      # 南の東西3分割
 
-  # center
-  rc.puts "focus down"
-  rc.puts "screen -t center"
-  rc.puts "stuff \"exec sudo ip netns exec center bash\\n\""
-  rc.puts "stuff \"export PS1='center# '\\n\""
-#  rc.puts "stuff \"clear\\n\""
+# console 0
+screen
 
-  # east
-  rc.puts "focus next"
-  rc.puts "screen -t east"
-  rc.puts "stuff \"exec sudo ip netns exec east bash\\n\""
-  rc.puts "stuff \"export PS1='east# '\\n\""
-  rc.puts "stuff \"ip addr add 10.0.0.6/24 dev center0\\n\""
-#  rc.puts "stuff \"clear\\n\""
+# console 1 南西
+screen
+stuff "clear\n"
 
-  # west
-  rc.puts "focus prev"
-  rc.puts "focus prev"
-  rc.puts "screen -t west"
-  rc.puts "stuff \"exec sudo ip netns exec west bash\\n\""
-  rc.puts "stuff \"export PS1='west# '\\n\""
-  rc.puts "stuff \"ip addr add 10.0.0.4/24 dev center0\\n\""
-#  rc.puts "stuff \"clear\\n\""
+# console 2 南
+focus next
+screen -t south
+stuff "exec sudo ip netns exec south bash\n"
+stuff "export PS1='south# '\n"
+stuff "ip addr add 10.0.0.2/24 dev center0\n"
+stuff "export PATH=$PATH\n"
+stuff "clear\n"
 
-  # south
-  rc.puts "focus next"
-  rc.puts "focus down"
-  rc.puts "screen -t south"
-  rc.puts "stuff \"exec sudo ip netns exec south bash\\n\""
-  rc.puts "stuff \"export PS1='south# '\\n\""
-  rc.puts "stuff \"ip addr add 10.0.0.8/24 dev center0\\n\""
-#  rc.puts "stuff \"clear\\n\""
+# console 3 南東
+focus next
+screen
+stuff "clear\n"
 
-  # console
-  rc.puts "focus top"
-  rc.puts "screen -t"
+# console 4 西
+focus prev
+focus prev
+focus up
+screen -t west
+stuff "exec sudo ip netns exec west bash\n"
+stuff "export PS1='west# '\n"
+stuff "ip addr add 10.0.0.4/24 dev center0\n"
+stuff "export PATH=$PATH\n" # su するけど PATH は今のまま
+stuff "clear\n"
+
+# console 5 中央
+focus next
+screen -t center
+stuff "exec sudo ip netns exec center bash\n"
+stuff "export PS1='center# '\n"
+stuff "export PATH=$PATH\n" # su するけど PATH は今のまま
+stuff "clear\n"
+
+# console 6 東
+focus next
+screen -t east
+stuff "exec sudo ip netns exec east bash\n"
+stuff "export PS1='east# '\n"
+stuff "ip addr add 10.0.0.6/24 dev center0\n"
+stuff "export PATH=$PATH\n" # su するけど PATH は今のまま
+stuff "clear\n"
+
+# console 7 北西
+focus prev
+focus prev
+focus up
+screen
+stuff "clear\n"
+
+# console 8 北
+focus next
+screen -t east
+stuff "exec sudo ip netns exec north bash\n"
+stuff "export PS1='north# '\n"
+stuff "ip addr add 10.0.0.8/24 dev center0\n"
+stuff "export PATH=$PATH\n" # su するけど PATH は今のまま
+stuff "clear\n"
+
+# console 9 北東
+focus next
+screen
+stuff "clear\n"
+
+ENDOFSCREENRC
 end
 system "screen  -c #{__dir__}/.screen"
