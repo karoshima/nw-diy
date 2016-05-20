@@ -32,7 +32,7 @@ class NwDiy
     def addif(ifp)
       # リストなら、リスト内の各インターフェースについて処理する
       ifp.kind_of?(Array) and
-        return ifp.each {|ifp2| self.newif(ifp2)}
+        return ifp.each {|ifp2| self.addif(ifp2)}
 
       # インターフェース名→インターフェース種別ハッシュ
       ifh = ifhash(ifp)
