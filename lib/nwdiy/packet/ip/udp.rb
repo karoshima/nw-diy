@@ -2,9 +2,9 @@
 # -*- mode: ruby; coding: utf-8 -*-
 ################################################################
 
-class NwDiy
-  class Packet
-    class IP
+module NwDiy
+  module Packet
+    module IP
       class UDP
       end
     end

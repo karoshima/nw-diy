@@ -2,8 +2,8 @@
 # -*- mode: ruby; coding: utf-8 -*-
 ################################################################
 
-class NwDiy
-  class Packet
+module NwDiy
+  module Packet
     class VLAN
     end
   end

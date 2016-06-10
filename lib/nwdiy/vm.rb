@@ -8,7 +8,7 @@ require_relative '../nwdiy'
 require 'nwdiy/iplink'
 require 'nwdiy/interface'
 
-class NwDiy
+module NwDiy
   class VM
     # いくつかのインターフェースを持つ VM を作る
     # in: インターフェースのリスト

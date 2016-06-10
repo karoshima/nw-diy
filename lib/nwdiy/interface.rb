@@ -12,7 +12,7 @@ require 'nwdiy/interface/pcap'
 require 'nwdiy/interface/sock'
 require 'nwdiy/interface/proxy'
 
-class NwDiy
+module NwDiy
   ################################################################
   # インターフェース
   class Interface

@@ -2,10 +2,10 @@
 # -*- mode: ruby; coding: utf-8 -*-
 ################################################################
 
-class NwDiy
-  class Packet
+module NwDiy
+  module Packet
 
-    class IP
+    module IP
       autoload(:TCP,    'nwdiy/packet/ip/tcp')
       autoload(:UDP,    'nwdiy/packet/ip/udp')
       autoload(:ICMP6,  'nwdiy/packet/ip/icmp6')

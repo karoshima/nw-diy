@@ -4,8 +4,8 @@
 
 require_relative '../nwdiy'
 
-class NwDiy
-  class Packet
+module NwDiy
+  module Packet
 
     ################################################################
     # NWDIY::PKT::* に必要な定数

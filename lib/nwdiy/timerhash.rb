@@ -3,7 +3,7 @@
 ################################################################
 # タイマー付き Hash
 
-class NwDiy
+module NwDiy
   class TimerHash < Hash
 
     def initialize(*arg)

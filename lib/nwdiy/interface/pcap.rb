@@ -9,7 +9,7 @@ require 'nwdiy/util'
 require 'nwdiy/iplink'
 require 'nwdiy/packet'
 
-class NwDiy
+module NwDiy
   class Interface
     class Pcap
       include NwDiy::Linux

@@ -7,8 +7,8 @@ require_relative '../../nwdiy'
 require 'nwdiy/util'
 require 'nwdiy/macaddr'
 
-class NwDiy
-  class Packet
+module NwDiy
+  module Packet
 
     autoload(:IPv4, 'nwdiy/packet/ipv4')
     autoload(:ARP,  'nwdiy/packet/ipv4')

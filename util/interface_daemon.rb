@@ -7,7 +7,7 @@ require_relative '../lib/nwdiy'
 
 require 'nwdiy/interface'
 
-class NwDiy
+module NwDiy
   class Interface
 
     ################

@@ -58,7 +58,7 @@ end
 
 ################################################################
 # Linux 関連
-class NwDiy
+module NwDiy
   module Linux
 
     # /usr/include/linux/if_ether.h

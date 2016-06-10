@@ -3,7 +3,7 @@
 ################################################################
 # IPAddr クラスそっくりな MacAddr クラス
 
-class NwDiy
+module NwDiy
   class MacAddr
 
     # バイナリデータから MAC データを作って返す

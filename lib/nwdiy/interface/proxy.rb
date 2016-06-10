@@ -7,7 +7,7 @@ require_relative '../../nwdiy'
 
 require 'nwdiy/util'
 
-class NwDiy
+module NwDiy
   class Interface
     class Proxy
       include NwDiy::Linux

@@ -4,10 +4,10 @@
 
 require 'ipaddr'
 
-class NwDiy
-  class Packet
+module NwDiy
+  module Packet
 
-    class IP
+    module IP
       autoload(:TCP,    'nwdiy/packet/ip/tcp')
       autoload(:UDP,    'nwdiy/packet/ip/udp')
       autoload(:ICMP4,  'nwdiy/packet/ip/icmp4')

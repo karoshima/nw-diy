@@ -5,7 +5,7 @@
 
 require_relative '../../nwdiy'
 
-class NwDiy
+module NwDiy
   class Interface
     class Sock
       include NwDiy::Linux

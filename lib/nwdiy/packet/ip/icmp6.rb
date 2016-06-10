@@ -4,9 +4,9 @@
 
 require 'nwdiy/packet/ip/icmp'
 
-class NwDiy
-  class Packet
-    class IP
+module NwDiy
+  module Packet
+    module IP
 
       class ICMP
         autoload(:EchoRequest, 'nwdiy/packet/ip/icmp/echo')
