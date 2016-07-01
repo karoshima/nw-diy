@@ -6,6 +6,10 @@ module NwDiy
   module Packet
     module IP
       class ICMP
+        include Packet
+
+        autoload(:EchoRequest, 'nwdiy/packet/ip/icmp/echo')
+        autoload(:EchoReply, 'nwdiy/packet/ip/icmp/echo')
 
         ################################################################
         # プロトコル番号とプロトコルクラスの対応表

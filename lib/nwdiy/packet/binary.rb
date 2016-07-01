@@ -13,13 +13,12 @@ module NwDiy
     # なにかのバイナリデータ
     class Binary
 
-      def self.cast(pkt = nil)
-        pkt.kind_of?(self) and
-          return pkt
-        self.new(pkt.respond_to?(:to_pkt) ? pkt.to_pkt : pkt)
-      end
       def initialize(pkt)
-        @bin = pkt
+        super()
+        pkt.instance_of?(String) or
+          raise InvalidData, pkt
+        @bin = pkt  # データそのもの
+        @txt = nil  # self.to_s 表示用キャッシュ
       end
 
       def to_pkt
@@ -28,6 +27,7 @@ module NwDiy
       def bytesize
         @bin.bytesize
       end
+
       def to_s
         unless @txt
           @txt = ''

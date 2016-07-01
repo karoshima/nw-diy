@@ -4,17 +4,16 @@
 
 require 'ipaddr'
 
+require_relative '../../nwdiy'
+
+require 'nwdiy/util'
+require 'nwdiy/packet/ip'
+
 module NwDiy
   module Packet
 
-    module IP
-      autoload(:TCP,    'nwdiy/packet/ip/tcp')
-      autoload(:UDP,    'nwdiy/packet/ip/udp')
-      autoload(:ICMP4,  'nwdiy/packet/ip/icmp4')
-      autoload(:OSPFv2, 'nwdiy/packet/ip/ospf')
-    end
-
     class IPv4
+      include IP
       include NwDiy::Linux
 
       ################################################################
@@ -24,40 +23,41 @@ module NwDiy
       @@kt = KlassType.new({ IP::ICMP4 => 1 })
 
       ################################################################
-      # パケット生成
-      ################################################################
-      def self.cast(pkt = nil)
-        pkt.kind_of?(self) and
-          return pkt
-        self.new(pkt.respond_to?(:to_pkt) ? pkt.to_pkt : pkt)
-      end
-
       # 受信データからパケットを作る
       def initialize(pkt = nil)
+        super()
         case pkt
         when String
           pkt.bytesize >= 20 or
             raise TooShort.new(pkt)
           @vhl = pkt[0].btoh
+          self.version == 4 or
+            raise InvalidData, pkt
+          self.hlen >= 5 or
+            raise InvalidData, pkt
           @tos = pkt[1].btoh
           @length = pkt[2..3].btoh
           @id = pkt[4..5].btoh
           @off = pkt[6..7].btoh
           @ttl = pkt[8].btoh
-          self.proto = pkt[9].btoh
+          @proto = pkt[9].btoh
           @cksum = pkt[10..11].btoh
           @src = IPAddr.new_ntoh(pkt[12..15])
           @dst = IPAddr.new_ntoh(pkt[16..19])
           @option = pkt[20..(self.hlen-1)]
-          self.data = pkt[self.hlen..@length]
-          pkt[0..@length] = ''
+          self.data = pkt[self.hlen..@length-1]
+          pkt[0..@length-1] = ''
           @trailer = pkt
         when nil
           @vhl = 0x45
-          @tos = @id = @off = @ttl = @proto = @cksum = 0
-          @length = 20
+          @tos = 0
+          @id = rand(0x10000)
+          @off = 0
+          @ttl = 64
           @src = @dst = IPAddr.new('0.0.0.0')
-          @option = @data = ''
+          @option = ''
+          @data = Binary.new('')
+          @trailer = ''
         else
           raise InvalidData.new(pkt)
         end
@@ -67,9 +67,6 @@ module NwDiy
       # 各フィールドの値
       ################################################################
 
-      attr_accessor :tos, :id, :ttl, :cksum, :option
-      attr_reader :length, :proto, :cksum, :src, :dst, :data
-
       def version
         @vhl >> 4
       end
@@ -77,9 +74,15 @@ module NwDiy
         (@vhl & 0xf) << 2
       end
 
-      def df
-        !!(@off & 0x4000)
+      attr_accessor :tos
+
+      attr_writer :length
+      def length
+        @auto_compile ? (self.hlen + @data.bytesize) : @length
       end
+
+      attr_accessor :id
+
       def df=(val)
         if val
           @off |=  0x4000
@@ -87,8 +90,8 @@ module NwDiy
           @off &=~ 0x4000
         end
       end
-      def more
-        !!(@off & 0x2000)
+      def df
+        (@off & 0x4000) != 0
       end
       def more=(val)
         if val
@@ -97,49 +100,66 @@ module NwDiy
           @off &=~ 0x2000
         end
       end
-      def offset
-        @off & 0x1fff
+      def more
+        (@off & 0x2000) != 0
       end
       def offset=(val)
         @off = (@off & 0x6000) | (val & 0x1fff)
       end
+      def offset
+        @off & 0x1fff
+      end
 
-      def proto=(val)
-        # 代入されたら @data の型も変わる
-        @proto = val
-        @data and
-          self.data = @data
+      attr_accessor :ttl
+
+      attr_writer :proto
+      def proto
+        @auto_compile ? @@kt.type(@data, @proto) : @proto
+      end
+
+      attr_writer :cksum
+      def cksum
+        @auto_compile ? calc_cksum(self.pkt_with_cksum(0)) : @cksum
       end
 
       def src=(val)
         @src = IPAddr.new(val, Socket::AF_INET)
       end
+      attr_reader :src
+
       def dst=(val)
         @dst = IPAddr.new(val, Socket::AF_INET)
       end
+      attr_reader :dst
+
+      attr_accessor :option
 
       def data=(val)
-        # 代入されたら @length, @proto の値も変わる
-        # 逆に val の型が不明なら、@proto に沿って @data の型が変わる
-        dtype = @@kt.type(val)
-        dtype and
-          @proto = dtype
-        @data = @@kt.klass(@proto).cast(val)
-        @length = self.hlen + @data.bytesize
+        @data = val.kind_of?(Packet) ? val : Binary.new(val)
       end
+      def data
+        (@auto_compile && @data.kind_of?(Binary) && @@kt.klass(@proto) != Binary) and
+          @data = @@kt.klass(@type).new(@data)
+        @data
+      end
+
+      attr_accessor :trailer # IP パケットの末尾以降の余計なデータ
 
       ################################################################
       # その他の諸々
       def to_pkt
-        @vhl.htob8 + @tos.htob8 + @length.htob16 +
+        self.pkt_with_cksum(self.cksum)
+      end
+      def pkt_with_cksum(sum)
+        @vhl.htob8 + @tos.htob8 + self.length.htob16 +
           @id.htob16 + @off.htob16 +
-          @ttl.htob8 + @proto.htob8 + @cksum.htob16 +
+          @ttl.htob8 + self.proto.htob8 + sum.htob16 +
           @src.hton + @dst.hton + @option +
-          @data.to_pkt
+          @data.to_pkt + @trailer
       end
 
       def bytesize
-        @length
+        self.length
       end
 
       def to_s

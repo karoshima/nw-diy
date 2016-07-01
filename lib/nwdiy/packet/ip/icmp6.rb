@@ -7,12 +7,6 @@ require 'nwdiy/packet/ip/icmp'
 module NwDiy
   module Packet
     module IP
-
-      class ICMP
-        autoload(:EchoRequest, 'nwdiy/packet/ip/icmp/echo')
-        autoload(:EchoReply, 'nwdiy/packet/ip/icmp/echo')
-      end
-
       class ICMP6 < ICMP
         # ほとんどは icmp.rb にある
         @@kt = KlassType.new({ ICMP::EchoRequest => 128,

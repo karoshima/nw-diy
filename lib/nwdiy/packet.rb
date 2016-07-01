@@ -23,6 +23,10 @@ module NwDiy
     # def initialize
     #    中身のない NWDIY::PKT を作る
     # end
+    # 引数の有無に関わらず、内部で super() すること
+    def initialize
+      @auto_compile = true
+    end
 
     # def フィールド名=(val)
     #    NWDIY::PKT の特定フィールドのデータを設定する
@@ -44,12 +48,17 @@ module NwDiy
     #   パケットを可視化する
     # end
 
+    attr_accessor :auto_compile
+    #   パケット内容を出力するとき、自動算出できるフィールドに関して
+    #   自動算出する (真) あるいはしない (偽) を設定する。
+
     ################################################################
     # 最初に必要な NWDIY::PKT の子クラスを下記に定義しておく
     autoload(:Binary,   'nwdiy/packet/binary')
     autoload(:Ethernet, 'nwdiy/packet/ethernet')
 
     ################################################################
+    # 各種パケットクラス定義につかうデータ
     # 定数 DATA_TYPE を使って、クラスからタイプ値を求める
     class KlassType
       # 変換テーブルを作っとく
@@ -70,9 +79,9 @@ module NwDiy
       end
 
       # データからタイプ値を求める
-      def type(klass)
+      def type(klass, nomatch = nil)
         klass.kind_of?(Class) or klass = klass.class
-        @type[klass]
+        @type[klass] || nomatch || 0
       end
 
       # タイプ値からデータクラスを求める
@@ -84,6 +93,18 @@ module NwDiy
       def to_s
         "[#@type] [#@klass]"
       end
+    end
+
+    ################################################################
+    # チェックサム計算する with 与えられた複数のバッファ
+    def calc_cksum(*bufs)
+      sum = bufs.inject(0) do |sum2,buf|
+        (buf % 2 == 1) and
+          buf += "\x00"
+        buf.unpack("n*").inject(sum2, :+)
+      end
+      sum = (sum & 0xffff) + (sum >> 16) while sum > 0xffff;
+      ~sum & 0xffff
     end
 
     ################################################################
