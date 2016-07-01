@@ -51,9 +51,12 @@ module NwDiy
         when nil
           @vhl = 0x45
           @tos = 0
+          @length = 20
           @id = rand(0x10000)
           @off = 0
           @ttl = 64
+          @proto = 0
+          @cksum = 0
           @src = @dst = IPAddr.new('0.0.0.0')
           @option = ''
           @data = Binary.new('')
