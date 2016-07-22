@@ -1,4 +1,8 @@
 #!/bin/sh
+################################################################
+# Copyright (c) 2016 KASHIMA Hiroaki <kashima@jp.fujitsu.com>
+# 本ツールは Apache License 2.0 ライセンスで公開します。
+# 著作権については ./LICENSE もご確認ください
 
         screen -X -p 7 stuff "cat > /dev/null\n"
         screen -X -p 7 stuff "NW-DIY のデモを行ないます。\n"
