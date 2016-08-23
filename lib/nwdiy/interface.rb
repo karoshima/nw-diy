@@ -55,7 +55,12 @@ module NwDiy
 
       # 実在するか否かで klass を決める
       unless klass
-        klass = NwDiy::IpLink.new[arg] ? NwDiy::Interface::Pcap : NwDiy::Interface::Sock
+        klass = NwDiy::Interface::Sock
+        begin
+          NwDiy::IpLink.new[arg] and
+            klass = NwDiy::Interface::Pcap
+        rescue Errno::ENOENT
+        end
       end
 
       # 接続する
