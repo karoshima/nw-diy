@@ -16,19 +16,22 @@ module NwDiy
     def initialize
       @index = []
       @name = {}
-      `ip link`.gsub(/\n\s+/, ' ').lines.each do |line|
-        dummy, index, name = *(/^(\d+): ([^:@]+)/.match(line))
-        index or next
-        ifa = NwDiy::IpLink::IfAddr.new(index, name)
-        @index[index.to_i] = ifa;
-        @name[name] = ifa;
-        ifa.parse_link(line)
-      end
-      `ip addr`.gsub(/\n\s+/, ' ').lines.each do |line|
-        dummy, index = *(/^(\d+):/.match(line))
-        index or next
-        ifa = @index[index.to_i]
-        ifa.parse_addr(line)
+      begin
+        `ip link`.gsub(/\n\s+/, ' ').lines.each do |line|
+          dummy, index, name = *(/^(\d+): ([^:@]+)/.match(line))
+          index or next
+          ifa = NwDiy::IpLink::IfAddr.new(index, name)
+          @index[index.to_i] = ifa;
+          @name[name] = ifa;
+          ifa.parse_link(line)
+        end
+        `ip addr`.gsub(/\n\s+/, ' ').lines.each do |line|
+          dummy, index = *(/^(\d+):/.match(line))
+          index or next
+          ifa = @index[index.to_i]
+          ifa.parse_addr(line)
+        end
+      rescue Errno::ENOENT
       end
     end
 

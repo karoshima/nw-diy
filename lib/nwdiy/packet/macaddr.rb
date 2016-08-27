@@ -25,6 +25,10 @@ module NwDiy
           @addr = addr.hton
           return
         end
+        if addr == :local
+          @addr = ([2] + (1..5).map{rand(256)}).pack('C6')
+          return
+        end
         if addr.size == 6
           @addr = addr
           return

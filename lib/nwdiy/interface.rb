@@ -15,6 +15,7 @@ require 'nwdiy/iplink'
 require 'nwdiy/interface/pcap'
 require 'nwdiy/interface/sock'
 require 'nwdiy/interface/proxy'
+require 'nwdiy/packet/macaddr'
 
 module NwDiy
   ################################################################
@@ -69,6 +70,14 @@ module NwDiy
       rescue Errno::EPERM
         @dev = NwDiy::Interface::Proxy.new(klass, arg)
       end
+    end
+
+    ################
+    # interface address
+    def localmac
+      @localmac or
+        @localmac = NwDiy::Packet::MacAddr.new(:local)
+      @localmac
     end
 
     ################
