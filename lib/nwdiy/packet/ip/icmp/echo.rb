@@ -30,8 +30,9 @@ class NwDiy::Packet::IP::ICMP
         pkt[0..3] = ''
         @data = pkt
       when nil
-        @id = @seq = 0
-        @data = ''
+        @id = rand(0x10000)
+        @seq = rand(0x10000)
+        @data = 'NW-DIY ICMP'
       else
         raise InvalidData.new(pkt)
       end

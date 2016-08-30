@@ -9,6 +9,8 @@
 
 require_relative '../../nwdiy'
 
+require 'nwdiy/packet/ethernet'
+
 module NwDiy
   class Interface
     class Sock

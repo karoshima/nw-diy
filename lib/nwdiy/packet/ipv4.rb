@@ -177,7 +177,5 @@ module NwDiy
       end
     end
 
-    class ARP
-    end
   end
 end

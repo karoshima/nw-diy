@@ -21,7 +21,7 @@ module NwDiy
       end
 
       def initialize(addr)
-        if addr === self.class
+        if addr.is_a?(NwDiy::Packet::MacAddr)
           @addr = addr.hton
           return
         end
@@ -29,7 +29,7 @@ module NwDiy
           @addr = ([2] + (1..5).map{rand(256)}).pack('C6')
           return
         end
-        if addr.size == 6
+        if addr.bytesize == 6
           @addr = addr
           return
         end

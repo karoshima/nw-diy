@@ -16,7 +16,7 @@ module NwDiy
   module Packet
 
     autoload(:IPv4, 'nwdiy/packet/ipv4')
-    autoload(:ARP,  'nwdiy/packet/ipv4')
+    autoload(:ARP,  'nwdiy/packet/arp')
     autoload(:IPv6, 'nwdiy/packet/ipv6')
     autoload(:VLAN, 'nwdiy/packet/vlan')
 
@@ -27,7 +27,7 @@ module NwDiy
       ################################################################
       # プロトコル番号とプロトコルクラスの対応表
       @@kt = KlassType.new({ VLAN => 0x8100,
-                             # ARP  => 0x0806,
+                             ARP  => 0x0806,
                              IPv4 => 0x0800,
                              IPv6 => 0x86dd })
 
@@ -107,7 +107,7 @@ module NwDiy
         name = resolv('/etc/ethertypes', self.type4)
         name.kind_of?(Array) and
           name = name[0]
-        "[Ethernet #@dst > #@src #{name} #@data]"
+        "[Ethernet #@src > #@dst #{name} #@data]"
       end
 
     end
