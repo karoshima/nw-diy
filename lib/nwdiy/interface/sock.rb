@@ -20,19 +20,22 @@ module NwDiy
 
       # インターフェースサーバーに接続する
       def initSock(name)
+        @name = name
         begin
           # 既に誰かがサーバーやってくれてたら、そこを使う
-          sock = TCPSocket.open('localhost', SOCKPORT)
+          sock = TCPSocket.open('::1', SOCKPORT)
         rescue Errno::ECONNREFUSED
           # 誰もサーバーやってくれてなかったら、自分でサーバーやる
-          @@server = NwDiy::Interface::SockServer.new(SOCKPORT)
-          Thread.new do
-            @@server.run
+          begin
+            self.startServer
+          rescue Errno::EADDRINUSE
+            sleep 0.1
           end
-          sock = TCPSocket.open('localhost', SOCKPORT)
+          retry
         end
         Marshal.dump(name, sock)
-        sock
+        @sock and @sock.close
+        @sock = sock
       end
 
       ################
@@ -44,7 +47,12 @@ module NwDiy
       ################
       # socket op
       def recv
-        Marshal.load(@sock)
+        begin
+          Marshal.load(@sock)
+        rescue EOFError
+          self.initSock(@name)
+          retry
+        end
       end
 
       def send(pkt)
@@ -52,12 +60,20 @@ module NwDiy
         pkt.bytesize
       end
 
+      # サーバーを起動する
+      def startServer
+        @@server = NwDiy::Interface::SockServer.new(SOCKPORT)
+        Thread.new { @@server.run }
+        puts 'Started'
+      end
+
     end
 
     class SockServer
 
       def initialize(port)
-        @listen = TCPServer.new('localhost', port)
+        @listen = TCPServer.new('::1', port)
+        @listen.setsockopt(:SOCKET, :REUSEADDR, true)
         @name2ifp = Hash.new { |h,k| h[k] = Array.new }
         @ifp2name = Hash.new
       end
