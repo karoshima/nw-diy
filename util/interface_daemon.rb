@@ -89,7 +89,7 @@ module NwDiy
         while pkt = @dev.recv_raw
           Marshal.dump(pkt, @cli)
         end
-      rescue Errno::ECONNRESET
+      rescue Errno::ECONNRESET, Errno::EPIPE
         @daemon.debug("Client[#{@id}] closes #{@klass}(#{@name})")
       ensure
         @cli2dev.kill
