@@ -49,7 +49,7 @@ module NwDiy
       def recv
         begin
           Marshal.load(@sock)
-        rescue EOFError
+        rescue EOFError, ECONNRESET
           self.initSock(@name)
           retry
         end
