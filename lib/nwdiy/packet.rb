@@ -103,12 +103,12 @@ module NwDiy
     # チェックサム計算する with 与えられた複数のバッファ
     def calc_cksum(*bufs)
       sum = bufs.inject(0) do |sum2,buf|
-        (buf % 2 == 1) and
+        (buf.length % 2 == 1) and
           buf += "\x00"
         buf.unpack("n*").inject(sum2, :+)
       end
       sum = (sum & 0xffff) + (sum >> 16) while sum > 0xffff;
-      ~sum & 0xffff
+      sum ^ 0xffff
     end
 
     ################################################################

@@ -113,6 +113,11 @@ module NwDiy
           @src.hton + @dst.hton + @data.to_pkt + @trailer
       end
 
+      # L4 ヘッダのチェックサム計算のための仮ヘッダ
+      def pseudo_header(proto, len)
+        @src.hton + @dst.hton + 0.htob8 + l4len.htob32 + proto.htob32
+      end
+
       def bytesize
         self.length
       end

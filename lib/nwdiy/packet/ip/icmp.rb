@@ -10,7 +10,9 @@ module NwDiy
   module Packet
     module IP
       class ICMP
+
         include Packet
+        # @auto_compile というフラグで、自動計算するかしないか設定します
 
         autoload(:EchoRequest, 'nwdiy/packet/ip/icmp/echo')
         autoload(:EchoReply, 'nwdiy/packet/ip/icmp/echo')
@@ -29,6 +31,7 @@ module NwDiy
 
         # 受信データからパケットを作る
         def initialize(pkt = nil)
+          super()
           case pkt
           when String
             pkt.bytesize >= 4 or
@@ -50,14 +53,24 @@ module NwDiy
         # 各フィールドの値
         ################################################################
 
-        attr_accessor :code
-        attr_reader :type, :cksum, :data
-
+        attr_reader :type
         def type=(val)
           @type = val
           self.data = @data
         end
 
+        attr_accessor :code
+
+        def cksum
+          @auto_compile ? calc_cksum(self.pkt_with_cksum(0)) : @cksum
+        end
+        attr_writer :cksum
+        def cksum_ok?
+          @auto_compile or
+            calc_cksum(self.pkt_with_cksum(0)) == @cksum
+        end
+
+        attr_reader :data
         def data=(kt, val)
           # 代入されたら @proto の値も変わる
           # 逆に val の型が不明なら、@proto に沿って @data の型が変わる
@@ -70,7 +83,10 @@ module NwDiy
         ################################################################
         # その他の諸々
         def to_pkt
-          @type.htob8 + @code.htob8 + @cksum.htob16 + @data.to_pkt
+          pkt_with_cksum(self.cksum)
+        end
+        def pkt_with_cksum(sum)
+          @type.htob8 + @code.htob8 + sum.htob16 + @data.to_pkt
         end
 
         def bytesize

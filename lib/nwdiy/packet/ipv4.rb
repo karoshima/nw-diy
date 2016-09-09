@@ -17,7 +17,10 @@ module NwDiy
   module Packet
 
     class IPv4
+
       include IP
+      # @auto_compile というフラグで、自動計算するかしないか設定します
+
       include NwDiy::Linux
 
       ################################################################
@@ -128,6 +131,10 @@ module NwDiy
       def cksum
         @auto_compile ? calc_cksum(self.pkt_with_cksum(0)) : @cksum
       end
+      def cksum_ok?
+        @auto_compile or
+          calc_cksum(self.pkt_with_cksum(0)) == @cksum
+      end
 
       def src=(val)
         @src = IPAddr.new(val, Socket::AF_INET)
@@ -163,6 +170,11 @@ module NwDiy
           @ttl.htob8 + self.proto.htob8 + sum.htob16 +
           @src.hton + @dst.hton + @option +
           @data.to_pkt + @trailer
+      end
+
+      # L4 ヘッダのチェックサム計算のための仮ヘッダ
+      def pseudo_header(proto, len)
+        @src.hton + @dst.hton + proto.htob16 + len.htob16
       end
 
       def bytesize
