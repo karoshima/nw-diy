@@ -51,6 +51,8 @@ module NwDiy
     end
 
     def arpResolve(addr)
+      @mactable and @mactable[addr.to_s] and
+        return @mactable[addr.to_s]
       eth = NwDiy::Packet::Ethernet.new
       eth.dst = NwDiy::Packet::MacAddr.new('ff-ff-ff-ff-ff-ff')
       eth.src = @ifp.local
@@ -60,8 +62,27 @@ module NwDiy
       arp.sndip4 = @localip
       arp.tgtip4 = addr
       @ifp.send(eth)
-      eth = @ifp.recv
-      eth.data.sndmac
+      loop do
+        eth = @ifp.recv
+        puts eth.type
+        (eth.type == 0x0806) or
+          next
+        puts eth.dst
+        puts @ifp.local
+        (eth.dst == @ifp.local) or
+          next
+        puts eth.data.oper
+        eth.data.response? or
+          next
+        puts eth.data.sndip4
+        (eth.data.sndip4 == addr) or
+          next
+        puts eth
+        break
+      end
+      @mactable or 
+        @mactable = Hash.new
+      return @mactable[addr.to_s] = eth.data.sndmac
     end
 
     def pong

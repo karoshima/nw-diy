@@ -68,6 +68,15 @@ module NwDiy
           raise InvalidData.new(op)
         end
       end
+      def request?
+        @oper == 1
+      end
+      def response?
+        @oper == 2
+      end
+      def reply?
+        @oper == 2
+      end
 
       attr_accessor :sndmac, :sndip4, :tgtmac, :tgtip4
 
