@@ -84,6 +84,8 @@ module NwDiy
             next
           (eth.data.data.type == 8) or
             next
+          (eth.data.dst == @localip) or
+            next
           eth.data.data.type = 0
           eth.data.dst = eth.data.src
           eth.data.src = @localip
