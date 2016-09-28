@@ -80,7 +80,11 @@ module NwDiy
         @auto_compile ? (40 + @data.bytesize) : @length
       end
 
-      attr_writer :next
+      def next=(val)
+        @next = val
+        @data and
+          self.data = @data.to_pkt
+      end
       def next
         @auto_compile ? @@kt.type(@data, @next) : @next
       end

@@ -122,7 +122,11 @@ module NwDiy
 
       attr_accessor :ttl
 
-      attr_writer :proto
+      def proto=(val)
+        @proto = val
+        @data and
+          self.data = @data.to_pkt
+      end
       def proto
         @auto_compile ? @@kt.type(@data, @proto) : @proto
       end

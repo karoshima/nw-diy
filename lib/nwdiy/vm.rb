@@ -20,7 +20,7 @@ module NwDiy
     #     { type: :pcap, name: "eth0" }: 実在リンクに pcap で送受信する
     #     { type: :tap,  name: "tap0" }: tap でリンクを作って送受信する
     #     { type: :file, name: <file> }: ソケットファイルを作って送受信する
-    def initialize(ifp = [])
+    def initialize(*ifp)
       @ifs = Hash.new
       @threads = Hash.new
       @pktqueue = SizedQueue.new(64)

@@ -56,7 +56,8 @@ module NwDiy
         attr_reader :type
         def type=(val)
           @type = val
-          self.data = @data
+          @data and
+            self.data = @data.to_pkt
         end
 
         attr_accessor :code

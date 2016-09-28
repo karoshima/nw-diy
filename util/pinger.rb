@@ -8,9 +8,12 @@
 # ruby で綴る、簡易で adhoc な、arp と ping の送信ツール
 ################################################################
 # pinger = NwDiy::Pinger.new(ifp, localip)
-#    ifp はイーサネットインターフェースであること
+#    インターフェース ifp に、random な MAC addrを割り当てる
+#    インターフェース ifp に、引数で指定された IP addr を割り当てる
+#    (ifp はイーサネットインターフェースであること)
 # pinger.ping(アドレス)
-#    ifp に ARP req, ICMPv4 Echo を送信し、ifp からの ICMPv4 EchoReply を受信する
+#    ifp に ARP req, ICMPv4 Echo を送信し、
+#    ifp からの ICMPv4 EchoReply を受信する
 # pinger.pong
 #    ifp で ARP, ICMPv4 に応答する
 
@@ -25,29 +28,26 @@ module NwDiy
   class Pinger
 
     def initialize(ifp, localip)
-      @ifp = ifp
-      ifp.local or ifp.local(NwDiy::Packet::MacAddr.new(:local))
-      @localip = localip
+      @ifp = ifp.kind_of?(NwDiy::Interface) ? ifp : NwDiy::Interface.new(ifp)
+      @ifp.local or @ifp.local(NwDiy::Packet::MacAddr.new(:local))
+      @localip = localip.kind_of?(IPAddr) ? localip : IPAddr.new(localip, Socket::AF_INET)
     end
 
     def ping(addr)
-      case addr
-      when IPAddr
-        eth = NwDiy::Packet::Ethernet.new
-        eth.dst = self.arpResolve(addr)
-        puts eth.dst
-        eth.src = @ifp.local
-        eth.data = ip = NwDiy::Packet::IPv4.new
-        ip.src = @localip
-        ip.dst = addr
-        ip.data = icmp = NwDiy::Packet::IP::ICMP4.new
-        icmp.data = NwDiy::Packet::IP::ICMP::EchoRequest.new
-        puts eth
-        @ifp.send(eth)
-        @ifp.recv
-      else
-        raise addr
-      end
+      addr.kind_of?(IPAddr) or
+        addr = IPAddr.new(addr, Socket::AF_INET)
+      eth = NwDiy::Packet::Ethernet.new
+      eth.dst = self.arpResolve(addr)
+      puts eth.dst
+      eth.src = @ifp.local
+      eth.data = ip = NwDiy::Packet::IPv4.new
+      ip.src = @localip
+      ip.dst = addr
+      ip.data = icmp = NwDiy::Packet::IP::ICMP4.new
+      icmp.data = NwDiy::Packet::IP::ICMP::EchoRequest.new
+      puts eth
+      @ifp.send(eth)
+      @ifp.recv
     end
 
     def arpResolve(addr)
@@ -90,7 +90,6 @@ module NwDiy
           eth.dst = eth.src
           eth.src = @ifp.local
           @ifp.send(eth)
-          puts eth
         end
       end
     end
