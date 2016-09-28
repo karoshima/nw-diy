@@ -61,9 +61,9 @@ describe NwDiy::Packet::IPv4, 'を作るとき' do
     ipv4.ttl = 64
     ipv4.src = '127.0.0.1'
     ipv4.data = data = "xxxxxxxxxxxxxxxx"
-    expect(ipv4.cksum).to be == 0 # 計算されてない
+    old_cksum = ipv4.cksum
     ipv4.ttl -= 1
-    expect(ipv4.cksum).to be == 0 # 計算されてない
+    expect(ipv4.cksum).to be == old_cksum # 計算されてない
   end
 
   it 'データを付けたら proto が変わる' do
@@ -74,12 +74,12 @@ describe NwDiy::Packet::IPv4, 'を作るとき' do
     expect(ipv4.proto).to be == 1
   end
 
-  it '@auto_compile を false にしたら変わんない' do
+  it 'proto と data は一括代入なので、@auto_compile を false にしても変える' do
     ipv4 = NwDiy::Packet::IPv4.new
     expect(ipv4).not_to be nil
     ipv4.auto_compile = false
     expect(ipv4.proto).to be == 0
     ipv4.data = NwDiy::Packet::IP::ICMP4.new
-    expect(ipv4.proto).to be == 0
+    expect(ipv4.proto).to be == 1
   end
 end

@@ -77,7 +77,7 @@ module NwDiy
 
       attr_writer :length
       def length
-        @auto_compile ? (40 + @data.bytesize) : @length
+        @auto_compile ? (40 + (@data||"").bytesize) : @length
       end
 
       def next=(val)
@@ -85,9 +85,7 @@ module NwDiy
         @data and
           self.data = @data.to_pkt
       end
-      def next
-        @auto_compile ? @@kt.type(@data, @next) : @next
-      end
+      attr_reader :next
 
       attr_accessor :hlim
 
@@ -102,13 +100,15 @@ module NwDiy
       attr_reader :dst
 
       def data=(val)
-        @data = val.kind_of?(Packet) ? val : Binary.new(val)
+        ktype = @@kt.type(val)
+        if ktype == 0
+          @data = @@kt.klass(@type).new(val)
+        else
+          @next = ktype
+          @data = val
+        end
       end
-      def data
-        (@auto_compile && @data.kind_of?(Binary) && @@kt.klass(@next) != Binary) and
-          @data = @@kt.klass(@next).new(@data)
-        @data
-      end
+      attr_reader :data
 
       ################################################################
       # @auto_compile 設定
@@ -118,7 +118,6 @@ module NwDiy
         unless bool
           @length = self.length
           @next = self.next
-          @data = self.data
         end
 
         # 値を反映して、データ部にも伝える

@@ -17,9 +17,7 @@ describe NwDiy::Packet, 'を作るとき' do
     expect(eth.dst.to_s).to be == "ff:ff:ff:ff:ff:ff"
     expect(eth.data.to_pkt).to be == data
     expect(eth.bytesize).to be == 14 + data.bytesize
-    expect(eth.type).to be == 14 + data.bytesize
-    # Ethertype を指定しないときは 802.3 フォーマットで
-    # type 部が length になる
+    expect(eth.type).to be == nil
   end
 
   it '中身のない IPv4 packet を作って、あとから修正する' do

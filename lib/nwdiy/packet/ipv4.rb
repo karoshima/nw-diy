@@ -127,9 +127,7 @@ module NwDiy
         @data and
           self.data = @data.to_pkt
       end
-      def proto
-        @auto_compile ? @@kt.type(@data, @proto) : @proto
-      end
+      attr_reader :proto
 
       attr_writer :cksum
       def cksum
@@ -153,13 +151,16 @@ module NwDiy
       attr_accessor :option
 
       def data=(val)
-        @data = val.kind_of?(Packet) ? val : Binary.new(val)
-      end
-      def data
-        (@auto_compile && @data.kind_of?(Binary) && @@kt.klass(@proto) != Binary) and
-          @data = @@kt.klass(@type).new(@data)
+        ktype = @@kt.type(val)
+        if ktype == 0
+          @data = @@kt.klass(@type).new(val)
+        else
+          @proto = ktype
+          @data = val
+        end
         @data
       end
+      attr_reader :data
 
       attr_accessor :trailer # IP パケットの末尾以降の余計なデータ
 
@@ -170,9 +171,7 @@ module NwDiy
         # 解除するまえに、これまでの正常値を設定しておく
         unless bool
           @length = self.length
-          @proto = self.proto
           @cksum = self.cksum
-          @data = self.data
         end
 
         # 値を反映して、データ部にも伝える

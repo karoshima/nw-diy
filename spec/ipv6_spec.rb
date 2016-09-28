@@ -49,12 +49,12 @@ describe NwDiy::Packet::IPv6, 'を作るとき' do
     expect(ipv6.next).to be == 58
   end
 
-  it '@auto_compile = false したら変わらない' do
+  it 'データと next は一括代入なので @auto_compile = false しても変わる' do
     ipv6 = NwDiy::Packet::IPv6.new
     expect(ipv6).not_to be nil
     ipv6.auto_compile = false
     expect(ipv6.next).to be == 0
     ipv6.data = NwDiy::Packet::IP::ICMP6.new
-    expect(ipv6.next).to be == 0
+    expect(ipv6.next).to be == 58
   end
 end

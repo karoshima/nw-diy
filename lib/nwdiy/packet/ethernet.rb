@@ -70,39 +70,57 @@ module NwDiy
       end
       attr_reader :src
 
-      attr_writer :type
-      def type
-        if @auto_compile
-          val = @@kt.type(@data, @type)
-          val == 0 and
-            val = 14 + @data.bytesize
-          val
-        else
-          @type
-        end
+      def ethernet?
+        @type && 1500 < @type
       end
-      def type4
-        sprintf("%04x", self.type)
+      def ieee802dot3?
+        @type && 46 <= @type && @type <= 1500
+      end
+      def type=(val)
+        self.ieee802dot3? and
+          raise InvalidData.new "This 802.3 frame is unavailable to turn into a Ethernet."
+        (1500 < val) or
+          raise InvalidData.new "Ethernet type must be greater than 1500."
+        @type = val
+        @data and
+          self.data = @data.to_pkt
+        @type
+      end
+      def length=(val)
+        self.ethernet? and
+          raise InvalidData.new "This Ethernet frame is unavailable to turn into 802.3 frame."
+        (1500 < val) and
+          raise InvalidData.new "802.3 length must be less than 1501"
+        @type = val
+      end
+      def type
+        @type
       end
       alias length type
 
       def data=(val)
-        @data = val.kind_of?(Packet) ? val : Binary.new(val)
-      end
-      def data
-        (@auto_compile && @data.kind_of?(Binary) && @@kt.klass(@type) != Binary) and
-          @data = @@kt.klass(@type).new(@data)
+        if self.ieee802dot3?
+          @data = val.kind_if?(Packet) ? val : Binary.new(val)
+        else
+          ktype = @@kt.type(val)
+          if ktype == 0
+            @data = @@kt.klass(@type).new(val)
+          else
+            @type = ktype
+            @data = val
+          end
+        end
         @data
       end
+      attr_reader :data
 
       ################################################################
       # @auto_compile 設定
       def auto_compile=(bool)
 
         # 解除するまえに、これまでの正常値を設定しておく
-        unless bool
-          @type = self.type
-        end
+        #unless bool
+        #end
 
         # 値を反映して、データ部にも伝える
         @auto_compile = bool

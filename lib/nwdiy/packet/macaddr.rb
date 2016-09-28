@@ -73,9 +73,7 @@ module NwDiy
       def eql?(other)
         other.kind_of?(NwDiy::Packet::MacAddr) && self.hash == other.hash
       end
-      def ==(other)
-        self.eql?(other)
-      end
+      alias == eql?
     end
   end
 end
