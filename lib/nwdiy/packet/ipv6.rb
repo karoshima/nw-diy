@@ -111,6 +111,23 @@ module NwDiy
       end
 
       ################################################################
+      # @auto_compile 設定
+      def auto_compile=(bool)
+
+        # 解除するまえに、これまでの正常値を設定しておく
+        unless bool
+          @length = self.length
+          @next = self.next
+          @data = self.data
+        end
+
+        # 値を反映して、データ部にも伝える
+        @auto_compile = bool
+        @data.respond_to?(:auto_compile=) and
+          @data.auto_compile = bool
+      end
+
+      ################################################################
       # その他の諸々
       def to_pkt
         @vtf.htob32 + self.length.htob16 + self.next.htob8 + @hlim.htob8 +
