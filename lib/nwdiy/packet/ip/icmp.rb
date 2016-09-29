@@ -35,7 +35,7 @@ module NwDiy
           case pkt
           when String
             pkt.bytesize >= 4 or
-              raise TooShort.new(pkt)
+              raise TooShort.new("ICMP", 4, pkt)
             @type = pkt[0].btoh
             @code = pkt[1].btoh
             @cksum = pkt[2..3].btoh
@@ -45,7 +45,7 @@ module NwDiy
             @type = @code = @cksum = 0
             @data = Binary.new('')
           else
-            raise InvalidData.new(pkt)
+            raise InvalidData.new "What is '#{pkt}'?"
           end
         end
 
@@ -55,9 +55,15 @@ module NwDiy
 
         attr_reader :type
         def type=(val)
+          oldtype = @type
           @type = val
           @data and
-            self.data = @data.to_pkt
+            begin
+              self.data = @data.to_pkt
+            rescue => e
+              @type = oldtype
+              raise e
+            end
         end
 
         attr_accessor :code
@@ -75,10 +81,16 @@ module NwDiy
         def data=(kt, val)
           # 代入されたら @proto の値も変わる
           # 逆に val の型が不明なら、@proto に沿って @data の型が変わる
-          dtype = kt.type(val)
-          dtype == 0 or
-            @type = dtype
-          @data = kt.klass(@type).cast(val)
+          oldtype = @type
+          newtype = kt.type(val)
+          newtype == 0 or
+            @type = newtype
+          begin
+            @data = kt.klass(@type).cast(val)
+          rescue => e
+            @type = oldtype
+            raise e
+          end
         end
 
         ################################################################

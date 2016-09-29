@@ -23,7 +23,7 @@ module NwDiy
         case pkt
         when String
           pkt.bytesize >= 28 or
-            raise TooShort.new(pkt)
+            raise TooShort.new("ARP", 28, pkt)
           @hard = pkt[0..1].btoh
           @prot = pkt[2..3].btoh
           @hlen = pkt[4].btoh
@@ -45,8 +45,9 @@ module NwDiy
           @sndip4 = IPAddr.new('0.0.0.0')
           @tgtmac = MacAddr.new("\0\0\0\0\0\0")
           @tgtip4 = IPAddr.new('0.0.0.0')
+          @trailer = ''
         else
-          raise InvalidData.new(pkt)
+          raise InvalidData.new "What is '#{pkt}'?"
         end
       end
 

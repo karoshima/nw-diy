@@ -40,7 +40,7 @@ module NwDiy
         case pkt
         when String
           pkt.bytesize > 14 or
-            raise TooShort.new(pkt)
+            raise TooShort.new("Ethernet", 14, pkt)
           @dst = MacAddr.new(pkt[0..5])
           @src = MacAddr.new(pkt[6..11])
           @type = pkt[12..13].btoh
@@ -52,7 +52,7 @@ module NwDiy
           @type = nil
           @data = Binary.new('')
         else
-          raise InvalidData.new(pkt)
+          raise InvalidData.new "What is '#{pkt}'?"
         end
       end
 
@@ -81,9 +81,15 @@ module NwDiy
           raise InvalidData.new "This 802.3 frame is unavailable to turn into a Ethernet."
         (1500 < val) or
           raise InvalidData.new "Ethernet type must be greater than 1500."
+        oldtype = @type
         @type = val
         @data and
-          self.data = @data.to_pkt
+          begin
+            self.data = @data.to_pkt
+          rescue => e
+            @type = oldtype
+            raise e
+          end
         @type
       end
       def length=(val)

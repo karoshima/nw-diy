@@ -36,12 +36,12 @@ module NwDiy
         case pkt
         when String
           pkt.bytesize >= 20 or
-            raise TooShort.new(pkt)
+            raise TooShort.new("IPv4", 20, pkt)
           @vhl = pkt[0].btoh
           self.version == 4 or
-            raise InvalidData, pkt
+            raise InvalidData.new "IPv4 version must be 4, but it comes #{self.version}."
           self.hlen >= 5 or
-            raise InvalidData, pkt
+            raise InvalidData.new "IPv4 header length must be 5(20byte), but it comes #{self.hlen}."
           @tos = pkt[1].btoh
           @length = pkt[2..3].btoh
           @id = pkt[4..5].btoh
@@ -69,7 +69,7 @@ module NwDiy
           @data = Binary.new('')
           @trailer = ''
         else
-          raise InvalidData.new(pkt)
+          raise InvalidData.new "What is '#{pkt}'?"
         end
       end
 
@@ -123,9 +123,15 @@ module NwDiy
       attr_accessor :ttl
 
       def proto=(val)
+        oldproto = @proto
         @proto = val
         @data and
-          self.data = @data.to_pkt
+          begin
+            self.data = @data.to_pkt
+          rescue => e
+            @proto = oldproto
+            raise e
+          end
       end
       attr_reader :proto
 

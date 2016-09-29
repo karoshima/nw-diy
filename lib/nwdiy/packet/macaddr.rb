@@ -54,13 +54,13 @@ module NwDiy
       alias to_string to_s
 
       def unicast?
-        (@addr.unpack('C') & 0x02) == 0
+        (@addr.unpack('C')[0] & 0x02) == 0
       end
       def multicast?
         !self.unicast?
       end
       def global?
-        (@addr.unpack('C') & 0x01) == 0
+        (@addr.unpack('C')[0] & 0x01) == 0
       end
       def local?
         !self.global?

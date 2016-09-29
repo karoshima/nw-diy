@@ -114,7 +114,11 @@ module NwDiy
 
     ################################################################
     # エラー関連
-    class TooShort < Exception; end
+    class TooShort < Exception
+      def initialize(name, minlen, pkt)
+        "#{name} needs #{minlen} bytes or longer, but the data has only #{pkt.bytesize} bytes."
+      end
+    end
     class TooLong < Exception; end
     class InvalidData < Exception; end
   end

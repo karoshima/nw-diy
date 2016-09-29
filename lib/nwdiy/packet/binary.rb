@@ -19,8 +19,10 @@ module NwDiy
 
       def initialize(pkt)
         super()
+        pkt.respond_to?(:to_pkt) and
+          pkt = pkt.to_pkt
         pkt.instance_of?(String) or
-          raise InvalidData, pkt
+          raise InvalidData.new "What is '#{pkt}'?"
         @bin = pkt  # データそのもの
         @txt = nil  # self.to_s 表示用キャッシュ
       end

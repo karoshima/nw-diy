@@ -24,7 +24,7 @@ class NwDiy::Packet::IP::ICMP
       case pkt
       when String
         pkt.bytesize >= 8 or
-          raise TooShort.new(pkt)
+          raise TooShort.new("Echo", 8, pkt)
         @id = pkt[0..1].btoh
         @seq = pkt[2..3].btoh
         pkt[0..3] = ''
@@ -34,7 +34,7 @@ class NwDiy::Packet::IP::ICMP
         @seq = rand(0x10000)
         @data = 'NW-DIY ICMP'
       else
-        raise InvalidData.new(pkt)
+        raise InvalidData.new "What is '#{pkt}'?"
       end
     end
 

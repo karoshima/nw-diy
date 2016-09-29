@@ -88,10 +88,19 @@ module NwDiy
     def pong
       loop do
         eth = @ifp.recv
+        unless eth.dst.multicast? || eth.dst == @ifp.local
+          puts "ignore ether.dst = #{eth.dst} != me"
+        end
         case eth.type
         when 0x0806
-          (eth.data.tgtip4 == @localip) or
+          unless eth.data.request?
+            puts "ignore arp.oper = #{eth.data.oper} != EchoRequest"
             next
+          end
+          unless (eth.data.tgtip4 == @localip)
+            puts "ignore arp.target = #{eth.data.tgt} != me"
+            next
+          end
           eth.dst = eth.src
           eth.src = @ifp.local
           eth.data.oper = :response
@@ -102,15 +111,15 @@ module NwDiy
           @ifp.send(eth)
         when 0x0800
           unless (eth.data.dst == @localip)
-            puts "ignore ip.dst = " + eth.data.dst + " != me"
+            puts "ignore ip.dst = #{eth.data.dst} != me"
             next
           end
           unless (eth.data.proto == 1)
-            puts "ignore ip.proto = " + eth.data.proto + " != ICMP"
+            puts "ignore ip.proto = #{eth.data.proto} != ICMP"
             next
           end
           unless (eth.data.data.type == 8)
-            puts "ignore ICMP type = " + eth.data.data.type + " != Echo"
+            puts "ignore ICMP type = #{eth.data.data.type} != Echo"
             next
           end
           eth.data.data.type = 0
@@ -120,7 +129,7 @@ module NwDiy
           eth.src = @ifp.local
           @ifp.send(eth)
         else
-          puts "ignore ether.type = " + eth.type4 + " != IP,ARP"
+          puts "ignore ether.type = #{eth.type4} != IP,ARP"
         end
       end
     end

@@ -33,7 +33,7 @@ module NwDiy
         case pkt
         when String
           pkt.bytesize >= 40 or
-            raise TooShort.new(pkt)
+            raise TooShort.new("IPv6", 40, pkt)
           @vtf = pkt[0..3].btoh
           @length = pkt[4..5].btoh
           @next = pkt[6].btoh
@@ -51,7 +51,7 @@ module NwDiy
           @src = @dst = IPAddr.new('::')
           @trailer = ''
         else
-          raise InvalidData.new(pkt)
+          raise InvalidData.new "What is '#{pkt}'?"
         end
       end
 
@@ -81,9 +81,15 @@ module NwDiy
       end
 
       def next=(val)
+        oldnext = @next
         @next = val
         @data and
-          self.data = @data.to_pkt
+          begin
+            self.data = @data.to_pkt
+          rescue => e
+            @next = oldnext
+            raise e
+          end
       end
       attr_reader :next
 
