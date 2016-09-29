@@ -81,15 +81,12 @@ module NwDiy
         def data=(kt, val)
           # 代入されたら @proto の値も変わる
           # 逆に val の型が不明なら、@proto に沿って @data の型が変わる
-          oldtype = @type
           newtype = kt.type(val)
-          newtype == 0 or
+          if newtype == 0
+            @data = kt.klass(@type).new(val)
+          else
             @type = newtype
-          begin
-            @data = kt.klass(@type).cast(val)
-          rescue => e
-            @type = oldtype
-            raise e
+            @data = val
           end
         end
 
