@@ -80,7 +80,7 @@ module NwDiy
         puts eth
         break
       end
-      @mactable or 
+      @mactable or
         @mactable = Hash.new
       return @mactable[addr.to_s] = eth.data.sndmac
     end
@@ -101,18 +101,26 @@ module NwDiy
           eth.data.sndip4 = @localip
           @ifp.send(eth)
         when 0x0800
-          (eth.data.proto == 1) or
+          unless (eth.data.dst == @localip)
+            puts "ignore ip.dst = " + eth.data.dst + " != me"
             next
-          (eth.data.data.type == 8) or
+          end
+          unless (eth.data.proto == 1)
+            puts "ignore ip.proto = " + eth.data.proto + " != ICMP"
             next
-          (eth.data.dst == @localip) or
+          end
+          unless (eth.data.data.type == 8)
+            puts "ignore ICMP type = " + eth.data.data.type + " != Echo"
             next
+          end
           eth.data.data.type = 0
           eth.data.dst = eth.data.src
           eth.data.src = @localip
           eth.dst = eth.src
           eth.src = @ifp.local
           @ifp.send(eth)
+        else
+          puts "ignore ether.type = " + eth.type4 + " != IP,ARP"
         end
       end
     end
