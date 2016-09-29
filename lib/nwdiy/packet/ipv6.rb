@@ -35,6 +35,8 @@ module NwDiy
           pkt.bytesize >= 40 or
             raise TooShort.new("IPv6", 40, pkt)
           @vtf = pkt[0..3].btoh
+          self.version == 6 or
+            raise InvalidData.new "IPv6 version must be 6, but it comes #{self.version}."
           @length = pkt[4..5].btoh
           @next = pkt[6].btoh
           @hlim = pkt[7].btoh

@@ -32,7 +32,7 @@ class NwDiy::Packet::IP::ICMP
       when nil
         @id = rand(0x10000)
         @seq = rand(0x10000)
-        @data = 'NW-DIY ICMP'
+        @data = 'NW-DIY ICMP Echo'
       else
         raise InvalidData.new "What is '#{pkt}'?"
       end

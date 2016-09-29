@@ -47,7 +47,17 @@ module NwDiy
       icmp.data = NwDiy::Packet::IP::ICMP::EchoRequest.new
       puts eth
       @ifp.send(eth)
-      @ifp.recv
+      loop do
+        eth = @ifp.recv
+        self.forme?(eth) or
+          next
+        (eth.data.proto == 1) or
+          next
+        (eth.data.data.type == 0) or
+          next
+        break
+      end
+      eth
     end
 
     def arpResolve(addr)
@@ -64,20 +74,14 @@ module NwDiy
       @ifp.send(eth)
       loop do
         eth = @ifp.recv
-        puts eth.type
         (eth.type == 0x0806) or
           next
-        puts eth.dst
-        puts @ifp.local
-        (eth.dst == @ifp.local) or
+        self.forme?(eth) or
           next
-        puts eth.data.oper
         eth.data.response? or
           next
-        puts eth.data.sndip4
         (eth.data.sndip4 == addr) or
           next
-        puts eth
         break
       end
       @mactable or
@@ -88,19 +92,16 @@ module NwDiy
     def pong
       loop do
         eth = @ifp.recv
-        unless eth.dst.multicast? || eth.dst == @ifp.local
-          puts "ignore ether.dst = #{eth.dst} != me"
-        end
+        self.forme?(eth) or
+          next
+
         case eth.type
         when 0x0806
           unless eth.data.request?
             puts "ignore arp.oper = #{eth.data.oper} != EchoRequest"
             next
           end
-          unless (eth.data.tgtip4 == @localip)
-            puts "ignore arp.target = #{eth.data.tgt} != me"
-            next
-          end
+          puts eth
           eth.dst = eth.src
           eth.src = @ifp.local
           eth.data.oper = :response
@@ -108,12 +109,9 @@ module NwDiy
           eth.data.tgtip4 = eth.data.sndip4
           eth.data.sndmac = @ifp.local
           eth.data.sndip4 = @localip
+          puts eth
           @ifp.send(eth)
         when 0x0800
-          unless (eth.data.dst == @localip)
-            puts "ignore ip.dst = #{eth.data.dst} != me"
-            next
-          end
           unless (eth.data.proto == 1)
             puts "ignore ip.proto = #{eth.data.proto} != ICMP"
             next
@@ -122,16 +120,41 @@ module NwDiy
             puts "ignore ICMP type = #{eth.data.data.type} != Echo"
             next
           end
+          puts eth
           eth.data.data.type = 0
           eth.data.dst = eth.data.src
           eth.data.src = @localip
           eth.dst = eth.src
           eth.src = @ifp.local
+          puts eth
           @ifp.send(eth)
         else
           puts "ignore ether.type = #{eth.type4} != IP,ARP"
         end
       end
+    end
+
+    def forme?(eth)
+      unless eth.dst.multicast? || eth.dst == @ifp.local
+        puts "ignore ether.dst = #{eth.dst} != me"
+        return false
+      end
+      case eth.type
+      when 0x0806
+        unless (eth.data.tgtip4 == @localip)
+          puts "ignore arp.target = #{eth.data.tgt} != me"
+          return false
+        end
+      when 0x0800
+        unless (eth.data.dst == @localip)
+          puts "ignore ip.dst = #{eth.data.dst} != me"
+          return false
+        end
+      else
+        puts "ignore ether.type = #{eth.type4} != IP,ARP"
+        return false
+      end
+      true
     end
 
   end
