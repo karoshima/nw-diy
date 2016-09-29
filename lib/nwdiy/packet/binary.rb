@@ -45,7 +45,7 @@ module NwDiy
             end
           end
         end
-        @txt
+        "[Binary #{@txt}]"
       end
 
     end
