@@ -153,7 +153,7 @@ module NwDiy
       def data=(val)
         ktype = @@kt.type(val)
         if ktype == 0
-          @data = @@kt.klass(@type).new(val)
+          @data = @@kt.klass(@proto).new(val)
         else
           @proto = ktype
           @data = val

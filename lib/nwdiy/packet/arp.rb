@@ -29,10 +29,10 @@ module NwDiy
           @hlen = pkt[4].btoh
           @plen = pkt[5].btoh
           @oper = pkt[6..7].btoh
-          @sndmac = NwDiy::Packet::MacAddr.new(pkt[8..13])
-          @sndip4 = NwDiy::Packet::IPAddr.new(pkt[14..17])
-          @tgtmac = NwDiy::Packet::MacAddr.new(pkt[18..23])
-          @tgtip4 = NwDiy::Packet::IPAddr.new(pkt[24..27])
+          @sndmac = MacAddr.new(pkt[8..13])
+          @sndip4 = IPAddr.new_ntoh(pkt[14..17])
+          @tgtmac = MacAddr.new(pkt[18..23])
+          @tgtip4 = IPAddr.new_ntoh(pkt[24..27])
           pkt[0..27] = ''
           @trailer = pkt
         when nil
@@ -85,8 +85,8 @@ module NwDiy
       def to_pkt
         @hard.htob16 + @prot.htob16 +
           @hlen.htob8 + @plen.htob8 + @oper.htob16 +
-          @sndmac.to_pkt + @sndip4.to_pkt +
-          @tgtmac.to_pkt + @tgtip4.to_pkt + @trailer
+          @sndmac.hton + @sndip4.hton +
+          @tgtmac.hton + @tgtip4.hton + @trailer
       end
 
       def bytesize

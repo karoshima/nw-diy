@@ -76,7 +76,7 @@ module NwDiy
           # 代入されたら @proto の値も変わる
           # 逆に val の型が不明なら、@proto に沿って @data の型が変わる
           dtype = kt.type(val)
-          dtype and
+          dtype == 0 or
             @type = dtype
           @data = kt.klass(@type).cast(val)
         end

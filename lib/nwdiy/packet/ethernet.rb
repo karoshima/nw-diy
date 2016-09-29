@@ -93,10 +93,11 @@ module NwDiy
           raise InvalidData.new "802.3 length must be less than 1501"
         @type = val
       end
-      def type
-        @type
-      end
+      attr_reader :type
       alias length type
+      def type4
+        @type.to_s(16).rjust(4, "0")
+      end
 
       def data=(val)
         if self.ieee802dot3?
