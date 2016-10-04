@@ -49,7 +49,7 @@ module NwDiy
       def recv
         begin
           Marshal.load(@sock)
-        rescue EOFError, ECONNRESET
+        rescue EOFError, Errno::ECONNRESET
           self.initSock(@name)
           retry
         end
@@ -65,6 +65,12 @@ module NwDiy
         @@server = NwDiy::Interface::SockServer.new(SOCKPORT)
         Thread.new { @@server.run }
         puts 'Started'
+      end
+
+      ################
+      # interface address
+      def to_s
+        @name
       end
 
     end

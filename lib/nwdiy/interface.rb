@@ -73,6 +73,12 @@ module NwDiy
 
     ################
     # interface address
+    def to_s
+      @dev.to_s
+    end
+
+    ################
+    # interface address
     def local(addr = nil)
       addr ? @local = addr : @local
     end

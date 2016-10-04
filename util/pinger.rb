@@ -101,7 +101,6 @@ module NwDiy
             puts "ignore arp.oper = #{eth.data.oper} != EchoRequest"
             next
           end
-          puts eth
           eth.dst = eth.src
           eth.src = @ifp.local
           eth.data.oper = :response
@@ -109,7 +108,6 @@ module NwDiy
           eth.data.tgtip4 = eth.data.sndip4
           eth.data.sndmac = @ifp.local
           eth.data.sndip4 = @localip
-          puts eth
           @ifp.send(eth)
         when 0x0800
           unless (eth.data.proto == 1)

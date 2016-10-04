@@ -92,6 +92,12 @@ module NwDiy
         end
         @mac
       end
+
+      ################
+      # interface address
+      def to_s
+        @name
+      end
     end
   end
 end
