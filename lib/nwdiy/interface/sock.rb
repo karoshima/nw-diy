@@ -54,10 +54,12 @@ module NwDiy
           retry
         end
       end
-
       def send(pkt)
         Marshal.dump(pkt, @sock)
         pkt.bytesize
+      end
+      def recvq_empty?
+        IO.select([@sock], [], [], 0)
       end
 
       # サーバーを起動する
@@ -87,7 +89,7 @@ module NwDiy
       def run
         Thread.abort_on_exception = true
         loop do
-          recv, = IO.select(@name2ifp.values.inject([@listen]) {|a,b| a+=b})
+          recv, = IO.select([@listen] + @name2ifp.values.flatten)
           recv.each do |ifp|
             if (ifp == @listen)
               begin
@@ -95,15 +97,22 @@ module NwDiy
                 name = Marshal.load(newifp)
                 @name2ifp[name] << newifp
                 @ifp2name[newifp.peeraddr[1]] = name
+                NwDiy::Interface.debug[:packet] and
+                  puts "New client uses #{name}"
               rescue Errno::EAGAIN, Errno::EINTR => e
                 # retry
               end
             else
               name = @ifp2name[ifp.peeraddr[1]]
+              NwDiy::Interface.debug[:packet] and
+                puts "Packet has sent from #{name}"
               begin
                 pkt = Marshal.load(ifp)
-                (@name2ifp[name] - [ifp]).each do |dstifp|
+                selected = IO.select([], @name2ifp[name] - [ifp], [], 0)
+                selected[1].each do |dstifp|
                   Marshal.dump(pkt, dstifp)
+                  NwDiy::Interface.debug[:packet] and
+                    puts "Packet has redistributed in #{name}"
                 end
               rescue EOFError
                 name = @ifp2name.delete(ifp.peeraddr[1])

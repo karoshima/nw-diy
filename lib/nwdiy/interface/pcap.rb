@@ -83,6 +83,9 @@ module NwDiy
       def close
         @sock.close
       end
+      def recvq_empty?
+        IO.select([@sock], [], [], 0)
+      end
 
       ################
       # 自分の MAC アドレスを調べる

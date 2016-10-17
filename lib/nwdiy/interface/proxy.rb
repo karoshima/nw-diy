@@ -35,6 +35,9 @@ module NwDiy
         Marshal.dump(pkt, @sock)
         pkt.bytesize
       end
+      def recvq_empty?
+        IO.select([@sock], [], [], 0)
+      end
     end
   end
 end

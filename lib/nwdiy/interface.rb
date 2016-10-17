@@ -20,6 +20,16 @@ module NwDiy
   ################################################################
   # インターフェース
   class Interface
+    @@debug = Hash.new
+    def self.debug(hash = nil)
+      hash.kind_of?(Hash) and
+        @@debug.merge!(hash)
+      @@debug
+    end
+    def debug(*arg)
+      self.class.debug(arg)
+    end
+
     ################
     # new 引数はインターフェース名、あるいは情報付与したハッシュ
     def initialize(arg)
@@ -86,13 +96,24 @@ module NwDiy
     ################
     # socket op
     def recv
-      @dev.recv
+      pkt = @dev.recv
+      @@debug[:packet] and
+        puts "Receive packet from #{self}"
+      pkt
     end
     def send(msg)
-      @dev.send(msg)
+      @@debug[:packet] and
+        print "Sending pacaket from #{self} ..."
+      len = @dev.send(msg)
+      @@debug[:packet] and
+        puts " done"
+      len
     end
     def close
       @dev.close
+    end
+    def recvq_empty?
+      @dev.recvq_empty? ? true : false
     end
   end
 end

@@ -36,57 +36,59 @@ module NwDiy
     def ping(addr)
       addr.kind_of?(IPAddr) or
         addr = IPAddr.new(addr, Socket::AF_INET)
-      eth = NwDiy::Packet::Ethernet.new
-      eth.dst = self.arpResolve(addr)
-      puts eth.dst
-      eth.src = @ifp.local
-      eth.data = ip = NwDiy::Packet::IPv4.new
+      req = NwDiy::Packet::Ethernet.new
+      req.dst = self.arpResolve(addr)
+      puts req.dst
+      req.src = @ifp.local
+      req.data = ip = NwDiy::Packet::IPv4.new
       ip.src = @localip
       ip.dst = addr
       ip.data = icmp = NwDiy::Packet::IP::ICMP4.new
       icmp.data = NwDiy::Packet::IP::ICMP::EchoRequest.new
-      puts eth
-      @ifp.send(eth)
+      puts req
+      @ifp.send(req)
       loop do
-        eth = @ifp.recv
-        self.forme?(eth) or
+        res = @ifp.recv
+        self.forme?(res, req.dst, addr) or
           next
-        (eth.data.proto == 1) or
+        res.data.is_a?(NwDiy::Packet::IPv4) or
           next
-        (eth.data.data.type == 0) or
+        res.data.data.is_a?(NwDiy::Packet::IP::ICMP4) or
           next
-        break
+        res.data.data.data.is_a?(NwDiy::Packet::IP::ICMP::EchoReply) or
+          next
+        unless res.data.cksum_ok?
+          puts "BAD CHECKSUM"
+          next
+        end
+        return res
       end
-      eth
     end
 
     def arpResolve(addr)
       @mactable and @mactable[addr.to_s] and
         return @mactable[addr.to_s]
-      eth = NwDiy::Packet::Ethernet.new
-      eth.dst = NwDiy::Packet::MacAddr.new('ff-ff-ff-ff-ff-ff')
-      eth.src = @ifp.local
-      eth.data = arp = NwDiy::Packet::ARP.new
+      req = NwDiy::Packet::Ethernet.new
+      req.dst = NwDiy::Packet::MacAddr.new('ff-ff-ff-ff-ff-ff')
+      req.src = @ifp.local
+      req.data = arp = NwDiy::Packet::ARP.new
       arp.oper = :request
       arp.sndmac = @ifp.local
       arp.sndip4 = @localip
       arp.tgtip4 = addr
-      @ifp.send(eth)
+      @ifp.send(req)
       loop do
-        eth = @ifp.recv
-        (eth.type == 0x0806) or
+        res = @ifp.recv
+        (res.type == 0x0806) or
           next
-        self.forme?(eth) or
+        res.data.response? or
           next
-        eth.data.response? or
+        self.forme?(res, nil, addr) or
           next
-        (eth.data.sndip4 == addr) or
-          next
-        break
+        @mactable or
+          @mactable = Hash.new
+        return @mactable[addr.to_s] = res.data.sndmac
       end
-      @mactable or
-        @mactable = Hash.new
-      return @mactable[addr.to_s] = eth.data.sndmac
     end
 
     def pong
@@ -108,6 +110,7 @@ module NwDiy
           eth.data.tgtip4 = eth.data.sndip4
           eth.data.sndmac = @ifp.local
           eth.data.sndip4 = @localip
+          puts "DEBUG: #{@ifp}.send(#{eth})"
           @ifp.send(eth)
         when 0x0800
           unless (eth.data.proto == 1)
@@ -118,6 +121,10 @@ module NwDiy
             puts "ignore ICMP type = #{eth.data.data.type} != Echo"
             next
           end
+          unless eth.data.cksum_ok?
+            puts "BAD CHECKSUM"
+            next
+          end
           puts eth
           eth.data.data.type = 0
           eth.data.dst = eth.data.src
@@ -125,6 +132,7 @@ module NwDiy
           eth.dst = eth.src
           eth.src = @ifp.local
           puts eth
+          puts "DEBUG: #{@ifp}.send(#{eth})"
           @ifp.send(eth)
         else
           puts "ignore ether.type = #{eth.type4} != IP,ARP"
@@ -132,20 +140,35 @@ module NwDiy
       end
     end
 
-    def forme?(eth)
+    def forme?(eth, srcmac = nil, srcip = nil)
+      unless eth.is_a?(NwDiy::Packet::Ethernet)
+        puts "ignore unknown packet #{eth}"
+        return false
+      end
       unless eth.dst.multicast? || eth.dst == @ifp.local
         puts "ignore ether.dst = #{eth.dst} != me"
         return false
       end
+      if srcmac && eth.src != srcmac
+        puts "ignore ethernet.src = #{eth.src} != #{srcmac}"
+      end
       case eth.type
       when 0x0806
-        unless (eth.data.tgtip4 == @localip)
-          puts "ignore arp.target = #{eth.data.tgt} != me"
+        if @localip != eth.data.tgtip4
+          puts "ignore arp.target = #{eth.data.tgtip4} != me(#{@localip})"
+          return false
+        end
+        if srcip && srcip != eth.data.sndip4
+          puts "ignore arp.sender = #{eth.data.sndip4} != #{srcip}"
           return false
         end
       when 0x0800
-        unless (eth.data.dst == @localip)
-          puts "ignore ip.dst = #{eth.data.dst} != me"
+        if @localip != eth.data.dst
+          puts "ignore ip.dst = #{eth.data.dst} != me(#{@localip})"
+          return false
+        end
+        if srcip && srcip != eth.data.src
+          puts "ignore ip.src = #{eth.data.dst} != #{srcip}"
           return false
         end
       else
