@@ -112,8 +112,8 @@ module NwDiy
     def close
       @dev.close
     end
-    def recvq_empty?
-      @dev.recvq_empty? ? true : false
+    def recv_ready?
+      @dev.recv_ready?
     end
   end
 end

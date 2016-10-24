@@ -9,6 +9,7 @@
 
 require_relative '../../nwdiy'
 
+require 'io/wait'
 require 'nwdiy/util'
 
 module NwDiy
@@ -35,8 +36,8 @@ module NwDiy
         Marshal.dump(pkt, @sock)
         pkt.bytesize
       end
-      def recvq_empty?
-        IO.select([@sock], [], [], 0)
+      def recv_ready?
+        @sock.ready?
       end
     end
   end

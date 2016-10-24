@@ -9,6 +9,7 @@
 
 require_relative '../../nwdiy'
 
+require 'io/wait'
 require 'nwdiy/util'
 require 'nwdiy/iplink'
 require 'nwdiy/packet'
@@ -83,8 +84,8 @@ module NwDiy
       def close
         @sock.close
       end
-      def recvq_empty?
-        IO.select([@sock], [], [], 0)
+      def recv_ready?
+        @sock.ready?
       end
 
       ################

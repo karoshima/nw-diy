@@ -9,6 +9,7 @@
 
 require_relative '../../nwdiy'
 
+require 'io/wait'
 require 'nwdiy/packet/ethernet'
 
 module NwDiy
@@ -17,6 +18,20 @@ module NwDiy
       include NwDiy::Linux
 
       SOCKPORT = 43218
+      def self.send_sock(sock, data)
+        bytesize = data.bytesize
+        marshal = Marshal.dump(data)
+        sock << [marshal.bytesize].pack("N") + marshal
+        bytesize
+      end
+      def self.recv_sock(sock)
+        len = sock.read(4) or
+          raise EOFError
+        buflen, = len.unpack("N")
+        buf = sock.read(buflen) or
+          raise EOFError
+        Marshal.load(buf)
+      end
 
       # インターフェースサーバーに接続する
       def initSock(name)
@@ -24,6 +39,7 @@ module NwDiy
         begin
           # 既に誰かがサーバーやってくれてたら、そこを使う
           sock = TCPSocket.open('::1', SOCKPORT)
+          sock.autoclose = true
         rescue Errno::ECONNREFUSED
           # 誰もサーバーやってくれてなかったら、自分でサーバーやる
           begin
@@ -33,7 +49,7 @@ module NwDiy
           end
           retry
         end
-        Marshal.dump(name, sock)
+        self.class.send_sock(sock, name)
         @sock and @sock.close
         @sock = sock
       end
@@ -48,18 +64,17 @@ module NwDiy
       # socket op
       def recv
         begin
-          Marshal.load(@sock)
+          self.class.recv_sock(@sock)
         rescue EOFError, Errno::ECONNRESET
           self.initSock(@name)
           retry
         end
       end
       def send(pkt)
-        Marshal.dump(pkt, @sock)
-        pkt.bytesize
+        self.class.send_sock(@sock, pkt)
       end
-      def recvq_empty?
-        IO.select([@sock], [], [], 0)
+      def recv_ready?
+        @sock.ready?
       end
 
       # サーバーを起動する
@@ -81,6 +96,7 @@ module NwDiy
 
       def initialize(port)
         @listen = TCPServer.new('::1', port)
+        @listen.autoclose = true
         @listen.setsockopt(:SOCKET, :REUSEADDR, true)
         @name2ifp = Hash.new { |h,k| h[k] = Array.new }
         @ifp2name = Hash.new
@@ -91,32 +107,40 @@ module NwDiy
         loop do
           recv, = IO.select([@listen] + @name2ifp.values.flatten)
           recv.each do |ifp|
+            ifp.ready? or
+              next
             if (ifp == @listen)
               begin
                 newifp = ifp.accept
-                name = Marshal.load(newifp)
+                newifp.autoclose = true
+                name = NwDiy::Interface::Sock.recv_sock(newifp)
                 @name2ifp[name] << newifp
                 @ifp2name[newifp.peeraddr[1]] = name
                 NwDiy::Interface.debug[:packet] and
-                  puts "New client uses #{name}"
+                  puts "SockServer: #{name}: new client"
               rescue Errno::EAGAIN, Errno::EINTR => e
                 # retry
               end
             else
               name = @ifp2name[ifp.peeraddr[1]]
               NwDiy::Interface.debug[:packet] and
-                puts "Packet has sent from #{name}"
+                puts "SockServer: #{name}: #{Thread.current}"
               begin
-                pkt = Marshal.load(ifp)
+                pkt = NwDiy::Interface::Sock.recv_sock(ifp)
+                NwDiy::Interface.debug[:packet] and
+                  puts "    new Packet arrives"
                 selected = IO.select([], @name2ifp[name] - [ifp], [], 0)
                 selected[1].each do |dstifp|
-                  Marshal.dump(pkt, dstifp)
+                  NwDiy::Interface::Sock.send_sock(dstifp, pkt)
                   NwDiy::Interface.debug[:packet] and
-                    puts "Packet has redistributed in #{name}"
+                    puts "SockServer: #{@ifp2name[dstifp.peeraddr[1]]}: sent"
                 end
               rescue EOFError
+                NwDiy::Interface.debug[:packet] and
+                  puts "    destroyed client"
                 name = @ifp2name.delete(ifp.peeraddr[1])
                 @name2ifp[name].delete(ifp)
+                ifp.close
               end
             end
           end

@@ -33,12 +33,13 @@ module NwDiy
       @localip = localip.kind_of?(IPAddr) ? localip : IPAddr.new(localip, Socket::AF_INET)
     end
 
+    attr_reader :ifp, :localip
+
     def ping(addr)
       addr.kind_of?(IPAddr) or
         addr = IPAddr.new(addr, Socket::AF_INET)
       req = NwDiy::Packet::Ethernet.new
       req.dst = self.arpResolve(addr)
-      puts req.dst
       req.src = @ifp.local
       req.data = ip = NwDiy::Packet::IPv4.new
       ip.src = @localip
@@ -110,7 +111,8 @@ module NwDiy
           eth.data.tgtip4 = eth.data.sndip4
           eth.data.sndmac = @ifp.local
           eth.data.sndip4 = @localip
-          puts "DEBUG: #{@ifp}.send(#{eth})"
+          NwDiy::Interface.debug[:packet] and
+            puts "DEBUG: #{@ifp}.send(#{eth})"
           @ifp.send(eth)
         when 0x0800
           unless (eth.data.proto == 1)
@@ -132,7 +134,8 @@ module NwDiy
           eth.dst = eth.src
           eth.src = @ifp.local
           puts eth
-          puts "DEBUG: #{@ifp}.send(#{eth})"
+          NwDiy::Interface.debug[:packet] and
+            puts "DEBUG: #{@ifp}.send(#{eth})"
           @ifp.send(eth)
         else
           puts "ignore ether.type = #{eth.type4} != IP,ARP"
