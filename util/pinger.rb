@@ -104,7 +104,7 @@ module NwDiy
             puts "ignore arp.oper = #{eth.data.oper} != EchoRequest"
             next
           end
-          eth.dst = eth.data.sndmaceth.src
+          eth.dst = eth.data.sndmac
           eth.src = @ifp.local
           eth.data.oper = :response
           eth.data.tgtmac = eth.data.sndmac
