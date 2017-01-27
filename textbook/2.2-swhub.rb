@@ -21,6 +21,7 @@ class SwHub < NwDiy::VM
 
     @macdb = NwDiy::TimerHash.new
     @macdb.age = 10
+    @macdb.update = false
   end
 
   # この VM の仕事内容は以下のとおり
@@ -28,8 +29,8 @@ class SwHub < NwDiy::VM
     loop do
       rifp, rpkt = self.recv               # パケットを受信したら
 
-      @macdb.overwrite(rpkt.src, rifp)     # 受信インターフェースを覚える
-      sifp = @macdb.value(rpkt.dst)        # 送信インターフェースが
+      @macdb[rpkt.src] = rifp              # 受信インターフェースを覚える
+      sifp = @macdb[rpkt.dst]              # 送信インターフェースが
       if sifp                              # もし分かったら
         sifp.send(rpkt)                    # そこにだけ送って
         next                               # ほかには送らない
