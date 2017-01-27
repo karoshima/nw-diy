@@ -130,10 +130,15 @@ module NwDiy
                 NwDiy::Interface.debug[:packet] and
                   puts "    new Packet arrives"
                 selected = IO.select([], @name2ifp[name] - [ifp], [], 0)
-                selected[1].each do |dstifp|
-                  NwDiy::Interface::Sock.send_sock(dstifp, pkt)
+                if selected
+                  selected[1].each do |dstifp|
+                    NwDiy::Interface::Sock.send_sock(dstifp, pkt)
+                    NwDiy::Interface.debug[:packet] and
+                      puts "SockServer: #{@ifp2name[dstifp.peeraddr[1]]}: sent"
+                  end
+                else
                   NwDiy::Interface.debug[:packet] and
-                    puts "SockServer: #{@ifp2name[dstifp.peeraddr[1]]}: sent"
+                    puts "    WARNING: a packet is sent to monopole ethernet."
                 end
               rescue EOFError
                 NwDiy::Interface.debug[:packet] and
