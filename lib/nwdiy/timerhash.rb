@@ -33,7 +33,7 @@ module NwDiy
       end
       if self.has_key?(key)
         if age
-          ret = @period[key] = self.uptime + age
+          ret = @period[key] = Time.new + age
         else
           @period.delete(key)
           ret = nil
@@ -50,11 +50,13 @@ module NwDiy
       self.set_age(key, nil)
     end
     
-    def uptime
-      File.open('/proc/uptime') do |proc|
-        return proc.gets.to_f
-      end
-    end
+    # # システム時刻の変更に惑わされたくない場合は
+    # # Linux ならこの小技でなんとかなる
+    # def uptime
+    #   File.open('/proc/uptime') do |proc|
+    #     return proc.gets.to_f
+    #   end
+    # end
 
     ################################################################
     # self に対する処理
