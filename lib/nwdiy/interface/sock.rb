@@ -115,14 +115,14 @@ module NwDiy
                 newifp.autoclose = true
                 name = NwDiy::Interface::Sock.recv_sock(newifp)
                 @name2ifp[name] << newifp
-                @ifp2name[newifp.peeraddr[1]] = name
+                @ifp2name[newifp.fileno] = name
                 NwDiy::Interface.debug[:packet] and
                   puts "SockServer: #{name}: new client"
               rescue Errno::EAGAIN, Errno::EINTR => e
                 # retry
               end
             else
-              name = @ifp2name[ifp.peeraddr[1]]
+              name = @ifp2name[ifp.fileno]
               NwDiy::Interface.debug[:packet] and
                 puts "SockServer: #{name}: #{Thread.current}"
               begin
@@ -134,7 +134,7 @@ module NwDiy
                   selected[1].each do |dstifp|
                     NwDiy::Interface::Sock.send_sock(dstifp, pkt)
                     NwDiy::Interface.debug[:packet] and
-                      puts "SockServer: #{@ifp2name[dstifp.peeraddr[1]]}: sent"
+                      puts "SockServer: #{@ifp2name[dstifp.fileno]}: sent"
                   end
                 else
                   NwDiy::Interface.debug[:packet] and
@@ -143,7 +143,7 @@ module NwDiy
               rescue EOFError
                 NwDiy::Interface.debug[:packet] and
                   puts "    destroyed client"
-                name = @ifp2name.delete(ifp.peeraddr[1])
+                name = @ifp2name.delete(ifp.fileno)
                 @name2ifp[name].delete(ifp)
                 ifp.close
               end
