@@ -7,8 +7,10 @@
 ################################################################
 # タイマー付き Hash
 
+require_relative '../nwdiy'
+
 module NwDiy
-  class TimerHash < Hash
+  class TimerHash < Enumerator
 
     ################
     # 追加時に寿命を更新する(true)か否(false)か
@@ -28,73 +30,82 @@ module NwDiy
     #    false  self.[] では見えないが self.expired で取得するまで内部に残す
     attr_accessor :autodelete
 
-    def initialize(*arg)
-      super(*arg)
+    def initialize(opt = {})
 
       # 省略時値
-      @update     = true
-      @oldvalue   = false
-      @age        = 10
-      @autodelete = true
+      @update     = opt.has_key?(:update)     ? opt[:update]     : true
+      @oldvalue   = opt.has_key?(:oldvalue)   ? opt[:oldvalue]   : false
+      @age        = opt.has_key?(:age)        ? opt[:age]      : Float::INFINITY
+      @autodelete = opt.has_key?(:autodelete) ? opt[:autodelete] : true
 
-      @period     = Hash.new    # エントリー毎の寿命データベース
+      @lock = Thread::Mutex.new
+      @cond = Thread::ConditionVariable.new
 
-      @lock = Thread::Mutex.new             # self と @period の...
-      @cond = Thread::ConditionVariable.new # ...同期を取る
+      ################
+      # データベース本体
+      #    @data[key] = { value: 値, expire: タイムアウト時刻 }
+      @data       = Hash.new
+
     end
 
     ################################################################
-    # Hash インスタンスメソッドのオーバーライド
+    # データ管理
 
     ################
-    # [] は寿命確認も行なう
-    #    ageout したものは「無い」と見做す
-    #    (ただし登録時に expired: :keep オプションを付けていた場合
-    #     self.expired で取り出すまで内部には残る)
-    alias :__super_get :[]
+    # Hash と同様に []= で設定する
+    #    ただし [] 内に第2引数として寿命オプションを指定できる
+    #    寿命オプションがなければ、この Hash に指定した @age を使う
+    def []=(key, age = @age, value)
+      @lock.synchronize do
+        begin
+          uptime = self.class.uptime
+          if @data[key] && uptime <= @data[key][:expire]
+            if @data[key][:value] == value
+              if @update
+                @data[key][:expire] = uptime + age
+              end
+              return value
+            end
+            old = @data[key]
+            @data[key] = { value: value, expire: uptime + age }
+            return @oldvalue ? old[:value] : value
+          end
+          @data[key] = { value: value, expire: uptime + age }
+          return @oldvalue ? nil : value
+        ensure
+          @cond.broadcast
+        end
+      end
+    end
+
+    ################
+    # Hash と同様に [] で参照する
     def [](key)
       @lock.synchronize do
-        self.__locked_get(key)
+        @data[key] or
+          return nil
+        self.class.uptime <= @data[key][:expire] and
+          return @data[key][:value]
+        @autodelete and
+          @data.delete(key)
+        return nil
       end
-    end
-    def __locked_get(key)
-      self.__locked_get_age(key) ? self.__super_get(key) : self.default
     end
 
     ################
-    # []= もほぼ Hash のままだが、オプションで age も指定できる
-    alias :__super_set :[]=
-    def []=(key, age = @age, val)
-      @lock.synchronize do
-        self.__locked_set(key, age, val)
-      end
-    end
-    def __locked_set(key, opt, val)
-      old = self.__locked_get(key)
-      self.__super_set(key, val)
-      (@update || (old != val)) and
-        self.__locked_set_age(key, age)
-      return @oldvalue ? old : val
-    end
-
-    ################
-    # delete は完全に Hash と同じ
-    alias :__super_delete :delete
+    # Hash と同様に delete でデータ削除
     def delete(key)
       @lock.synchronize do
-        self.__locked_delete(key)
+        old = @data.delete(key)
+        return (old && self.class.uptime <= old[:expire]) ? old[:value] : nil
       end
-    end
-    def __locked_delete(key)
-      @period.delete(key)
-      self.__super_delete(key)
     end
 
     ################################################################
-    # 寿命の管理
+    # 寿命管理
 
     ################
-    # 時刻
+    # 現在時刻
     def self.uptime
       # 本来はシステム時刻の設定変更に惑わされないよう
       # uptime などを使いたいところ
@@ -103,95 +114,94 @@ module NwDiy
     end
 
     ################
-    # 寿命の設定
+    # 寿命の変更
     def set_age(key, age)
       @lock.synchronize do
-        self.__locked_set_age(key, age)
-      end
-    end
-    def reset_age(key)
-      self.set_age(key, Float::INFINITY)
-    end
-    def __locked_set_age(key, age)
-      if self.has_key?(key)
-        @cond.signal
-        @period[key] = self.class.uptime + age
-        age
+        if @data[key]
+          uptime = self.class.uptime
+          if uptime <= @data[key][:expire]
+            @data[key][:expire] = uptime + age
+          elsif @autodelete
+            @data.delete(key)
+          end
+        end
       end
     end
 
     ################
-    # 余命の確認
-    #    数値             残り時間
+    # 残り時間の確認
+    #    数値             残り時間(秒)
     #    Float::INFINITY  無限大
     #    nil              そもそもそんなキーは持っていない or 寿命が尽きている
     def get_age(key)
       @lock.synchronize do
-        self.__locked_get_age(key)
-      end
-    end
-    def __locked_get_age(key)
-      if self.has_key?(key)
-        remains = @period[key] - self.class.uptime
-        (remains >= 0) and
-          return remains
-        @autodelete and
-          self.__locked_delete(key)
-        nil
+        @data[key] or
+          return nil
+        remains = @data[key][:expire] - self.class.uptime
+        return remains >= 0 ? remains : nil
       end
     end
 
-    ################################################################
-    # 寿命の監視
-    #    :keep 属性のあるデータ限定
-
+    private
     ################
-    # 掃除
-    #    :keep 属性がなく expire しているデータを除く
-    def __locked_swipe
-      now = self.class.uptime
-      self.select! {|key,val| @expiredb[key] == :keep || now <= @period[key] }
-      nil
+    # expire したデータを掃除して、以下の 2 値を返す
+    # 1. 次の掃除までの時間
+    # 2. 有効なデータ
+    # 3. 掃除されたデータ
+    def _scan
+      @lock.locked? or raise "NOT LOCKED"
+      uptime = self.class.uptime
+      left = Float::INFINITY
+      alive = Hash.new
+      expired = Hash.new
+      @data.each do |key,struct|
+        remains = struct[:expire] - uptime
+        if remains >= 0
+          remains < left and
+            left = remains
+          alive[key] = struct[:value]
+        else
+          expired[key] = struct[:value]
+        end
+      end
+      @autodelete or
+        expired = Hash.new
+      return [left, alive, expired]
     end
 
+    public
     ################
-    # 誰かが expire するまでの秒数
-    #    既に expire しているデータがあるときは負値を返す
-    def timeleft
+    # 既に expire しているデータを抜き出して
+    # Hash 化して返す
+    def expired
       @lock.synchronize do
-        self.__locked_timeleft
+        left, alive, expired = _scan
+        return expired
       end
-    end
-    def __locked_timeleft
-      self.__locked_swipe
-      @period.values.min - self.class.uptime
     end
 
     ################
-    # 誰かが expire するまで待つ
-    def wait_expire
+    # ひとつ以上のデータが expire するのを待って、
+    # expire したデータを Hash 化して返す
+    def wait_expired
       @lock.synchronize do
         loop do
-          left = self.__locked_timeleft
-          (left >= 0) or
-            return 
+          left, alive, expired = _scan
+          expired.length > 0 and
+            return expired
           @cond.wait(@lock, left)
         end
       end
     end
 
     ################
-    # expire したデータ群を Hash で返す
-    def expired
+    # expire してないものを抜き出して each する
+    def each
+      alive = nil
       @lock.synchronize do
-        self.__locked_expired
+        left, alive, expired = _scan
       end
+      alive.each {|key,value| yield(key, value) }
     end
-    def __locked_expired
-      select.locked_swipe
-      now = self.class.uptime
-      self.select {|key,val| @period[key] < now }
-    end
-
   end
 end
