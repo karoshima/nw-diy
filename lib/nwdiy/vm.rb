@@ -38,7 +38,7 @@ module NwDiy
     def addif(ifp)
       # リストなら、リスト内の各インターフェースについて処理する
       ifp.kind_of?(Array) and
-        return ifp.each {|ifp2| self.addif(ifp2)}
+        return ifp.map {|ifp2| self.addif(ifp2)}
 
       # インターフェース名→インターフェース種別ハッシュ
       name = ifname(ifp)
@@ -56,12 +56,13 @@ module NwDiy
           # kill されても静かに終了する
         end
       end
+      @ifs[name]
     end
 
     def delif(ifp)
       # リストなら、リスト内の各インターフェースについて処理する
       ifp.kind_of?(Array) and
-        return ifp.each {|ifp2| self.delif(ifp2)}
+        return ifp.map {|ifp2| self.delif(ifp2)}
 
       name = ifname(ifp)
       @ifs[name] or

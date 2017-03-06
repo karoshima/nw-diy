@@ -6,11 +6,15 @@
 # 著作権については ./LICENSE もご確認ください
 ################################################################
 
-# 必ず最初に読み込むファイル
-# $LOAD_PATH の最初に、このファイル (nwdiy.rb) があるディレクトリを入れて
-# 以降 require や autoload ができるようにする
-
-$LOAD_PATH.unshift(File.dirname(__FILE__))
-
 module NwDiy
+  module Packet
+
+    autoload(:IPv4, 'nwdiy/packet/ipv4')
+    autoload(:ARP,  'nwdiy/packet/arp')
+    autoload(:IPv6, 'nwdiy/packet/ipv6')
+    autoload(:VLAN, 'nwdiy/packet/vlan')
+
+    class QinQ < NwDiy::Packet::VLAN
+    end
+  end
 end

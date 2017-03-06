@@ -19,6 +19,7 @@ module NwDiy
     autoload(:ARP,  'nwdiy/packet/arp')
     autoload(:IPv6, 'nwdiy/packet/ipv6')
     autoload(:VLAN, 'nwdiy/packet/vlan')
+    autoload(:QinQ, 'nwdiy/packet/qinq')
 
     class Ethernet
       include Packet
@@ -29,7 +30,8 @@ module NwDiy
       @@kt = KlassType.new({ VLAN => 0x8100,
                              ARP  => 0x0806,
                              IPv4 => 0x0800,
-                             IPv6 => 0x86dd })
+                             IPv6 => 0x86dd,
+                             QinQ => 0x88a8 })
 
       ################################################################
       # パケット生成
