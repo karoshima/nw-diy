@@ -45,12 +45,13 @@ module NwDiy
       @ifs[name] and
         raise Errno::EEXIST.new("interface #{ifp} already exists")
 
-      nwif = NwDiy::Interface.new(ifp)
-      @ifs[name] = nwif
-      @threads[name] = Thread.new(nwif) do |nwif2|
+      ifp.kind_of?(NwDiy::Interface) or
+        ifp = NwDiy::Interface.new(ifp)
+      @ifs[name] = ifp
+      @threads[name] = Thread.new(ifp) do |ifp2|
         begin
           loop do
-            @pktqueue.push([nwif2, nwif2.recv])
+            @pktqueue.push([ifp2, ifp2.recv])
           end
         ensure
           # kill されても静かに終了する

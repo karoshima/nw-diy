@@ -17,7 +17,7 @@ module NwDiy
       super()
       @klass = NwDiy::Packet::VLAN
       @trunk = nil
-      @access = Array.new
+      @access = Hash.new
       @vid = Hash.new
     end
 
@@ -29,7 +29,7 @@ module NwDiy
     def trunk=(ifp)
       @trunk and
         self.delif(@trunk)
-      @trunk = self.addif(@trunk)
+      @trunk = self.addif(ifp)
     end
 
     # access インターフェース
@@ -37,7 +37,7 @@ module NwDiy
       @access[vid]
     end
     def []=(vid, ifp)
-      (0 < vid) or
+      (0 < vid && vid < 4095) or
         raise Errno::ENODEV.new("vlan-id #{vid} is invalid");
       @access[vid] and
         self.delif(@access[vid])
@@ -64,6 +64,7 @@ module NwDiy
         rpkt.data = vlan.data
         sifp.send(rpkt)
       else
+        # access ポートで受信した場合
         vid = @access.key(rifp) or
           return
         vlan = @klass.new

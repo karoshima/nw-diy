@@ -20,17 +20,7 @@ module NwDiy
     autoload(:VLAN, 'nwdiy/packet/vlan')
     autoload(:QinQ, 'nwdiy/packet/qinq')
 
-    class VLAN
-      include Packet
-      include NwDiy::Linux
-
-      ################################################################
-      # プロトコル番号とプロトコルクラスの対応表
-      @@kt = KlassType.new({ VLAN => 0x8100,
-                             ARP  => 0x0806,
-                             IPv4 => 0x0800,
-                             IPv6 => 0x86dd,
-                             QinQ => 0x88a8 })
+    class VLAN < NwDiy::Packet::Ethernet
 
       ################################################################
       # パケット生成
@@ -47,9 +37,7 @@ module NwDiy
           pkt[0..3] = ''
           self.data = pkt
         when nil
-          @tci = nil
-          @type = nil
-          @data = Binary.new('')
+          @tci = 0
         else
           raise InvalidData.new "What is '#{pkt}'?"
         end
@@ -57,6 +45,9 @@ module NwDiy
 
       ################################################################
       # 各フィールドの値
+      #    tci, pcp, cfi, vid は vlan 独自
+      #    type, data は NwDiy::Packet::Ethernet のものを使う
+      #    NwDiy::Packet::Ethernet の src,dst は使わない
       ################################################################
 
       attr_accessor :tci
@@ -84,6 +75,21 @@ module NwDiy
       end
       def vid
         @tci & 0x0fff
+      end
+
+      ################################################################
+      # その他の諸々
+      def to_pkt
+        @tci.htob16 + self.type.htob16 + @data.to_pkt
+      end
+      def bytesize
+        4 + @data.bytesize
+      end
+      def to_s
+        name = resolv('/etc/ethertypes', self.type4)
+        name.kind_of?(Array) and
+          name = name[0]
+        "[VLAN#{self.vid} #@data]"
       end
 
     end

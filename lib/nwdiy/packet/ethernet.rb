@@ -51,7 +51,7 @@ module NwDiy
         when nil
           @dst = MacAddr.new("\0\0\0\0\0\0")
           @src = MacAddr.new("\0\0\0\0\0\0")
-          @type = nil
+          @type = 0
           @data = Binary.new('')
         else
           raise InvalidData.new "What is '#{pkt}'?"
