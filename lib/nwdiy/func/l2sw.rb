@@ -9,6 +9,7 @@
 
 require_relative '../../nwdiy'
 require 'nwdiy/vm'
+require 'nwdiy/timerhash'
 
 module NwDiy
   class L2Switch < NwDiy::VM
@@ -17,7 +18,7 @@ module NwDiy
     # 詳しくは NWDIY::VM の initialize を参照
   
     def initialize(*args)
-      super(*arg)
+      super(*args)
 
       # L2switch には学習テーブルが必要
       @fdb = NwDiy::TimerHash.new
