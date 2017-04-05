@@ -151,6 +151,7 @@ stuff "clear\n"
 # console 9 北東
 focus next
 screen
+stuff "export PS1='center% '\n"
 stuff "clear\n"
 
 ENDOFSCREENRC
