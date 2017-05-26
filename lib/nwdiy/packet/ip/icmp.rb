@@ -24,8 +24,7 @@ module NwDiy
         # パケット生成
         ################################################################
         def self.cast(pkt = nil)
-          pkt.kind_of?(self) and
-            return pkt
+          return pkt if pkt.kind_of?(self)
           self.new(pkt.respond_to?(:to_pkt) ? pkt.to_pkt : pkt)
         end
 
@@ -34,8 +33,9 @@ module NwDiy
           super()
           case pkt
           when String
-            pkt.bytesize >= 4 or
+            unless pkt.bytesize >= 4
               raise TooShort.new("ICMP", 4, pkt)
+            end
             @type = pkt[0].btoh
             @code = pkt[1].btoh
             @cksum = pkt[2..3].btoh
@@ -57,13 +57,14 @@ module NwDiy
         def type=(val)
           oldtype = @type
           @type = val
-          @data and
+          if @data
             begin
               self.data = @data.to_pkt
             rescue => e
               @type = oldtype
               raise e
             end
+          end
         end
 
         attr_accessor :code
@@ -73,8 +74,8 @@ module NwDiy
         end
         attr_writer :cksum
         def cksum_ok?
-          @auto_compile or
-            calc_cksum(self.pkt_with_cksum(0)) == @cksum
+          return @auto_compile if @auto_compile
+          calc_cksum(self.pkt_with_cksum(0)) == @cksum
         end
 
         attr_reader :data
@@ -101,8 +102,7 @@ module NwDiy
 
           # 値を反映して、データ部にも伝える
           @auto_compile = bool
-          @data.respond_to?(:auto_compile=) and
-            @data.auto_compile = bool
+          @data.auto_compile = bool if @data.respond_to?(:auto_compile=)
         end
 
         ################################################################

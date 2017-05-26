@@ -69,16 +69,18 @@ module NwDiy
       def recv_raw
         loop do
           pkt, ll = @sock.recvfrom(65540)
-          (ll.hatype == ARPHRD_LOOPBACK && ll.pkttype == PACKET_OUTGOING) and
-            redo
+          redo if
+            (ll.hatype == ARPHRD_LOOPBACK && ll.pkttype == PACKET_OUTGOING)
           return pkt
         end
       end
       def send(pkt)
-        pkt.src.to_s == '00:00:00:00:00:00' and
+        if pkt.src.to_s == '00:00:00:00:00:00'
           pkt.src = self.mac
-        pkt.respond_to?(:to_pkt) and
+        end
+        if pkt.respond_to?(:to_pkt)
           pkt = pkt.to_pkt
+        end
         @sock.send(pkt, 0)
       end
       def close

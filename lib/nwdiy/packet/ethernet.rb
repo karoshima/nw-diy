@@ -41,8 +41,7 @@ module NwDiy
         super()
         case pkt
         when String
-          pkt.bytesize > 14 or
-            raise TooShort.new("Ethernet", 14, pkt)
+          raise TooShort.new("Ethernet", 14, pkt) unless pkt.bytesize > 14
           @dst = MacAddr.new(pkt[0..5])
           @src = MacAddr.new(pkt[6..11])
           @type = pkt[12..13].btoh
@@ -79,26 +78,31 @@ module NwDiy
         @type && 46 <= @type && @type <= 1500
       end
       def type=(val)
-        self.ieee802dot3? and
+        if self.ieee802dot3?
           raise InvalidData.new "This 802.3 frame is unavailable to turn into a Ethernet."
-        (1500 < val) or
+        end
+        unless (1500 < val)
           raise InvalidData.new "Ethernet type must be greater than 1500."
+        end
         oldtype = @type
         @type = val
-        @data and
+        if @data
           begin
             self.data = @data.to_pkt
           rescue => e
             @type = oldtype
             raise e
           end
+        end
         @type
       end
       def length=(val)
-        self.ethernet? and
+        if self.ethernet?
           raise InvalidData.new "This Ethernet frame is unavailable to turn into 802.3 frame."
-        (1500 < val) and
+        end
+        if (1500 < val)
           raise InvalidData.new "802.3 length must be less than 1501"
+        end
         @type = val
       end
       attr_reader :type
@@ -133,8 +137,9 @@ module NwDiy
 
         # 値を反映して、データ部にも伝える
         @auto_compile = bool
-        @data.respond_to?(:auto_compile=) and
+        if @data.respond_to?(:auto_compile=)
           @data.auto_compile = bool
+        end
       end
 
       ################################################################
@@ -147,8 +152,9 @@ module NwDiy
       end
       def to_s
         name = resolv('/etc/ethertypes', self.type4)
-        name.kind_of?(Array) and
+        if name.kind_of?(Array)
           name = name[0]
+        end
         "[Ethernet #@src > #@dst #{name} #@data]"
       end
 

@@ -86,8 +86,9 @@ module NwDiy
     # 数値あるいは文字列から ifindex と ifname を求める
     def ifindexname(arg)
       ifp = NwDiy::IpLink.new[arg]
-      ifp or
+      unless ifp
         raise ArgumentError.new("Unknown device: #{arg}");
+      end
       [ifp.index, ifp.name]
     end
 
@@ -110,10 +111,9 @@ module NwDiy
           file.each do |line|
             line.gsub!(/#.*/, '')
             words = line.split(/\s+/)
-            words.length > 0 or next
+            next unless words.length > 0
             words.each do |w|
-              w.downcase == n2 and
-                return words
+              return words if w.downcase == n2
             end
           end
         end
@@ -137,8 +137,7 @@ class Addrinfo
 
   alias ipproto protocol
   def protocol
-    self.ether? and
-      return self.ethertype
+    return self.ethertype if self.ether?
     self.ipproto
   end
 
@@ -159,7 +158,7 @@ class Addrinfo
   end
 
   def unpack
-    @mac and return @mac
+    return @mac if @mac
     @mac = self.to_sockaddr.unpack("S!nI!S!CCa*")
   end
 end

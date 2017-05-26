@@ -22,8 +22,9 @@ module NwDiy
   class Interface
     @@debug = Hash.new
     def self.debug(hash = nil)
-      hash.kind_of?(Hash) and
+      if hash.kind_of?(Hash)
         @@debug.merge!(hash)
+      end
       @@debug
     end
     def debug(*arg)
@@ -33,8 +34,7 @@ module NwDiy
     ################
     # new 引数はインターフェース名、あるいは情報付与したハッシュ
     def initialize(arg)
-      arg or
-        raise ArgumentError.new("no interface: (nil)");
+      raise ArgumentError.new("no interface: (nil)") unless arg
 
       # インターフェース種別 klass を決める
       if arg.kind_of?(Hash)
@@ -54,9 +54,9 @@ module NwDiy
       when Integer, String, NwDiy::IpLink::IfAddr
         # do nothing
       else
-        if arg.respond_to?(:to_i) and arg.to_i > 0
+        if arg.respond_to?(:to_i) && arg.to_i > 0
           arg = arg.to_i
-        elsif arg.respond_to?(:to_s) and arg.to_s != ''
+        elsif arg.respond_to?(:to_s) && arg.to_s != ''
           arg = arg.to_s
         else
           raise ArgumentError.new("unknown interface name: #{arg}");
@@ -67,8 +67,9 @@ module NwDiy
       unless klass
         klass = NwDiy::Interface::Sock
         begin
-          NwDiy::IpLink.new[arg] and
+          if NwDiy::IpLink.new[arg]
             klass = NwDiy::Interface::Pcap
+          end
         rescue Errno::ENOENT
         end
       end
@@ -97,16 +98,19 @@ module NwDiy
     # socket op
     def recv
       pkt = @dev.recv
-      @@debug[:packet] and
+      if @@debug[:packet]
         puts "Receive packet from #{self}"
+      end
       pkt
     end
     def send(msg)
-      @@debug[:packet] and
+      if @@debug[:packet]
         print "Sending pacaket from #{self} ..."
+      end
       len = @dev.send(msg)
-      @@debug[:packet] and
+      if @@debug[:packet]
         puts " done"
+      end
       len
     end
     def close

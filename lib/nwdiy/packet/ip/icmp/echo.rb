@@ -14,8 +14,7 @@ class NwDiy::Packet::IP::ICMP
     # パケット生成
     ################################################################
     def self.cast(pkt = nil)
-      pkt.kind_of?(self) and
-        return pkt
+      return pkt if pkt.kind_of?(self)
       self.new(pkt.respond_to?(:to_pkt) ? pkt.to_pkt : pkt)
     end
 
@@ -23,8 +22,9 @@ class NwDiy::Packet::IP::ICMP
     def initialize(pkt = nil)
       case pkt
       when String
-        pkt.bytesize >= 8 or
+        unless pkt.bytesize >= 8
           raise TooShort.new("Echo", 8, pkt)
+        end
         @id = pkt[0..1].btoh
         @seq = pkt[2..3].btoh
         pkt[0..3] = ''

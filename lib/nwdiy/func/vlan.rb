@@ -27,8 +27,7 @@ module NwDiy
     # trunk インターフェース
     attr_reader :trunk
     def trunk=(ifp)
-      @trunk and
-        self.delif(@trunk)
+      self.delif(@trunk) if @trunk
       @trunk = self.addif(ifp)
     end
 
@@ -37,11 +36,10 @@ module NwDiy
       @access[vid]
     end
     def []=(vid, ifp)
-      (0 < vid && vid < 4095) or
-        raise Errno::ENODEV.new("vlan-id #{vid} is invalid");
-      @access[vid] and
-        self.delif(@access[vid])
-      ifp or return
+      raise Errno::ENODEV.new("vlan-id #{vid} is invalid") unless
+        (0 < vid && vid < 4095)
+      self.delif(@access[vid]) if @access[vid]
+      return unless ifp
       @access[vid] = self.addif(ifp)
     end
 
@@ -51,22 +49,18 @@ module NwDiy
 
       if (rifp == @trunk)
         # trunk ポートで受信した場合
-        rpkt.kind_of?(NwDiy::Packet::Ethernet) or
-          return
+        return unless rpkt.kind_of?(NwDiy::Packet::Ethernet)
         vlan = rpkt.data
-        vlan.kind_of?(NwDiy::Packet::VLAN) or
-          return
-        vlan.cfi and
-          return
+        return unless vlan.kind_of?(NwDiy::Packet::VLAN)
+        return if vlan.cfi
         sifp = @access[vlan.vid]
-        sifp or
-          return
+        return unless sifp
         rpkt.data = vlan.data
         sifp.send(rpkt)
       else
         # access ポートで受信した場合
-        vid = @access.key(rifp) or
-          return
+        vid = @access.key(rifp)
+        return unless vid
         vlan = @klass.new
         vlan.vid = vid
         vlan.data = rpkt.data

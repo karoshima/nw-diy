@@ -22,8 +22,7 @@ module NwDiy
       def initialize(pkt = nil)
         case pkt
         when String
-          pkt.bytesize >= 28 or
-            raise TooShort.new("ARP", 28, pkt)
+          raise TooShort.new("ARP", 28, pkt) unless pkt.bytesize >= 28
           @hard = pkt[0..1].btoh
           @prot = pkt[2..3].btoh
           @hlen = pkt[4].btoh

@@ -34,12 +34,9 @@ module NwDiy
           return
         end
         match = /^(\h\h?):(\h\h?):(\h\h?):(\h\h?):(\h\h?):(\h\h?)$/.match(addr)
-        match or
-          match = /^(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)$/.match(addr)
-        match or
-          match = /^(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)$/.match(addr)
-        match or
-          raise ArgumentError.new("invalid MAC addr: #{addr}")
+        match = /^(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)$/.match(addr) unless match
+        match = /^(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)$/.match(addr) unless match
+        raise ArgumentError.new("invalid MAC addr: #{addr}") unless match
         @addr = match[1..6].map{|h|h.hex}.pack('C6')
       end
 

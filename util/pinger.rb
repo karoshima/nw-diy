@@ -29,15 +29,18 @@ module NwDiy
 
     def initialize(ifp, localip)
       @ifp = ifp.kind_of?(NwDiy::Interface) ? ifp : NwDiy::Interface.new(ifp)
-      @ifp.local or @ifp.local(NwDiy::Packet::MacAddr.new(:local))
+      unless @ifp.local
+        @ifp.local(NwDiy::Packet::MacAddr.new(:local))
+      end
       @localip = localip.kind_of?(IPAddr) ? localip : IPAddr.new(localip, Socket::AF_INET)
     end
 
     attr_reader :ifp, :localip
 
     def ping(addr)
-      addr.kind_of?(IPAddr) or
+      unless addr.kind_of?(IPAddr)
         addr = IPAddr.new(addr, Socket::AF_INET)
+      end
       req = NwDiy::Packet::Ethernet.new
       req.dst = self.arpResolve(addr)
       req.src = @ifp.local
@@ -50,14 +53,10 @@ module NwDiy
       @ifp.send(req)
       loop do
         res = @ifp.recv
-        self.forme?(res, req.dst, addr) or
-          next
-        res.data.is_a?(NwDiy::Packet::IPv4) or
-          next
-        res.data.data.is_a?(NwDiy::Packet::IP::ICMP4) or
-          next
-        res.data.data.data.is_a?(NwDiy::Packet::IP::ICMP::EchoReply) or
-          next
+        next unless self.forme?(res, req.dst, addr)
+        next unless res.data.is_a?(NwDiy::Packet::IPv4)
+        next unless res.data.data.is_a?(NwDiy::Packet::IP::ICMP4)
+        next unless res.data.data.data.is_a?(NwDiy::Packet::IP::ICMP::EchoReply)
         unless res.data.cksum_ok?
           puts "BAD CHECKSUM"
           next
@@ -67,8 +66,7 @@ module NwDiy
     end
 
     def arpResolve(addr)
-      @mactable and @mactable[addr.to_s] and
-        return @mactable[addr.to_s]
+      return @mactable[addr.to_s] if @mactable && @mactable[addr.to_s]
       req = NwDiy::Packet::Ethernet.new
       req.dst = NwDiy::Packet::MacAddr.new('ff-ff-ff-ff-ff-ff')
       req.src = @ifp.local
@@ -80,14 +78,12 @@ module NwDiy
       @ifp.send(req)
       loop do
         res = @ifp.recv
-        (res.type == 0x0806) or
-          next
-        res.data.response? or
-          next
-        self.forme?(res, nil, addr) or
-          next
-        @mactable or
+        next unless (res.type == 0x0806)
+        next unless res.data.response?
+        next unless self.forme?(res, nil, addr)
+        unless @mactable
           @mactable = Hash.new
+        end
         return @mactable[addr.to_s] = res.data.sndmac
       end
     end
@@ -95,8 +91,7 @@ module NwDiy
     def pong
       loop do
         eth = @ifp.recv
-        self.forme?(eth) or
-          next
+        next unless self.forme?(eth)
 
         case eth.type
         when 0x0806
@@ -111,8 +106,9 @@ module NwDiy
           eth.data.tgtip4 = eth.data.sndip4
           eth.data.sndmac = @ifp.local
           eth.data.sndip4 = @localip
-          NwDiy::Interface.debug[:packet] and
+          if NwDiy::Interface.debug[:packet]
             puts "DEBUG: #{@ifp}.send(#{eth})"
+          end
           @ifp.send(eth)
         when 0x0800
           unless (eth.data.proto == 1)
@@ -134,8 +130,9 @@ module NwDiy
           eth.dst = eth.src
           eth.src = @ifp.local
           puts eth
-          NwDiy::Interface.debug[:packet] and
+          if NwDiy::Interface.debug[:packet]
             puts "DEBUG: #{@ifp}.send(#{eth})"
+          end
           @ifp.send(eth)
         else
           puts "ignore ether.type = #{eth.type4} != IP,ARP"

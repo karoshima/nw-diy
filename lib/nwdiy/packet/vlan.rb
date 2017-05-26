@@ -30,8 +30,7 @@ module NwDiy
         super()
         case pkt
         when String
-          pkt.bytesize > 4 or
-            raise TooShort.new("VLAN", 4, pkt)
+          raise TooShort.new("VLAN", 4, pkt) unless pkt.bytesize > 4
           @tci = pkt[0..1].btoh
           @type = pkt[2..3].btoh
           pkt[0..3] = ''
@@ -87,8 +86,9 @@ module NwDiy
       end
       def to_s
         name = resolv('/etc/ethertypes', self.type4)
-        name.kind_of?(Array) and
+        if name.kind_of?(Array)
           name = name[0]
+        end
         "[VLAN#{self.vid} #@data]"
       end
 

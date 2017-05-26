@@ -19,7 +19,7 @@ module NwDiy
       begin
         `ip link`.gsub(/\n\s+/, ' ').lines.each do |line|
           dummy, index, name = *(/^(\d+): ([^:@]+)/.match(line))
-          index or next
+          next unless index
           ifa = NwDiy::IpLink::IfAddr.new(index, name)
           @index[index.to_i] = ifa;
           @name[name] = ifa;
@@ -27,7 +27,7 @@ module NwDiy
         end
         `ip addr`.gsub(/\n\s+/, ' ').lines.each do |line|
           dummy, index = *(/^(\d+):/.match(line))
-          index or next
+          next unless index
           ifa = @index[index.to_i]
           ifa.parse_addr(line)
         end
@@ -39,14 +39,10 @@ module NwDiy
       @index.length
     end
     def [](key)
-      key.kind_of?(Integer) and
-        return @index[key]
-      key.kind_of?(String) and
-        return @name[key]
-      key.respond_to?(:to_i) and
-        return @index[key.to_i]
-      key.respond_to?(:to_s) and
-        return @index[key.to_s]
+      return @index[key] if key.kind_of?(Integer)
+      return @name[key] if key.kind_of?(String)
+      return @index[key.to_i] if key.respond_to?(:to_i)
+      return @index[key.to_s] if key.respond_to?(:to_s)
       nil
     end
     def each
@@ -89,12 +85,9 @@ module NwDiy
         @index
       end
       def addr(type = '')
-        type.match(/ipv4/i) and
-          return @ipv4
-        type.match(/ipv6/i) and
-          return @ipv6
-        type.match(/./) and
-          raise ArgumentError.new('"ipv4" or "ipv6" are available.');
+        return @ipv4 if type.match(/ipv4/i)
+        return @ipv6 if type.match(/ipv6/i)
+        raise ArgumentError.new('"ipv4" or "ipv6" are available.') if type.match(/./)
         return @ipv4 + @ipv6
       end
     end

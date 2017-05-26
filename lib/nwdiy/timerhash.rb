@@ -82,12 +82,9 @@ module NwDiy
     # Hash と同様に [] で参照する
     def [](key)
       @lock.synchronize do
-        @data[key] or
-          return nil
-        self.class.uptime <= @data[key][:expire] and
-          return @data[key][:value]
-        @autodelete and
-          @data.delete(key)
+        return nil unless @data[key]
+        return @data[key][:value] if self.class.uptime <= @data[key][:expire]
+        @data.delete(key) if @autodelete
         return nil
       end
     end
@@ -135,8 +132,7 @@ module NwDiy
     #    nil              そもそもそんなキーは持っていない or 寿命が尽きている
     def get_age(key)
       @lock.synchronize do
-        @data[key] or
-          return nil
+        return nil unless @data[key]
         remains = @data[key][:expire] - self.class.uptime
         return remains >= 0 ? remains : nil
       end
@@ -149,7 +145,7 @@ module NwDiy
     # 2. 有効なデータ
     # 3. 掃除されたデータ
     def _scan
-      @lock.locked? or raise "NOT LOCKED"
+      raise "NOT LOCKED" unless @lock.locked?
       uptime = self.class.uptime
       left = Float::INFINITY
       alive = Hash.new
@@ -157,15 +153,15 @@ module NwDiy
       @data.each do |key,struct|
         remains = struct[:expire] - uptime
         if remains >= 0
-          remains < left and
+          if remains < left
             left = remains
+          end
           alive[key] = struct[:value]
         else
           expired[key] = struct[:value]
         end
       end
-      @autodelete or
-        expired = Hash.new
+      expired = Hash.new unless @autodelete
       return [left, alive, expired]
     end
 
@@ -187,8 +183,7 @@ module NwDiy
       @lock.synchronize do
         loop do
           left, alive, expired = _scan
-          expired.length > 0 and
-            return expired
+          return expired if expired.length > 0
           @cond.wait(@lock, left)
         end
       end

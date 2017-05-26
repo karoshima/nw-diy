@@ -27,11 +27,13 @@ describe NwDiy::L2Switch, 'を作るとき' do
     @fxp0.send(@pkt)
     sleep(0.01)
     expect(@fxp1.recv_ready?).to be true
-    @fxp1.recv_ready? and
+    if @fxp1.recv_ready?
       expect(@fxp1.recv.data.to_pkt).to eq "Hello"
+    end
     expect(@fxp2.recv_ready?).to be true
-    @fxp2.recv_ready? and
+    if @fxp2.recv_ready?
       expect(@fxp2.recv.data.to_pkt).to eq "Hello"
+    end
   end
 
   it 'floods a packet with unknown destination' do
@@ -40,11 +42,13 @@ describe NwDiy::L2Switch, 'を作るとき' do
     @fxp1.send(@pkt)
     sleep(0.01)
     expect(@fxp0.recv_ready?).to be true
-    @fxp0.recv_ready? and
+    if @fxp0.recv_ready?
       expect(@fxp0.recv.data.to_pkt).to eq "Hello"
+    end
     expect(@fxp2.recv_ready?).to be true
-    @fxp2.recv_ready? and
+    if @fxp2.recv_ready?
       expect(@fxp2.recv.data.to_pkt).to eq "Hello"
+    end
   end
 
   it 'forward a packet with remembered destination' do
@@ -54,7 +58,8 @@ describe NwDiy::L2Switch, 'を作るとき' do
     sleep(0.01)
     expect(@fxp0.recv_ready?).to be false
     expect(@fxp1.recv_ready?).to be true
-    @fxp1.recv_ready? and
+    if @fxp1.recv_ready?
       expect(@fxp1.recv.data.to_pkt).to eq "Hello"
+    end
   end
 end

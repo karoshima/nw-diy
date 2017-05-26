@@ -35,13 +35,16 @@ module NwDiy
         super()
         case pkt
         when String
-          pkt.bytesize >= 20 or
+          unless pkt.bytesize >= 20
             raise TooShort.new("IPv4", 20, pkt)
+          end
           @vhl = pkt[0].btoh
-          self.version == 4 or
+          unless self.version == 4
             raise InvalidData.new "IPv4 version must be 4, but it comes #{self.version}."
-          self.hlen >= 5 or
+          end
+          unless self.hlen >= 5
             raise InvalidData.new "IPv4 header length must be 5(20byte), but it comes #{self.hlen}."
+          end
           @tos = pkt[1].btoh
           @length = pkt[2..3].btoh
           @id = pkt[4..5].btoh
@@ -182,8 +185,9 @@ module NwDiy
 
         # 値を反映して、データ部にも伝える
         @auto_compile = bool
-        @data.respond_to?(:auto_compile=) and
+        if @data.respond_to?(:auto_compile=)
           @data.auto_compile = bool
+        end
       end
 
       ################################################################
@@ -210,8 +214,9 @@ module NwDiy
 
       def to_s
         name = resolv('/etc/protocols', @proto)
-        name.kind_of?(Array) and
+        if name.kind_of?(Array)
           name = name[0]
+        end
         "[IPv4 #@src > #@dst #{name} #@data]"
       end
     end

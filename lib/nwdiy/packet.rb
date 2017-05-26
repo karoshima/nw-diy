@@ -68,8 +68,7 @@ module NwDiy
     class KlassType
       # 変換テーブルを作っとく
       def initialize(hash)
-        hash.kind_of?(Hash) or
-          raise "Illegal hash data #{hash}"
+        raise "Illegal hash data #{hash}" unless hash.kind_of?(Hash)
         @type = Hash.new
         @klass = Hash.new(Binary)
         hash.each do |key,val|
@@ -85,7 +84,9 @@ module NwDiy
 
       # データからタイプ値を求める
       def type(klass, nomatch = nil)
-        klass.kind_of?(Class) or klass = klass.class
+        unless klass.kind_of?(Class)
+          klass = klass.class
+        end
         @type[klass] || nomatch || 0
       end
 
@@ -104,8 +105,9 @@ module NwDiy
     # チェックサム計算する with 与えられた複数のバッファ
     def calc_cksum(*bufs)
       sum = bufs.inject(0) do |sum2,buf|
-        (buf.length % 2 == 1) and
+        if (buf.length % 2 == 1)
           buf += "\x00"
+        end
         buf.unpack("n*").inject(sum2, :+)
       end
       sum = (sum & 0xffff) + (sum >> 16) while sum > 0xffff;

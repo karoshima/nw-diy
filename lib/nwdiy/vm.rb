@@ -28,25 +28,25 @@ module NwDiy
     end
 
     def ifname(ifp)
-      ifp.kind_of?(Hash) and
-        return ifp[:name]
-      ifp.kind_of?(NwDiy::Interface) and
-        return ifp.to_s
-      ifp
+      return ifp[:name] if ifp.kind_of?(Hash)
+      return ifp.to_s if ifp.kind_of?(NwDiy::Interface)
+      return ifp
     end
 
     def addif(ifp)
       # リストなら、リスト内の各インターフェースについて処理する
-      ifp.kind_of?(Array) and
+      if ifp.kind_of?(Array)
         return ifp.map {|ifp2| self.addif(ifp2)}
+      end
 
       # インターフェース名→インターフェース種別ハッシュ
       name = ifname(ifp)
-      @ifs[name] and
+      if @ifs[name]
         raise Errno::EEXIST.new("interface #{ifp} already exists")
-
-      ifp.kind_of?(NwDiy::Interface) or
+      end
+      unless ifp.kind_of?(NwDiy::Interface)
         ifp = NwDiy::Interface.new(ifp)
+      end
       @ifs[name] = ifp
       @threads[name] = Thread.new(ifp) do |ifp2|
         begin
@@ -62,12 +62,14 @@ module NwDiy
 
     def delif(ifp)
       # リストなら、リスト内の各インターフェースについて処理する
-      ifp.kind_of?(Array) and
+      if ifp.kind_of?(Array)
         return ifp.map {|ifp2| self.delif(ifp2)}
+      end
 
       name = ifname(ifp)
-      @ifs[name] or
+      unless @ifs[name]
         raise Errno::ENOENT.new("interfacd #{ifp} does not exist")
+      end
 
       @threads[name].kill.join
       @threads.delete(name)

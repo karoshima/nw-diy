@@ -32,11 +32,13 @@ module NwDiy
         super()
         case pkt
         when String
-          pkt.bytesize >= 40 or
+          unless pkt.bytesize >= 40
             raise TooShort.new("IPv6", 40, pkt)
+          end
           @vtf = pkt[0..3].btoh
-          self.version == 6 or
+          unless self.version == 6
             raise InvalidData.new "IPv6 version must be 6, but it comes #{self.version}."
+          end
           @length = pkt[4..5].btoh
           @next = pkt[6].btoh
           @hlim = pkt[7].btoh
@@ -85,13 +87,14 @@ module NwDiy
       def next=(val)
         oldnext = @next
         @next = val
-        @data and
+        if @data
           begin
             self.data = @data.to_pkt
           rescue => e
             @next = oldnext
             raise e
           end
+        end
       end
       attr_reader :next
 
@@ -130,8 +133,9 @@ module NwDiy
 
         # 値を反映して、データ部にも伝える
         @auto_compile = bool
-        @data.respond_to?(:auto_compile=) and
+        if @data.respond_to?(:auto_compile=)
           @data.auto_compile = bool
+        end
       end
 
       ################################################################
@@ -152,8 +156,9 @@ module NwDiy
 
       def to_s
         name = resolv('/etc/protocols', @next)
-        name.kind_of?(Array) and
+        if name.kind_of?(Array)
           name = name[0]
+        end
         "[IPv6 #@src > #@dst #{name} #@data]"
       end
     end

@@ -25,11 +25,11 @@ module NwDiy
         bytesize
       end
       def self.recv_sock(sock)
-        len = sock.read(4) or
-          raise EOFError
+        len = sock.read(4)
+        raise EOFError unless len
         buflen, = len.unpack("N")
-        buf = sock.read(buflen) or
-          raise EOFError
+        buf = sock.read(buflen)
+        raise EOFError unless buf
         Marshal.load(buf)
       end
 
@@ -50,7 +50,7 @@ module NwDiy
           retry
         end
         self.class.send_sock(sock, name)
-        @sock and @sock.close
+        @sock.close if @sock
         @sock = sock
       end
 
@@ -107,8 +107,7 @@ module NwDiy
         loop do
           recv, = IO.select([@listen] + @name2ifp.values.flatten)
           recv.each do |ifp|
-            ifp.ready? or
-              next
+            next unless ifp.ready?
             if (ifp == @listen)
               begin
                 newifp = ifp.accept
@@ -116,33 +115,39 @@ module NwDiy
                 name = NwDiy::Interface::Sock.recv_sock(newifp)
                 @name2ifp[name] << newifp
                 @ifp2name[newifp.fileno] = name
-                NwDiy::Interface.debug[:packet] and
+                if NwDiy::Interface.debug[:packet]
                   puts "SockServer: #{name}: new client"
+                end
               rescue Errno::EAGAIN, Errno::EINTR => e
                 # retry
               end
             else
               name = @ifp2name[ifp.fileno]
-              NwDiy::Interface.debug[:packet] and
+              if NwDiy::Interface.debug[:packet]
                 puts "SockServer: #{name}: #{Thread.current}"
+              end
               begin
                 pkt = NwDiy::Interface::Sock.recv_sock(ifp)
-                NwDiy::Interface.debug[:packet] and
+                if NwDiy::Interface.debug[:packet]
                   puts "    new Packet arrives"
+                end
                 selected = IO.select([], @name2ifp[name] - [ifp], [], 0)
                 if selected
                   selected[1].each do |dstifp|
                     NwDiy::Interface::Sock.send_sock(dstifp, pkt)
-                    NwDiy::Interface.debug[:packet] and
+                    if NwDiy::Interface.debug[:packet]
                       puts "SockServer: #{@ifp2name[dstifp.fileno]}: sent"
+                    end
                   end
                 else
-                  NwDiy::Interface.debug[:packet] and
+                  if NwDiy::Interface.debug[:packet]
                     puts "    WARNING: a packet is sent to monopole ethernet."
+                  end
                 end
               rescue EOFError
-                NwDiy::Interface.debug[:packet] and
+                if NwDiy::Interface.debug[:packet]
                   puts "    destroyed client"
+                end
                 name = @ifp2name.delete(ifp.fileno)
                 @name2ifp[name].delete(ifp)
                 ifp.close

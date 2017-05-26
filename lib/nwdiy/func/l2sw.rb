@@ -32,8 +32,9 @@ module NwDiy
       rifp, rpkt = self.recv    # パケットを受信する
 
       # 送信元 MAC と受信インターフェースを覚える
-      rpkt.src.unicast? and
+      if rpkt.src.unicast?
         @fdb[rpkt.src] = rifp
+      end
 
       # 宛先 MAC がユニキャストであれば
       # その宛先 MAC で送信インターフェースを探す
@@ -52,8 +53,7 @@ module NwDiy
       # 転送先インターフェースが分からない場合は
       # 全てのインターフェースに転送する
       self.iflist.each do |sifp|
-        (sifp == rifp) or
-          sifp.send(rpkt)
+        sifp.send(rpkt) if (sifp != rifp)
       end
     end
 

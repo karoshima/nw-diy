@@ -26,7 +26,7 @@ module NwDiy
       end
 
       def debug(*arg)
-        @debug and puts arg
+        puts arg if @debug
       end
 
       # NWDIY アプリからの接続を待ち受けて

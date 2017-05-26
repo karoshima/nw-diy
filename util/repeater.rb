@@ -30,8 +30,9 @@ module NwDiy
         rifp, rpkt = self.recv               # パケットを受信したら
         puts "#{rifp} => #{rpkt}"            # 表示してから
         self.iflist.each do |ifp|            # vm のインターフェースのうち
-          (ifp == rifp) or                   # 受信インターフェース以外に
+          unless (ifp == rifp)               # 受信インターフェース以外に
             ifp.send(rpkt)                   # パケットを送信する
+          end
         end
       end
     end
