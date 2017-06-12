@@ -5,6 +5,32 @@
 # 本ツールは Apache License 2.0 ライセンスで公開します。
 # 著作権については ./LICENSE もご確認ください
 ################################################################
+#
+# ICMP パケットの処理
+#
+# icmp = NwDiy::Packet::IP::ICMP.new
+#    初期化された ICMP フレームを作成します。
+#
+# icmp = NwDiy::Packet::IP::ICMP.new(バイナリデータ)
+#    バイナリデータをパケットデータとして読み込み、
+#    ICMP パケットを作成します。
+#
+# icmp.type, icmp.code
+#    ICMP パケットの各フィールドを読み書きします。
+#
+# icmp.data
+#    ICMP パケットのデータ部 (type 毎に異なる部分) を読み書きします。
+#
+# icmp.bytesize
+#    ICMP パケットのバイト長を返します
+# 
+# icmp.to_pkt
+#    ICMP パケットのバイナリデータ化します
+#
+# icmp.to_s
+#    ICMP パケットをを可読化します
+#
+################################################################
 
 module NwDiy
   module Packet

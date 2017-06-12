@@ -5,6 +5,35 @@
 # 本ツールは Apache License 2.0 ライセンスで公開します。
 # 著作権については ./LICENSE もご確認ください
 ################################################################
+#
+# vlan パケットの処理
+#
+# vlan = NwDiy::Packet::VLAN.new
+#    初期化された VLAN パケットを作成します。
+#
+# vlan = NwDiy::Packet::VLAN.new(バイナリデータ)
+#    バイナリデータをパケットデータとして読み込み、
+#    VLAN パケットを作成します。
+#
+# vlan.pcp, vlan.cfi
+#    VLAN パケットの各フィールドを読み書きします。
+#
+# vlan.vid
+#    VLAN パケットの vlan-id を読み書きします
+#
+# vlan.data
+#    VLAN パケットのデータ部を読み書きします。
+# 
+# vlan.bytesize
+#    IPv6 パケットのバイト長を返します
+# 
+# vlan.to_pkt
+#    IPv6 パケットのバイナリデータ化します
+#
+# vlan.to_s
+#    IPv6 パケットをを可読化します
+#
+################################################################
 
 require_relative '../../nwdiy'
 
@@ -75,6 +104,17 @@ module NwDiy
       def vid
         @tci & 0x0fff
       end
+
+      def data=(val)
+        ktype = @@kt.type(val)
+        if ktype == 0
+          @data = @@kt.class(@type).new(val)
+        else
+          @type = ktype
+          @data = val
+        end
+      end
+      attr_reader :data
 
       ################################################################
       # その他の諸々

@@ -5,6 +5,39 @@
 # 本ツールは Apache License 2.0 ライセンスで公開します。
 # 著作権については ./LICENSE もご確認ください
 ################################################################
+#
+# ICMP echo パケットの処理
+#
+# echo = NwDiy::Packet::IP::ICMP::EchoRequest.new
+#    初期化された ICMP EchoRequest フレームを作成します。
+#
+# echo = NwDiy::Packet::IP::ICMP::EchoReply.new
+#    初期化された ICMP EchoReply フレームを作成します。
+#
+# echo = NwDiy::Packet::IP::ICMP::EchoRequest.new(バイナリデータ)
+#    バイナリデータをパケットデータとして読み込み、
+#    ICMP EchoRequest パケットを作成します。
+#
+# echo = NwDiy::Packet::IP::ICMP::EchoReply.new(バイナリデータ)
+#    バイナリデータをパケットデータとして読み込み、
+#    ICMP EchoReply パケットを作成します。
+#
+# echo.id, echo.seq
+#    ICMP Echo パケットの各フィールドを読み書きします。
+#
+# echo.data
+#    ICMP Echo パケットのデータ部を読み書きします。
+#
+# echo.bytesize
+#    ICMP Echoバイト長を返します
+# 
+# echo.to_pkt
+#    ICMP Echo パケットをバイナリデータ化します
+#
+# echo.to_s
+#    ICMP Echo パケットを可読化します
+#
+################################################################
 
 require 'nwdiy/packet/ip/icmp'
 

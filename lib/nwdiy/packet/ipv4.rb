@@ -5,6 +5,38 @@
 # 本ツールは Apache License 2.0 ライセンスで公開します。
 # 著作権については ./LICENSE もご確認ください
 ################################################################
+#
+# IPv4 パケットの処理
+#
+# ip = NwDiy::Packet::IPv4.new
+#    初期化された IPv4 パケットを作成します。
+#
+# ip = NwDiy::Packet::IPv4.new(バイナリデータ)
+#    バイナリデータをパケットデータとして読み込み、
+#    IPv4 パケットを作成します。
+#
+# ip.version, ip.hlen, ip.tos, ip.length, ip.id, ip.df, ip.more, ip.offset,
+# ip.ttl, ip.proto, ip.cksum, ip.src, ip.dst, ip.option
+#    IPv4 パケットの各フィールドを読み書きします。
+#
+# ip.data
+#    IPv4 パケットのデータ部を読み書きします。
+#
+# ip.cksum_ok?
+#    IPv4 パケットのチェックサムが正しいかどうか返します。
+#    ただし ip.autocompile が真であれば、常に真となります。
+#
+# ip.bytesize
+#    IPv4 パケットのバイト長を返します
+# 
+# ip.to_pkt
+#    IPv4 パケットのバイナリデータ化します
+#
+# ip.to_s
+#    IPv4 パケットをを可読化します
+#
+################################################################
+
 
 require 'ipaddr'
 
