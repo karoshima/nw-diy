@@ -98,8 +98,8 @@ module NwDiy
       def send(pkt)
         self.class.send_sock(@sock, pkt)
       end
-      def recv_ready?
-        @sock.ready?
+      def recv_ready?(timeout=0)
+        !!@sock.wait_readable(timeout)
       end
 
       # サーバーを起動する

@@ -113,8 +113,8 @@ module NwDiy
       def close
         @sock.close
       end
-      def recv_ready?
-        @sock.ready?
+      def recv_ready?(timeout=0)
+        !!@sock.wait_readable(timeout)
       end
 
       ################

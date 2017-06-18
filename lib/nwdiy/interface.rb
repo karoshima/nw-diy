@@ -145,8 +145,8 @@ module NwDiy
     def close
       @dev.close
     end
-    def recv_ready?
-      @dev.recv_ready?
+    def recv_ready?(timeout=0)
+      @dev.recv_ready?(timeout)
     end
   end
 end

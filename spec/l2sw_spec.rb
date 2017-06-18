@@ -18,48 +18,45 @@ describe NwDiy::L2Switch, 'を作るとき' do
     @thread = Thread.new { @sw.run }
 
     @pkt = NwDiy::Packet::Ethernet.new
-    @pkt.data = "Hello"
   end
 
   it 'floods a broadcast packet' do
     @pkt.src = "00:00:00:00:ff:00"
     @pkt.dst = "ff:ff:ff:ff:ff:ff"
+    @pkt.data = "Hello-1"
     @fxp0.send(@pkt)
-    sleep(0.01)
-    expect(@fxp1.recv_ready?).to be true
+    expect(@fxp1.recv_ready?(1)).to be true
     if @fxp1.recv_ready?
-      expect(@fxp1.recv.data.to_pkt).to eq "Hello"
+      expect(@fxp1.recv.data.to_pkt).to eq "Hello-1"
     end
-    expect(@fxp2.recv_ready?).to be true
+    expect(@fxp2.recv_ready?(1)).to be true
     if @fxp2.recv_ready?
-      expect(@fxp2.recv.data.to_pkt).to eq "Hello"
+      expect(@fxp2.recv.data.to_pkt).to eq "Hello-1"
     end
   end
 
-  it 'floods a packet with unknown destination' do
+  it 'floods a packet with unknown destination, and the reply with known destination' do
     @pkt.src = "00:00:00:00:ff:01"
     @pkt.dst = "00:00:00:00:ff:02"
+    @pkt.data = "Hello-2"
     @fxp1.send(@pkt)
-    sleep(0.01)
-    expect(@fxp0.recv_ready?).to be true
+    expect(@fxp0.recv_ready?(1)).to be true
     if @fxp0.recv_ready?
-      expect(@fxp0.recv.data.to_pkt).to eq "Hello"
+      expect(@fxp0.recv.data.to_pkt).to eq "Hello-2"
     end
-    expect(@fxp2.recv_ready?).to be true
+    expect(@fxp2.recv_ready?(1)).to be true
     if @fxp2.recv_ready?
-      expect(@fxp2.recv.data.to_pkt).to eq "Hello"
+      expect(@fxp2.recv.data.to_pkt).to eq "Hello-2"
     end
-  end
 
-  it 'forward a packet with remembered destination' do
-    @pkt.dst = "00:00:00:00:ff:02"
-    @pkt.src = "00:00:00:00:ff:01"
+    @pkt.src = "00:00:00:00:ff:02"
+    @pkt.dst = "00:00:00:00:ff:01"
+    @pkt.data = "Hello-3"
     @fxp2.send(@pkt)
-    sleep(0.01)
-    expect(@fxp0.recv_ready?).to be false
+    expect(@fxp0.recv_ready?(1)).to be false
     expect(@fxp1.recv_ready?).to be true
     if @fxp1.recv_ready?
-      expect(@fxp1.recv.data.to_pkt).to eq "Hello"
+      expect(@fxp1.recv.data.to_pkt).to eq "Hello-3"
     end
   end
 end
