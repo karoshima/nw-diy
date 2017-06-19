@@ -64,8 +64,8 @@ module NwDiy
         Marshal.dump(pkt, @sock)
         pkt.bytesize
       end
-      def recv_ready?
-        @sock.ready?
+      def recv_ready?(timeout=0)
+        !!@sock.wait_readable(timeout)
       end
     end
   end
