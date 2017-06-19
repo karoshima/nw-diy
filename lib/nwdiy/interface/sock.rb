@@ -74,7 +74,12 @@ module NwDiy
           end
           retry
         end
+
+        # インターフェース名をサーバーに登録して ack を貰う
         self.class.send_sock(sock, name)
+        NwDiy::Interface::Sock.recv_sock(sock)
+
+        # sock をインスタンスに登録する
         @sock.close if @sock
         @sock = sock
       end
@@ -133,7 +138,11 @@ module NwDiy
           recv, = IO.select([@listen] + @name2ifp.values.flatten)
           recv.each do |ifp|
             next unless ifp.ready?
+
             if (ifp == @listen)
+              # 新規インターフェースが申告されたら
+              # デーモンインスタンスに登録したうえで
+              # ack を返す
               begin
                 newifp = ifp.accept
                 newifp.autoclose = true
@@ -143,10 +152,14 @@ module NwDiy
                 if NwDiy::Interface.debug[:packet]
                   puts "SockServer: #{name}: new client"
                 end
+                NwDiy::Interface::Sock.send_sock(newifp, name)
               rescue Errno::EAGAIN, Errno::EINTR => e
                 # retry
               end
+
             else
+              # 登録されたインターフェースからパケットが送出されたら
+              # 同じ名称のインターフェースに届ける
               name = @ifp2name[ifp.fileno]
               if NwDiy::Interface.debug[:packet]
                 puts "SockServer: #{name}: #{Thread.current}"
