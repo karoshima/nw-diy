@@ -7,7 +7,7 @@
 ################################################################
 
 require 'nwdiy/iplink'
-require_relative '../util/os'
+require 'nwdiy/os'
 
 if NwDiy::OS.linux?
 

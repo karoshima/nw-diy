@@ -9,8 +9,7 @@
 # NwDiy::OS.linux?   Linux なら真を返す
 # NwDiy::OS.win?     Windows なら真を返す
 
-require_relative '../lib/nwdiy'
-
+require_relative '../nwdiy'
 require 'rbconfig'
 
 module NwDiy::OS

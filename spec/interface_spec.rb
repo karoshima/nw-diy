@@ -8,7 +8,7 @@
 
 require 'nwdiy/interface'
 require 'nwdiy/iplink'
-require_relative '../util/os'
+require 'nwdiy/os'
 
 describe NwDiy::Interface, 'を作るとき' do
   it 'インターフェース名として nil を与えたら、エラー' do
