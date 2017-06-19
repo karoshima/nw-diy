@@ -23,12 +23,14 @@ describe NwDiy::VM, 'を作るとき' do
     expect(r.iflist).to be_empty
   end
 
-  it '実在するインターフェース名を与えたら、そのインターフェースを pcap で開く' do
-    r = NwDiy::VM.new(ifp)
-    expect(r).not_to be_nil
-    expect(r.iflist.size).to be(1)
-    expect(r.iflist[0].class).to be(NwDiy::Interface)
-    expect(r.iflist[0].dev.class).to be(NwDiy::Interface::Pcap).or be(NwDiy::Interface::Proxy)
+  if NwDiy::OS.linux?
+    it '実在するインターフェース名を与えたら、そのインターフェースを pcap で開く' do
+      r = NwDiy::VM.new(ifp)
+      expect(r).not_to be_nil
+      expect(r.iflist.size).to be(1)
+      expect(r.iflist[0].class).to be(NwDiy::Interface)
+      expect(r.iflist[0].dev.class).to be(NwDiy::Interface::Pcap).or be(NwDiy::Interface::Proxy)
+    end
   end
 
   it '実在しないインターフェース名を与えたら、ソケットファイルを作る' do
@@ -39,12 +41,14 @@ describe NwDiy::VM, 'を作るとき' do
     expect(r.iflist[0].dev.class).to be(NwDiy::Interface::Sock).or be(NwDiy::Interface::Proxy)
   end
 
-  it '{type: :pcap, name: <ifp>} を与えたら、そのインターフェースを pcap で開く' do
-    r = NwDiy::VM.new({type: :pcap, name: ifp})
-    expect(r).not_to be_nil
-    expect(r.iflist.size).to be(1)
-    expect(r.iflist[0].class).to be(NwDiy::Interface)
-    expect(r.iflist[0].dev.class).to be(NwDiy::Interface::Pcap).or be(NwDiy::Interface::Proxy)
+  if NwDiy::OS.linux?
+    it '{type: :pcap, name: <ifp>} を与えたら、そのインターフェースを pcap で開く' do
+      r = NwDiy::VM.new({type: :pcap, name: ifp})
+      expect(r).not_to be_nil
+      expect(r.iflist.size).to be(1)
+      expect(r.iflist[0].class).to be(NwDiy::Interface)
+      expect(r.iflist[0].dev.class).to be(NwDiy::Interface::Pcap).or be(NwDiy::Interface::Proxy)
+    end
   end
 
 end

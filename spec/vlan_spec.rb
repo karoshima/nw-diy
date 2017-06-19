@@ -37,7 +37,7 @@ describe NwDiy::VLAN, 'を作るとき' do
 
   it 'can flow un-tagged packet' do
     @vlan0001.send(@eth)
-    expect(@trunk.recv_ready?).to be true
+    expect(@trunk.recv_ready?(1)).to be true
     expect(@vlan0000.recv_ready?).to be false
     expect(@vlan0001.recv_ready?).to be false
     expect(@vlan0002.recv_ready?).to be false
@@ -58,12 +58,12 @@ describe NwDiy::VLAN, 'を作るとき' do
     @eth.data.data = @ip
     @trunk.send(@eth)
     sleep(0.01)
+    expect(@vlan4094.recv_ready?(1)).to be true
     expect(@trunk.recv_ready?).to be false
     expect(@vlan0000.recv_ready?).to be false
     expect(@vlan0001.recv_ready?).to be false
     expect(@vlan0002.recv_ready?).to be false
     expect(@vlan4093.recv_ready?).to be false
-    expect(@vlan4094.recv_ready?).to be true
     expect(@vlan4095.recv_ready?).to be false
     if @vlan4094.recv_ready?
       pkt = @vlan4094.recv
