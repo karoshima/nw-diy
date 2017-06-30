@@ -10,11 +10,9 @@
 #
 ################################################################
 
-require_relative '../nwdiy';
+require_relative '../nwdiy'
 
 require 'socket'
-
-require 'nwdiy/iplink'
 
 ################################################################
 # バイナリデータと uintX_t 数値との相互変換
@@ -85,16 +83,6 @@ module NwDiy
 
     # アプリと root 権限デーモンとのやりとりソケット
     DAEMON_SOCKFILE = '/tmp/.nwdiy_daemon'
-
-    ################
-    # 数値あるいは文字列から ifindex と ifname を求める
-    def ifindexname(arg)
-      ifp = NwDiy::IpLink.new[arg]
-      unless ifp
-        raise ArgumentError.new("Unknown device: #{arg}");
-      end
-      [ifp.index, ifp.name]
-    end
 
     ################
     # sockaddr_ll の操作

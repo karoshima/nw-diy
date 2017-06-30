@@ -7,9 +7,9 @@
 ################################################################
 
 require "nwdiy/vm"
-require "nwdiy/iplink"
+require "nwdiy/interface/iplink"
 
-link = NwDiy::IpLink.new
+link = NwDiy::Interface::IpLink.new
 ifp = (link['lo'] || link['lo0']).to_s
 
 class NwDiy::Interface

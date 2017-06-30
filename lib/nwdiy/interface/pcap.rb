@@ -38,7 +38,7 @@ require_relative '../../nwdiy'
 
 require 'io/wait'
 require 'nwdiy/util'
-require 'nwdiy/iplink'
+require 'nwdiy/interface/iplink'
 require 'nwdiy/packet'
 
 module NwDiy
@@ -57,7 +57,7 @@ module NwDiy
       end
 
       def initialize(name)
-        @index, @name = ifindexname(name)
+        @index, @name = NwDiy::Interface::IpLink.ifindexname(name)
         @sock = Socket.new(PF_PACKET, SOCK_RAW, ETH_P_ALL.htons)
         @sock.bind(pack_sockaddr_ll(@index))
         self.clean
@@ -121,7 +121,7 @@ module NwDiy
       # 自分の MAC アドレスを調べる
       def mac
         unless @mac
-          @mac = NwDiy::IpLink.new[@index].mac
+          @mac = NwDiy::Interface::IpLink.new[@index].mac
         end
         @mac
       end

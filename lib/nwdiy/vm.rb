@@ -32,7 +32,7 @@
 
 require_relative '../nwdiy'
 
-require 'nwdiy/iplink'
+require 'nwdiy/interface/iplink'
 require 'nwdiy/interface'
 
 module NwDiy

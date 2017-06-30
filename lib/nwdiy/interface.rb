@@ -40,7 +40,7 @@ require_relative '../nwdiy'
 
 require 'socket'
 
-require 'nwdiy/iplink'
+require 'nwdiy/interface/iplink'
 require 'nwdiy/interface/pcap'
 require 'nwdiy/interface/sock'
 require 'nwdiy/interface/proxy'
@@ -80,7 +80,7 @@ module NwDiy
 
       # ifindex あるいは ifname を決める
       case arg
-      when Integer, String, NwDiy::IpLink::IfAddr
+      when Integer, String, NwDiy::Interface::IpLink::IfAddr
         # do nothing
       else
         if arg.respond_to?(:to_i) && arg.to_i > 0
@@ -96,7 +96,7 @@ module NwDiy
       unless klass
         klass = NwDiy::Interface::Sock
         begin
-          if NwDiy::IpLink.new[arg]
+          if NwDiy::Interface::IpLink.new[arg]
             klass = NwDiy::Interface::Pcap
           end
         rescue Errno::ENOENT

@@ -7,7 +7,7 @@
 ################################################################
 
 require 'nwdiy/interface'
-require 'nwdiy/iplink'
+require 'nwdiy/interface/iplink'
 require 'nwdiy/os'
 
 describe NwDiy::Interface, 'を作るとき' do
@@ -23,7 +23,7 @@ describe NwDiy::Interface, 'を作るとき' do
 
   if NwDiy::OS.linux?
     it '実在するインターフェース名を与えたら、そのインターフェースを pcap で開く' do
-      link = NwDiy::IpLink.new
+      link = NwDiy::Interface::IpLink.new
       lo = link['lo'] or link[0]
       ifp = NwDiy::Interface.new(lo)
       expect(ifp).not_to be_nil
@@ -37,7 +37,7 @@ describe NwDiy::Interface, 'を作るとき' do
 
   if NwDiy::OS.linux?
     it '{type: :pcap, name: <ifp>} を与えたら、そのインターフェースを pcap で開く' do
-      link = NwDiy::IpLink.new
+      link = NwDiy::Interface::IpLink.new
       lo = link['lo'] or link[0]
       ifp = NwDiy::Interface.new({type: :pcap, name: lo})
       expect(ifp).not_to be_nil
@@ -51,7 +51,7 @@ describe NwDiy::Interface, 'を作るとき' do
 
   if NwDiy::OS.linux?
     it 'pcap にパケットを送ったら、インターフェースから出てくる' do
-      link = NwDiy::IpLink.new
+      link = NwDiy::Interface::IpLink.new
       lo = link['lo']
       ifp = NwDiy::Interface.new(lo)
       pkt = NwDiy::Packet::Ethernet.new
@@ -67,7 +67,7 @@ describe NwDiy::Interface, 'を作るとき' do
 
   if NwDiy::OS.linux?
     it 'インターフェースにパケットを突っ込むと pcap から出てくる' do
-      link = NwDiy::IpLink.new
+      link = NwDiy::Interface::IpLink.new
       lo = link['lo'] or link[0]
       ifp = NwDiy::Interface.new(lo)
       system("ping -c 3 #{lo.addr('IPv4')[0][:addr]} 2>&1 >/dev/null &");
