@@ -53,9 +53,6 @@ module NwDiy
       # /usr/include/linux/if_arp.h
       ARPHRD_LOOPBACK = 772
 
-      # /usr/incluce/netpacket/packet.h
-      PACKET_OUTGOING = 4
-
       def self.packet
         NwDiy::Packet::Ethernet
       end
@@ -101,7 +98,8 @@ module NwDiy
         loop do
           pkt, ll = @sock.recvfrom(65540)
           redo if
-            (ll.hatype == ARPHRD_LOOPBACK && ll.pkttype == PACKET_OUTGOING)
+            (ll.hatype == ARPHRD_LOOPBACK && ll.pkttype == NwDiy::Packet::PACKET_OUTGOING)
+          pkt.recv_pkttype = ll.pkttype
           return pkt
         end
       end

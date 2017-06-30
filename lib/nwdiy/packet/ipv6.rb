@@ -165,6 +165,15 @@ module NwDiy
       end
 
       ################################################################
+      # @recv_pkttype 設定
+      def recv_pkttype=(type)
+        @recv_pkttype = type
+        if @data.respond_to?(:recv_pkttype=)
+          data.recv_pkttype = type
+        end
+      end
+
+      ################################################################
       # その他の諸々
       def to_pkt
         @vtf.htob32 + self.length.htob16 + self.next.htob8 + @hlim.htob8 +

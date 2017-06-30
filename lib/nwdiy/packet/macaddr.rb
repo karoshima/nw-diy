@@ -30,6 +30,10 @@ module NwDiy
           @addr = addr.hton
           return
         end
+        if addr == :global
+          @addr = ([0] + (1..5).map{rand(256)}).pack('C6')
+          return
+        end
         if addr == :local
           @addr = ([2] + (1..5).map{rand(256)}).pack('C6')
           return
@@ -60,6 +64,9 @@ module NwDiy
       end
       def multicast?
         !self.unicast?
+      end
+      def broadcast?
+        @addr == "\xFF\xFF\xFF\xFF\xFF\xFF"
       end
       def global?
         (@addr.unpack('C')[0] & 0x01) == 0

@@ -72,6 +72,17 @@ module NwDiy
     #   自動算出する (真) あるいはしない (偽) を確認する。
     #   あるいは設定する (設定は子クラスそれぞれで定義)
 
+    attr_reader :recv_pkttype
+    #    パケット受信時に指定される、受信種別
+    #    値は以下いずれか
+    #    <netpacket/packet.h> より
+    PACKET_HOST      = 0   # to us.
+    PACKET_BROADCAST = 1   # to all.
+    PACKET_MULTICAST = 2   # to group
+    PACKET_OTHERHOST = 3   # to someone else
+    PACKET_OUTGOING  = 4   # Originated by us
+    PACKET_LOOPBACK  = 5
+
     ################################################################
     # 最初に必要な NWDIY::PKT の子クラスを下記に定義しておく
     autoload(:Binary,   'nwdiy/packet/binary')
