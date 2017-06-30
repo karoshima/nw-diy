@@ -6,7 +6,7 @@
 # 著作権については ./LICENSE もご確認ください
 ################################################################
 #
-# ICMP echo パケットの処理
+# ICMP echo パケットの定義
 #
 # echo = NwDiy::Packet::IP::ICMP::EchoRequest.new
 #    初期化された ICMP EchoRequest フレームを作成します。

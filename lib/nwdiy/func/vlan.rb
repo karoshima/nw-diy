@@ -7,6 +7,11 @@
 ################################################################
 # ruby で綴る VLAN
 # 
+#    1 本の trunk インターフェース に届く VLAN パケットを
+#    vlan-id ごとの access インターフェースに分配します。
+#    また逆に access インターフェースに届く Ethernet パケットに
+#    VLAN にして trunk インターフェースに流します。
+#
 # インスタンス作成方法
 #
 #  vlan = NwDiy::VLAN.new
@@ -81,6 +86,7 @@ module NwDiy
         sifp.send(rpkt)
       else
         # access ポートで受信した場合
+        return unless rpkt.kind_of?(NwDiy::Packet::Ethernet)
         vid = @access.key(rifp)
         return unless vid
         vlan = @klass.new
