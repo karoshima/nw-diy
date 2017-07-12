@@ -4,6 +4,61 @@
 require 'nwdiy'
 
 ################################################################
+# たとえば
+################################################################
+# パケットの送受信
+eth0 = Nwdiy::Cable::Ethernet.new "eth0"
+pkt = eth1.vlan[1].ip["192.0.2.1/24"].vxlan[1].recv
+eth2.vlan[2].ip["192.0.2.2/24"].vxlan[2].send(pkt)
+################
+# フィルター
+filter = Nwdiy::Node::Filter.new
+filter.xxx = yyy # もろもろ設定
+eth0 | filter | eth1
+################
+# 外に出るパケットには source NAT をかける
+# (戻ってくるパケットには NAT 戻しも行なう)
+snat = Nwdiy::Node::Nat.new
+snat.xxx = yyy # もろもろ設定
+eth0 | snat | eth2
+################
+# L2ブリッジ
+# (bridge インスタンスに入ったパケットは
+#  bridge インスタンスに繋がったどれかのインターフェースから送信)
+bridge = Nwdiy::Node::Bridge.new
+eth0 | bridge
+eth1 | bridge
+eth2.vlan[2] | bridge
+eth3.vlan[3].ip["192.0.2.5/24"].vxlan[3] | bridge
+################
+# IPv4ルーティング
+# (route インスタンスに入ったパケットは
+#  そのインスタンスに繋がったどれかのインターフェースから送信)
+route = Nwdiy::Node::Routing4.new
+eth1.ip["192.0.2.1/24"] | route
+eth2.vlan[2].ip["198.51.100.2/24"] | route
+################
+# IPv6ルーティング
+# (ほぼ同上)
+route = NwDiy::Node::Routing6.new
+eth1.ip["2001:db8:0:1::1/64"] | route
+eth2.ip["192.0.2.2/24"].vxlan[2].ip["2001:db8:0:2::2/64"] | route
+# 長いから分けよう
+eth3 = eth1.ip["192.0.2.1/24"].vxlan[3]
+eth3.ip["2001:db8:0:3::3/64"] | route
+################
+# L2 & L3
+# eth1 や eth2 で受信したパケットは
+route = NwDiy::Node::Routing4.new
+bridge = Nwdiy::Node::Bridge.new
+eth1 | bridge.ip["192.0.2.1/24"] | route
+eth2 | bridge
+
+################################################################
+# 詳細
+################################################################
+
+################################################################
 # イーサネットケーブル
 # Nwdiy::Cable::Ethernet
 ################
