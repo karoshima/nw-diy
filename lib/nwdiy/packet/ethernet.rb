@@ -123,5 +123,4 @@ class Nwdiy::Packet::Ethernet
       self.src == other.src && self.type == other.type &&
       self.data == other.data
   end
-
 end

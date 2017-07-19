@@ -37,6 +37,7 @@ class Nwdiy::Func::Ethernet
     rescue Errno::ENOENT, Errno::EPERM
       @dev = Proxy.new(name)
     end
+    @addr = @dev.addr
   end
 
   def ready?
@@ -50,6 +51,15 @@ class Nwdiy::Func::Ethernet
     Nwdiy::Packet::Ethernet.new(@dev.recvpkt)
   end
 
+  attr_reader :addr
+  def addr=(mac)
+    if mac.kind_of?(Nwdiy::Addr::Mac)
+      @addr = mac
+    else
+      @addr = Nwdiy::Addr::Mac.new(mac)
+    end
+  end
+
   ################################################################
   # PF_PACKET ソケットを使ってパケットを送受信します
   class Pcap < Socket
@@ -59,9 +69,9 @@ class Nwdiy::Func::Ethernet
       end
       raise Errno::ENOENT unless link[0]
       @index = link[0].ifindex
-      sockaddr_ll = [AF_PACKET, Nwdiy::ETH_P_ALL, @index].pack("S!nI!x12")
+      @addr = Nwdiy::Addr::Mac.new(link[0].addr.addr)
       super(PF_PACKET, SOCK_RAW, Nwdiy::ETH_P_ALL.htons)
-      self.bind(sockaddr_ll)
+      self.bind(Socket.pack_sockaddr_ll(Nwdiy::ETH_P_ALL, @index))
       self.cleanup_socket
       self.set_promisc
     end
@@ -70,8 +80,10 @@ class Nwdiy::Func::Ethernet
       send(pkt, 0)
     end
     def recvpkt
-      recv(65536)
+      recv(65540)
     end
+
+    attr_reader :addr
 
     protected
 
@@ -136,8 +148,12 @@ class Nwdiy::Func::Ethernet
       end
 
       self.sendpkt(name) # デーモンに name を登録し
-      self.recvpkt       # 登録完了を確認します (ack の内容は不要なので破棄)
+      ack = self.recvpkt # 登録完了を確認します
+
+      @addr = Nwdiy::Addr::Mac.new(ack)
     end
+
+    attr_accessor :addr
 
   end
 
@@ -153,6 +169,7 @@ class Nwdiy::Func::Ethernet
       @listen.setsockopt(:SOCKET, :REUSEADDR, true)
       @name2ifp = Hash.new { |hash,key| hash[key] = Array.new }
       @ifp2name = Hash.new
+      @mac = Hash.new
     end
 
     def run
@@ -203,17 +220,20 @@ class Nwdiy::Func::Ethernet
       if @name2ifp[name].length == 0
         begin
           pfpkt = Pcap.new(name)
-          @name2ifp[name] << pfpkt
           @ifp2name[pfpkt.fileno] = name
+          @name2ifp[name] << pfpkt
+          @mac[name] = pfpkt.addr
           self.debug("open PF_PACKET #{name}")
         rescue Errno::ENOENT, Errno::EPERM => e
+          @mac[name] = Nwdiy::Addr::Mac.new(:local)
           self.debug("open PF_PACKET #{name} => #{e}")
         end
+        self.debug("MAC address = #{@mac[name].inspect}")
       end
       @name2ifp[name] << so
       @ifp2name[so.fileno] = name
       begin
-        so.sendpkt(name)
+        so.sendpkt(@mac[name].to_s)
         self.debug("register socket(#{so.fileno}) in #{name}")
       rescue Errno::ECONNRESET
         self.delsock(so)

@@ -53,11 +53,13 @@ class Nwdiy::Addr::Mac
         match = /^(\h\h?):(\h\h?):(\h\h?):(\h\h?):(\h\h?):(\h\h?)$/.match(mac)
         match = /^(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)$/.match(mac) unless match
         match = /^(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)$/.match(mac) unless match
-        raise Invalid.new("invalid MAC addr: #{addr}") unless match
+        raise InvalidMacAddressError.new("invalid MAC addr: #{addr}") unless match
         @addr = match[1..6].dup.map {|byte| byte.to_i}
       end
-    else
+    when nil
       @addr = [0, 0, 0, 0, 0, 0]
+    else
+      raise InvalidMacAddressError.new("Cannot convert #{mac.class} instance to MAC address")
     end
   end
 
@@ -102,5 +104,7 @@ class Nwdiy::Addr::Mac
     end
   end
   alias == eql?
+
+  class InvalidMacAddressError < Exception; end
 
 end

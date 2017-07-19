@@ -6,6 +6,7 @@
 # 著作権については ./LICENSE もご確認ください
 ################################################################
 
+require "socket"
 require "nwdiy/version"
 
 module Nwdiy
@@ -89,4 +90,52 @@ class Integer
   def htons
     self.htob16.unpack("S")[0]
   end
+end
+
+################################################################
+# sockaddr_ll 拡張
+# (これって Linux 固有っぽい)
+
+################
+# Socket に sockaddr_ll 関連のクラスメソッドを拡張する
+class Socket
+  def self.pack_sockaddr_ll(protocol, ifindex, hatype=0, pkttype=0, addr="")
+    [AF_PACKET, protocol, ifindex, hatype, pkttype, addr.length, addr].
+      pack("S!nI!S!CCa8")
+  end
+
+  def self.unpack_sockaddr_ll(sockaddr)
+    sll = sockaddr.unpack("S!nI!S!CCa*")
+    sll[6] = sll[6][0..sll[5]]
+    sll
+  end
+end
+class << Socket
+  alias :sockaddr_ll :pack_sockaddr_ll
+end
+
+################
+# Addrinfo に sockaddr_ll 関連のインスタンスメソッドを拡張する
+class Addrinfo
+  def packet?
+    self.afamily == Socket::AF_PACKET
+  end
+  def ifindex
+    sll unless @ifindex
+    @ifindex
+  end
+  def hatype
+    sll unless @hatype
+    @hatype
+  end
+  def addr
+    sll unless @addr
+    @addr
+  end
+  def sll
+    raise SocketError("need AF_PACKET address") unless self.packet?
+    fam, proto, @ifindex, @hatype, @pkttype, len, @addr =
+      Socket.unpack_sockaddr_ll(self.to_sockaddr)
+  end
+  protected :sll
 end
