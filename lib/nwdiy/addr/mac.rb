@@ -33,7 +33,7 @@
 # - local?      ローカルアドレスであれば true を返します。
 ################################################################
 
-# required from "nwdiy/addr"
+require "nwdiy/addr"
 
 class Nwdiy::Addr::Mac
   include Nwdiy::Addr

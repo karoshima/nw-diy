@@ -6,6 +6,8 @@
 # 著作権については ./LICENSE もご確認ください
 ################################################################
 
+require "nwdiy"
+
 module Nwdiy::Debug
   @@debug = Hash.new
   def debug(msg)

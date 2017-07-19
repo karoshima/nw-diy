@@ -17,7 +17,7 @@
 # calc_cksum        チェックサムを計算します。
 ################################################################
 
-# required from "nwdiy"
+require "nwdiy"
 
 module Nwdiy::Packet
 

@@ -44,10 +44,10 @@ class Nwdiy::Func::Ethernet
   end
 
   def send(pkt)
-    @dev.sendpkt(pkt)
+    @dev.sendpkt(pkt.to_s)
   end
   def recv
-    @dev.recvpkt
+    Nwdiy::Packet::Ethernet.new(@dev.recvpkt)
   end
 
   ################################################################
@@ -158,7 +158,7 @@ class Nwdiy::Func::Ethernet
     def run
       Thread.abort_on_exception = true
 
-      self.debugging
+      #self.debugging
       self.debug("Start ProxyDaemon")
 
       loop do

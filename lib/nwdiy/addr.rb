@@ -10,8 +10,7 @@
 # ソースコード内に解説してあります。
 ################################################################
 
-# required from "nwdiy"
-require "nwdiy/addr/mac"
+require "nwdiy"
 
 module Nwdiy::Addr
 
@@ -32,5 +31,4 @@ module Nwdiy::Addr
   end
 
   class Invalid < Exception; end  # パケット生成時の内容が変
-  end
 end

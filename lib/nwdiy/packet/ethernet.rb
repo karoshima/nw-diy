@@ -22,7 +22,7 @@
 # そのほか Nwdiy::Packet の各種メソッドも使用可能です
 ################################################################
 
-# required from "nwidy/packet.rb"
+require "nwdiy/packet"
 
 class Nwdiy::Packet::Ethernet
   include Nwdiy::Packet
@@ -36,8 +36,8 @@ class Nwdiy::Packet::Ethernet
     when String
       raise TooShort.new("Ethernet", 14, pkt) unless pkt.bytesize > 14
       dst, src, type, data = pkt.unpack("a6a6na*")
-      @dst = Nwdiy::Addr::Mac(dst)
-      @src = Nwdiy::Addr::Mac(src)
+      @dst = Nwdiy::Addr::Mac.new(dst)
+      @src = Nwdiy::Addr::Mac.new(src)
       @type = type
       if TYPE[@type].kind_of?(Class)
         @data = TYPE[@type].new(pkt)
@@ -86,7 +86,7 @@ class Nwdiy::Packet::Ethernet
   end
   def inspect
     name = Nwdiy::etc(sprintf("%04x", @type))
-    "[Ethernet #@src > #@dst #{name} #@data]"
+    "[Ethernet #{@src.inspect} > #{@dst.inspect} #{name} #{@data.inspect}]"
   end
   def bytesize
     14 + @data.bytesize
