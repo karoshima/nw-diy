@@ -66,7 +66,7 @@ module Nwdiy::Packet
   def self.calc_cksum(*bufs)
     sum = bufs.inject(0) do |bufsum, buf|
       buf += "\x00" if buf.length % 2 == 1
-      bun.unpack("n*").inject(bufsum, :+)
+      buf.unpack("n*").inject(bufsum, :+)
     end
     sum = (sum & 0xffff) + (sum >> 16) while sum > 0xffff;
     sum ^ 0xffff

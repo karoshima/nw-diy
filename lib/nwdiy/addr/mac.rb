@@ -50,9 +50,9 @@ class Nwdiy::Addr::Mac
       if mac.bytesize == 6
         @addr = mac.unpack("C6")
       else
-        match = /^(\h\h?):(\h\h?):(\h\h?):(\h\h?):(\h\h?):(\h\h?)$/.match(addr)
-        match = /^(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)$/.match(addr) unless match
-        match = /^(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)$/.match(addr) unless match
+        match = /^(\h\h?):(\h\h?):(\h\h?):(\h\h?):(\h\h?):(\h\h?)$/.match(mac)
+        match = /^(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)$/.match(mac) unless match
+        match = /^(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)$/.match(mac) unless match
         raise Invalid.new("invalid MAC addr: #{addr}") unless match
         @addr = match[1..6].dup
       end
@@ -91,7 +91,16 @@ class Nwdiy::Addr::Mac
   end
 
   def hash
-    @addr.inject { |hash, byte| (hash << 8) + byte }
+    @addr.inject(0) { |hash, byte| (hash * 0x100) + byte.to_i }
   end
+  def eql?(obj)
+    case obj
+    when Nwdiy::Addr::Mac
+      return self.hash == obj.hash
+    when String
+      return self.hash == Nwdiy::Addr::Mac.new(obj).hash
+    end
+  end
+  alias == eql?
 
 end
