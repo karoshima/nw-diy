@@ -2,6 +2,8 @@
 # -*- mode: ruby; coding: utf-8 -*-
 ################################################################
 
+require "pp"
+
 require "spec_helper"
 require "socket"
 require "rbconfig"
@@ -23,13 +25,18 @@ RSpec.describe Nwdiy::Func::Ethernet do
       expect(eth1).not_to be nil
       eth2 = Nwdiy::Func::Ethernet.new(ifp)
       expect(eth2).not_to be nil
-      expect(eth1.send("Hello world")).not_to be nil
+      spkt = Nwdiy::Packet::Ethernet.new
+      spkt.dst = "00:00:00:00:00:01"
+      spkt.src = "00:00:00:00:00:02"
+      spkt.type = 0x0800
+      spkt.data = "Hello World"
+      expect(eth1.send(spkt)).not_to be nil
       sleep 0.1
-      pkt = Array.new
+      rpkt = Array.new
       while eth2.ready?
-        pkt << eth2.recv
+        rpkt << eth2.recv
       end
-      expect(pkt.include?("Hello world")).to be true
+      expect(rpkt.include?(spkt)).to be true
     end
   end
 end

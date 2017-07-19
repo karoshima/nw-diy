@@ -54,7 +54,7 @@ class Nwdiy::Addr::Mac
         match = /^(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)-(\h\h?)$/.match(mac) unless match
         match = /^(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)\.(\h\h?)$/.match(mac) unless match
         raise Invalid.new("invalid MAC addr: #{addr}") unless match
-        @addr = match[1..6].dup
+        @addr = match[1..6].dup.map {|byte| byte.to_i}
       end
     else
       @addr = [0, 0, 0, 0, 0, 0]

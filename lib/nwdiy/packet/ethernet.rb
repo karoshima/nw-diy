@@ -35,15 +35,7 @@ class Nwdiy::Packet::Ethernet
     case pkt
     when String
       raise TooShort.new("Ethernet", 14, pkt) unless pkt.bytesize > 14
-      dst, src, type, data = pkt.unpack("a6a6na*")
-      @dst = Nwdiy::Addr::Mac.new(dst)
-      @src = Nwdiy::Addr::Mac.new(src)
-      @type = type
-      if TYPE[@type].kind_of?(Class)
-        @data = TYPE[@type].new(pkt)
-      else
-        @data = pkt
-      end
+      self.dst, self.src, self.type, self.data = pkt.unpack("a6a6na*")
     when nil
       @dst = Nwdiy::Addr::Mac.new
       @src = Nwdiy::Addr::Mac.new
@@ -54,8 +46,37 @@ class Nwdiy::Packet::Ethernet
 
   ################
   # パケット内容の設定
-  attr_accessor :dst, :src
-  attr_reader :type, :data
+  attr_reader :dst, :src, :type, :data
+
+  def dst=(obj)
+    @dst = self.to_mac(obj)
+  end
+  def src=(obj)
+    @src = self.to_mac(obj)
+  end
+  def to_mac(obj)
+    case obj
+    when Nwdiy::Addr::Mac
+      return obj
+    when String
+      return Nwdiy::Addr::Mac.new(obj)
+    end
+  end
+  protected :to_mac
+
+  def type=(obj)
+    case @data
+    when nil
+      @type = obj.to_i
+    when String
+      @type = obj.to_i
+      if TYPE[@type].kind_of?(Class)
+        @data = TYPE[@type].new(@data)
+      end
+    else
+      raise "DATA CONVERT IS NOT SUPPORTED, please set classed data."
+    end
+  end
 
   # データ部を設定します。
   # obj が Nwdiy::Packet::XXX 型を持つなら、type もそれに合わせて変更します。
@@ -95,6 +116,12 @@ class Nwdiy::Packet::Ethernet
   # ethernet 形式であれば true を返します。
   def ethernet?
     @type > 1500
+  end
+
+  def ==(other)
+    other.kind_of?(self.class) && self.dst == other.dst &&
+      self.src == other.src && self.type == other.type &&
+      self.data == other.data
   end
 
 end

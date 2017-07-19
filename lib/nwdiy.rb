@@ -43,8 +43,8 @@ module Nwdiy
     end
     def initialize
       for path in ["/etc/ethertypes", "/etc/protocols", "/etc/services",
-                   "/windows/system32/drivers/etc/protocol",
-                   "/windows/system32/drivers/etc/services"]
+                   "c:/windows/system32/drivers/etc/protocol",
+                   "c:/windows/system32/drivers/etc/services"]
         begin
           open(path) do |file|
             file.each do |line|
