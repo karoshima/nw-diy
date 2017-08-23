@@ -8,6 +8,10 @@
 
 require "spec_helper"
 
+require "pp"
+require "socket"
+require "rbconfig"
+
 ################################################################
 # パイプの概要
 ################
@@ -100,13 +104,9 @@ require "spec_helper"
 #
 ################################################################
 
-require "pp"
-require "socket"
-require "rbconfig"
 
-require "spec_helper"
+# パイプそのものより先に、パイプの元になる左右のインターフェースの区別
+# について、func_spec.rb と func.rb で定義と実装と試験をする。
 
-RSpec.describe Nwdiy::Pipe do
-  it "can handle ethernet interface and function" do
-  end
-end
+# パイプそのものより先に、パケットに右行きか左行きかの識別子を設けて、
+# packet_spec.rb と packet.rb で定義と実装と試験をする。

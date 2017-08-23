@@ -32,6 +32,7 @@ class Nwdiy::Packet::Ethernet
   TYPE = Hash.new
 
   def initialize(pkt = nil)
+    super(pkt)
     case pkt
     when String
       raise TooShort.new("Ethernet", 14, pkt) unless pkt.bytesize > 14
@@ -88,16 +89,24 @@ class Nwdiy::Packet::Ethernet
     elsif TYPE[@type].kind_of?(Class)
       @data = TYPE[@type].new(obj)
     else
-      @data = obj
+      @data = Nwdiy::Packet::Binary.new(obj)
     end
-    @data.auto_compile = @auto_compile if @data.respond_to?(:auto_compile=)
+    @data.copy_attributes(self) if @data.respond_to?(:copy_attributes)
   end
 
   ################
-  # 自動計算の設定
-  def auto_compile=(tf)
-    @auto_compile = tf
-    @data.auto_compile = tf if @data.respond_to?(:auto_compile=)
+  # 自動計算や向きの設定
+  def auto_compile=(bool)
+    super(bool)
+    @data.copy_attributes(self) if @data.respond_to?(:copy_attributes)
+  end
+  def direction=(dir)
+    super(dir)
+    @data.copy_attributes(self) if @data.respond_to?(:copy_attributes)
+  end
+  def copy_attributes(outer)
+    super(outer)
+    @data.copy_attributes(self) if @data.respond_to?(:copy_attributes)
   end
 
   ################
