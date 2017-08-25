@@ -8,7 +8,7 @@ require "spec_helper"
 require "socket"
 require "rbconfig"
 
-RSpec.describe Nwdiy::Func::Ethernet do
+RSpec.describe Nwdiy::Interface::Ethernet do
   iflist = ["nwdiy0"]
   if RbConfig::CONFIG["host_os"] =~ /linux/
     ifs = Socket.getifaddrs
@@ -21,7 +21,7 @@ RSpec.describe Nwdiy::Func::Ethernet do
 
   iflist.each do |ifp|
     it "creates Ethernet #{ifp}" do
-      eth1 = Nwdiy::Func::Ethernet.new(ifp)
+      eth1 = Nwdiy::Interface::Ethernet.new(ifp)
       expect(eth1).not_to be nil
       expect(eth1.addr.unicast?).to be true
       expect(eth1.addr.multicast?).to be false
@@ -34,7 +34,7 @@ RSpec.describe Nwdiy::Func::Ethernet do
         #expect(eth1.addr.global?).to be true
         #expect(eth1.addr.local?).to be false
       end
-      eth2 = Nwdiy::Func::Ethernet.new(ifp)
+      eth2 = Nwdiy::Interface::Ethernet.new(ifp)
       expect(eth2).not_to be nil
       expect(eth2.addr.unicast?).to be true
       expect(eth2.addr.multicast?).to be false

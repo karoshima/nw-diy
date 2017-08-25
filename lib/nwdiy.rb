@@ -11,10 +11,12 @@ require "nwdiy/version"
 
 module Nwdiy
 
-  autoload(:Debug,  'nwdiy/debug')
-  autoload(:Func,   'nwdiy/func')
-  autoload(:Addr,   'nwdiy/addr')
-  autoload(:Packet, 'nwdiy/packet')
+  autoload(:Addr,      'nwdiy/addr')
+  autoload(:Debug,     'nwdiy/debug')
+  autoload(:Func,      'nwdiy/func')
+  autoload(:Interface, 'nwdiy/interface')
+  autoload(:Packet,    'nwdiy/packet')
+  autoload(:Pipe,      'nwdiy/pipe')
 
   ################
   # /usr/include on Linux

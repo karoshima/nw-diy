@@ -14,6 +14,6 @@ require "bundler/setup"
 require "nwdiy"
 
 begin
-  Nwdiy::Func::Ethernet::ProxyDaemon.new.run
+  Nwdiy::Interface::Ethernet::ProxyDaemon.new.run
 rescue Interrupt
 end

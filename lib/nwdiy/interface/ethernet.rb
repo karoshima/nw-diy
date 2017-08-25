@@ -5,7 +5,7 @@
 # 本ツールは Apache License 2.0 ライセンスで公開します。
 # 著作権については ./LICENSE もご確認ください
 ################################################################
-# Nwdiy::Func::Ethernet はイーサネットインターフェースです。
+# Nwdiy::Interface::Ethernet はイーサネットインターフェースです。
 # 
 # new 時に以下の引数を与えることができます。
 #
@@ -24,11 +24,11 @@
 
 require "socket"
 
-require "nwdiy/func"
+require "nwdiy/interface"
 require "nwdiy/packet/ethernet"
 
-class Nwdiy::Func::Ethernet
-  include Nwdiy::Func
+class Nwdiy::Interface::Ethernet
+  include Nwdiy::Interface
 
   def initialize(name)
     raise ArgumentError.new("no interface name") unless name

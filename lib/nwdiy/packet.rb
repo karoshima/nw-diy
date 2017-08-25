@@ -17,7 +17,7 @@
 # @direction        パケットの向きを以下いずれかの値で示しています。
 #    :LEFT_TO_RIGHT 左から右へ
 #    :RIGHT_TO_LEFT 右から左へ
-#    :UNKNOWN       不明
+#    nil            不明
 # 
 # @recvtype         パケット受信時の、受信種別
 #    :HOST          自分宛
@@ -52,6 +52,9 @@ module Nwdiy::Packet
     @recvtype = nil
   end
 
+  ################
+  # パケット属性の設定 (詳細はヘッダコメント参照)
+  ################
   attr_accessor :auto_compile
   attr_accessor :direction
   attr_accessor :recvtype
@@ -72,12 +75,6 @@ module Nwdiy::Packet
   # パケット内容の設定
   # def フィールド名= val       パケットのフィールド値を設定します。
   # def フィールド名            パケットのフィールド値を参照します。
-  ################
-
-  ################
-  # 自動計算の設定
-  # def auto_compile = bool     パケットのフィールド自動計算を設定します。
-  # def auto_compile            true なら自動計算します。
   ################
 
   ################

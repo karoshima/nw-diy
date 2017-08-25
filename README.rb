@@ -7,7 +7,7 @@ require 'nwdiy'
 # たとえば
 ################################################################
 # パケットの送受信
-eth0 = Nwdiy::Func::Ethernet.new "eth0"
+eth0 = Nwdiy::Interface::Ethernet.new "eth0"
 pkt = eth1.vlan[1].ip["192.0.2.1/24"].vxlan[1].recv
 eth2.vlan[2].ip["192.0.2.2/24"].vxlan[2].send(pkt)
 ################
@@ -64,10 +64,10 @@ eth2 | bridge
 
 ################################################################
 # イーサネット
-# Nwdiy::Func::Ethernet
+# Nwdiy::Interface::Ethernet
 ################
 # 作成
-eth0 = Nwdiy::Func::Ethernet.new("eth0")
+eth0 = Nwdiy::Interface::Ethernet.new("eth0")
 ################
 # パケット送信
 #    pkt は Nwdiy::Packet::Ethernet のインスタンス
