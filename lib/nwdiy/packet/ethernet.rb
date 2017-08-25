@@ -32,7 +32,7 @@ class Nwdiy::Packet::Ethernet
   TYPE = Hash.new
 
   def initialize(pkt = nil)
-    super(pkt)
+    self.attr_init
     case pkt
     when String
       raise TooShort.new("Ethernet", 14, pkt) unless pkt.bytesize > 14

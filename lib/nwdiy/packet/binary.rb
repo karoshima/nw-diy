@@ -22,7 +22,7 @@ class Nwdiy::Packet::Binary < String
   ################
   # パケットの扱い
   def inspect
-    "[Ethernet #{self.dump}]"
+    "[Binary #{self.dump}]"
   end
   def ==(other)
     (other.kind_of?(self.class) || other.kind_of?(String)) &&
