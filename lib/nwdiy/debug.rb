@@ -11,7 +11,8 @@ require "nwdiy"
 module Nwdiy::Debug
   @@debug = Hash.new
   def debug(msg)
-    puts caller(1)[0] + ": " + msg if @@debug[self.class]
+    caller(1)[0] =~ %r{(lib/nwdiy/.*)$}
+    puts "#{$1}: " + msg if @@debug[self.class]
   end
   def debugging(flag = true)
     @@debug[self.class] = flag
