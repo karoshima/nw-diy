@@ -104,6 +104,10 @@ class Nwdiy::Packet::Ethernet
     super(dir)
     @data.copy_attributes(self) if @data.respond_to?(:copy_attributes)
   end
+  def recvtype=(type)
+    super(type)
+    @data.copy_attributes(self) if @data.respond_to?(:copy_attributes)
+  end
   def copy_attributes(outer)
     super(outer)
     @data.copy_attributes(self) if @data.respond_to?(:copy_attributes)

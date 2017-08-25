@@ -15,10 +15,17 @@
 #                   通常は true ですが、false にすると計算しません。
 #
 # @direction        パケットの向きを以下いずれかの値で示しています。
-#                   :LEFT_TO_RIGHT 左から右へ
-#                   :RIGHT_TO_LEFT 右から左へ
-#                   :UNKNOWN       不明
+#    :LEFT_TO_RIGHT 左から右へ
+#    :RIGHT_TO_LEFT 右から左へ
+#    :UNKNOWN       不明
 # 
+# @recvtype         パケット受信時の、受信種別
+#    :HOST          自分宛
+#    :BROADCAST     物理層ブロードキャストパケット
+#    :MULTICAST     物理層マルチキャストパケット
+#    :OTHERHOST     他人宛パケット
+#    :OUTGOING      自分が出した (ループバックしてきた) パケット
+#
 # copy_attributes   上記のフィールドを引数のパケットから取得します。
 #
 # その他、パケット処理で共通に使う機能をここで提供しています。
@@ -42,10 +49,12 @@ module Nwdiy::Packet
     ################
     @auto_compile = true
     @direction = :UNKNOWN
+    @recvtype = nil
   end
 
   attr_accessor :auto_compile
   attr_accessor :direction
+  attr_accessor :recvtype
   def dir_to_right
     self.direction = :LEFT_TO_RIGHT
   end
@@ -56,6 +65,7 @@ module Nwdiy::Packet
   def copy_attributes(pkt)
     self.auto_compile = pkt.auto_compile if pkt.respond_to?(:auto_compile)
     self.direction    = pkt.direction    if pkt.respond_to?(:direction)
+    self.recvtype     = pkt.recvtype     if pkt.respond_to?(:recvtype)
   end
 
   ################
