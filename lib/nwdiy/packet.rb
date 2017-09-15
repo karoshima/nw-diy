@@ -5,84 +5,83 @@
 # 本ツールは Apache License 2.0 ライセンスで公開します。
 # 著作権については ./LICENSE もご確認ください
 ################################################################
-# Nwdiy::Packet は Nwdiy::Packet::XXX の親モジュールです。
-# ここでは Nwdiy::Packet::XXX が持つメソッドについて
-# ソースコード内に解説してあります。
-#
-# また、各種パケットは下記の属性を持っています。
-#
-# @autocompile      自動計算で求めるべきフィールドの計算を自動的に計算します。
-#                   通常は true ですが、false にすると計算しません。
-#
-# @direction        パケットの向きを以下いずれかの値で示しています。
-#    :LEFT_TO_RIGHT 左から右へ
-#    :RIGHT_TO_LEFT 右から左へ
-#    nil            不明
-# 
-# @recvtype         パケット受信時の、受信種別
-#    :HOST          自分宛
-#    :BROADCAST     物理層ブロードキャストパケット
-#    :MULTICAST     物理層マルチキャストパケット
-#    :OTHERHOST     他人宛パケット
-#    :OUTGOING      自分が出した (ループバックしてきた) パケット
-#
-# copy_attributes   上記のフィールドを引数のパケットから取得します。
-#
-# その他、パケット処理で共通に使う機能をここで提供しています。
-#
-# calc_cksum()      チェックサムを計算します。
-################################################################
 
 require "nwdiy"
 
-module Nwdiy::Packet
+class Nwdiy::Packet
 
-  autoload(:Binary,   'nwdiy/packet/binary')
-  autoload(:Ethernet, 'nwdiy/packet/ethernet')
+  autoload(:Binary, 'nwdiy/packet/binary')
 
   ################################################################
-  # Nwdiy::Packet::XXX に必要なメソッド
+  # サブクラスを定義する
 
-  def attr_init
-    ################
-    # パケットインスタンスの属性を初期化します。
-    ################
-    @auto_compile = true
-    @direction = :UNKNOWN
-    @recvtype = nil
+  def self.def_field(type, name, option = {})
+
+    raise TypeError.new("invalid field name '#{name}'") unless
+      name.kind_of?(Symbol) || name.kind_of?(String)
+    raise TypeError.new("invalid option '#{option}'") unless
+      option.kind_of?(Hash)
+
+    if type.kind_of?(Nwdiy::Packet)
+      # サブクラスに読み書きメソッドを設定する
+      self.class_eval %Q {
+        def #{type}
+          return @field_#{name} if @field_#{name}
+          
+        end
+      }
+    elsif method_defined?(type)
+      
+    end
   end
 
+  ################################################################
+  # サブクラス
   ################
-  # パケット属性の設定 (詳細はヘッダコメント参照)
-  ################
-  attr_accessor :auto_compile
-  attr_accessor :direction
-  attr_accessor :recvtype
-  def dir_to_right
-    self.direction = :LEFT_TO_RIGHT
-  end
-  def dir_to_left
-    self.direction = :RIGHT_TO_LEFT
+  # @initbyte    生成時に指定されたバイト列
+  # @field_###   def_field で設定されたフィールド値
+
+  def initialize(value)
+    case value
+    when String
+      # とりあえず @initbyte に覚えておいて
+      # あとで必要に応じて参照する
+      @initbyte = value
+    when Hash
+      # 各フィールドを設定する
+      # 設定メソッドは def_field 内で定義する
+      @@initbyte = nil
+      value.each {|key,val| self.__send__(key.to_s+"=", val) }
+    else
+      TypeError.new("unsupported data `#{value}'")
+    end
   end
 
-  def copy_attributes(pkt)
-    self.auto_compile = pkt.auto_compile if pkt.respond_to?(:auto_compile)
-    self.direction    = pkt.direction    if pkt.respond_to?(:direction)
-    self.recvtype     = pkt.recvtype     if pkt.respond_to?(:recvtype)
+
+
+    # @@cls_fields[self][name] に収めるハッシュを用意する
+    field = [ index:  @@cls_fields[self].length,
+              pos:    @@cls_bytelen[self],
+              option: option ]
+    if type.kind_of?(Nwdiy::Packet)
+      field[:klass] = type
+    elsif method_defined?(type)
+      field[:method] = type
+    else
+      raise NoMethodError.new(cls)
+    end
+    @@cls_fields[self][name] = field
+    @@cls_fields[self][(name.to_s + "=").to_sym] = name
+
+    # パケットサイズ @@cls_bytelen[self] を更新する
+    if field[:pos] && type.kind_of?(Nwdiy::Packet) && type.bytesize
+      @@cls_bytelen[self] += type.bytesize
+    else
+      @@cls_bytelen[self] = nil
+    end
   end
 
-  ################
-  # パケット内容の設定
-  # def フィールド名= val       パケットのフィールド値を設定します。
-  # def フィールド名            パケットのフィールド値を参照します。
-  ################
 
-  ################
-  # パケットの扱い
-  # def to_s                    パケットをバイナリ化します。
-  # def inspect                 パケットを可視化します。
-  # def bytesize                パケットの長さを返します。
-  ################
 
   ################
   # 複数のバッファからチェックサム計算します。
@@ -97,7 +96,7 @@ module Nwdiy::Packet
 
   ################
   # 例外クラス
-  class TooShort < Exception # パケット生成時のデータ不足
+  class PacketTooShort < Exception # パケット生成時のデータ不足
     def initialize(name, minlen, pkt)
         super "#{name} needs #{minlen} bytes or longer, but the data has only #{pkt.bytesize} bytes."
     end

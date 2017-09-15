@@ -12,20 +12,6 @@
 
 require "nwdiy/packet"
 
-class Nwdiy::Packet::Binary < String
-  include Nwdiy::Packet
-
-  def initialize(pkt = "")
-    super(pkt.to_s)
-  end
-
-  ################
-  # パケットの扱い
-  def inspect
-    "[Binary #{self.dump}]"
-  end
-  def ==(other)
-    (other.kind_of?(self.class) || other.kind_of?(String)) &&
-      super(other)
-  end
+class Nwdiy::Packet::Binary < Nwdiy::Packet
+  def_array :uint8, :data
 end
