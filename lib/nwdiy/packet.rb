@@ -13,73 +13,69 @@ class Nwdiy::Packet
   autoload(:Binary, 'nwdiy/packet/binary')
 
   ################################################################
-  # サブクラスを定義する
+  # サブクラスを定義します
 
-  def self.def_field(type, name, option = {})
+  @@fields = Hash.new
 
-    raise TypeError.new("invalid field name '#{name}'") unless
-      name.kind_of?(Symbol) || name.kind_of?(String)
-    raise TypeError.new("invalid option '#{option}'") unless
-      option.kind_of?(Hash)
+  def self.inherited(subcls)
+    @@fields[subcls] = Array.new
+    @@template[subcls] = ""
+  end
 
-    if type.kind_of?(Nwdiy::Packet)
-      # サブクラスに読み書きメソッドを設定する
+  def self.def_field(type, *fields)
+
+    raise TypeError.new("invalid type name '#{type}'") unless
+      type.kind_of?(Nwdiy::Packet) || type == :uint8 ||
+      type == :uint16 || type == :uint32 || type == :uint64
+
+    fields.each do |field|
+      raise TypeError.new("invalid field name '#{name}'") unless
+        name.kind_of?(Symbol)
+    end
+
+    fields.each do |field|
+
+      # サブクラスに定義順にフィールドを並べます
+      @@fields[self] << [type, name]
+      @@template[self] += type.template
+
+      # サブクラスに読み書きメソッドを設定します
       self.class_eval %Q {
-        def #{type}
-          return @field_#{name} if @field_#{name}
-          
+        @#{field}
+        def #{field}
+          @#{field}
+        end
+        def #{field}=(data)
+          @#{field} = #{type}.new(data)
         end
       }
-    elsif method_defined?(type)
-      
     end
   end
 
   ################################################################
-  # サブクラス
-  ################
-  # @initbyte    生成時に指定されたバイト列
-  # @field_###   def_field で設定されたフィールド値
+  # サブクラスのインスタンスを生成します
 
-  def initialize(value)
-    case value
-    when String
-      # とりあえず @initbyte に覚えておいて
-      # あとで必要に応じて参照する
-      @initbyte = value
+  def initialize(data)
+    case data
     when Hash
-      # 各フィールドを設定する
-      # 設定メソッドは def_field 内で定義する
-      @@initbyte = nil
-      value.each {|key,val| self.__send__(key.to_s+"=", val) }
-    else
-      TypeError.new("unsupported data `#{value}'")
+      data.each do |var, val|
+        self.instance_variable_set(var, val)
+      end
+    when String
+      fixed = data.unpack(@@template[self])
+      @@fields[self].each do |tf|
+        type, field = tf
+        self.instance_variable_set(field, type.new(fixed.shift))
+      end
+      if self.respond_to?(:parse_data)
+        self.parse_data(fixed.shift)
+      end
     end
   end
 
-
-
-    # @@cls_fields[self][name] に収めるハッシュを用意する
-    field = [ index:  @@cls_fields[self].length,
-              pos:    @@cls_bytelen[self],
-              option: option ]
-    if type.kind_of?(Nwdiy::Packet)
-      field[:klass] = type
-    elsif method_defined?(type)
-      field[:method] = type
-    else
-      raise NoMethodError.new(cls)
-    end
-    @@cls_fields[self][name] = field
-    @@cls_fields[self][(name.to_s + "=").to_sym] = name
-
-    # パケットサイズ @@cls_bytelen[self] を更新する
-    if field[:pos] && type.kind_of?(Nwdiy::Packet) && type.bytesize
-      @@cls_bytelen[self] += type.bytesize
-    else
-      @@cls_bytelen[self] = nil
-    end
-  end
+  ################################################################
+  # 以上ここまで未検証の書きかけ
+  ################################################################
 
 
 
