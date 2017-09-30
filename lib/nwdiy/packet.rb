@@ -16,10 +16,13 @@ class Nwdiy::Packet
   # サブクラスを定義します
 
   @@fields = Hash.new
+  @@template = Hash.new
+  @@value = Hash.new
 
   def self.inherited(subcls)
     @@fields[subcls] = Array.new
     @@template[subcls] = ""
+    @@value[subcls] = Hash.new
   end
 
   def self.def_field(type, *fields)
@@ -27,14 +30,19 @@ class Nwdiy::Packet
     case type
     when :uint8
       template = "C"
+      cls = Integer
     when :uint16
       template = "n"
+      cls = Integer
     when :uint32
       template = "N"
-    when /^byte(\n+)$/
+      cls = Integer
+    when /^byte(\d+)$/
       template = "a#{$1}"
+      cls = String
     when Nwdiy::Packet
       template = "a#{type.bytesize}"
+      cls = type
     else
       raise TypeError.new("invalid type name '#{type}'")
     end
@@ -44,19 +52,30 @@ class Nwdiy::Packet
     fields.each do |field|
 
       # サブクラスに定義順にフィールドを並べます
-      @@fields[self] << [type, name]
+      @@fields[self] << [type, field]
       @@template[self] += template
 
       # サブクラスに読み書きメソッドを設定します
-      self.class_eval %Q {
-        @#{field}
-        def #{field}
-          @#{field}
-        end
-        def #{field}=(data)
-          @#{field} = #{type}.new(data)
-        end
-      }
+      case type
+      when Symbol
+        self.class_eval %Q{
+          def #{field}
+            @@value[self.class][:#{field}]
+          end
+          def #{field}=(data)
+            @@value[self.class][:#{field}] = data
+          end
+        }
+      when Nwdiy::Packet
+        self.class_eval %Q{
+          def #{field}
+            @@value[self.class][:#{field}]
+          end
+          def #{field}=(data)
+            @@value[self.class][:#{field}] = #{type}.new(data)
+          end
+        }
+      end
     end
   end
 
@@ -70,10 +89,15 @@ class Nwdiy::Packet
         self.instance_variable_set(var, val)
       end
     when String
-      list = data.unpack(@@template[self])
-      @@fields[self].each do |tf|
-        type, field = tf
-        self.instance_variable_set(field, type.new(list.shift))
+      list = data.unpack(@@template[self.class] + "a*")
+      @@fields[self.class].each do |cf|
+        cls, field = cf
+        case cls
+        when Symbol
+          @@value[self.class][field] = list.shift
+        when Nwdiy::Packet
+          @@value[self.class][field] = cls.new(list.shift)
+        end
       end
       if self.respond_to?(:parse_data)
         self.parse_data(list.shift)

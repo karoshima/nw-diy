@@ -116,22 +116,26 @@ RSpec.describe Nwdiy::Packet do
   end
 
   it "create an packet field" do
+
     class Sample < Nwdiy::Packet
-      def_field Nwdiy::Packet::Mac, :dst, :src
+      def_field :byte6, :dst, :src
       def_field :uint16, :type
       def parse_data(data)
         @data = data
       end
+      attr_accessor :data
     end
-    src = "\0e\00\00\00\00\01"
-    dst = "\0e\00\00\00\00\02"
-    type = "\08\00"
+
+    src = "\x0e\x00\x00\x00\x00\x01"
+    dst = "\x0e\x00\x00\x00\x00\x02"
+    type = "\x08\x00"
     data = "Hello World"
-    smpl = Sample.new(src + dst + type + data)
+    smpl = Sample.new(dst + src + type + data)
+
     expect(smpl.class).to be(Sample)
-    expect(smpl.src).to be(src)
-    expect(smpl.dst).to be(dst)
-    expect(smpl.type).to be(type)
-    expect(smpl.data).to be(data)
+    expect(smpl.src).to eq(src)
+    expect(smpl.dst).to eq(dst)
+    expect(smpl.type).to eq(0x0800)
+    expect(smpl.data).to eq(data)
   end
 end
