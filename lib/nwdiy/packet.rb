@@ -24,20 +24,28 @@ class Nwdiy::Packet
 
   def self.def_field(type, *fields)
 
-    raise TypeError.new("invalid type name '#{type}'") unless
-      type.kind_of?(Nwdiy::Packet) || type == :uint8 ||
-      type == :uint16 || type == :uint32 || type == :uint64
-
-    fields.each do |field|
-      raise TypeError.new("invalid field name '#{name}'") unless
-        name.kind_of?(Symbol)
+    case type
+    when :uint8
+      template = "C"
+    when :uint16
+      template = "n"
+    when :uint32
+      template = "N"
+    when /^byte(\n+)$/
+      template = "a#{$1}"
+    when Nwdiy::Packet
+      template = "a#{type.bytesize}"
+    else
+      raise TypeError.new("invalid type name '#{type}'")
     end
+
+    fields.map! { |field|  field.to_sym }
 
     fields.each do |field|
 
       # サブクラスに定義順にフィールドを並べます
       @@fields[self] << [type, name]
-      @@template[self] += type.template
+      @@template[self] += template
 
       # サブクラスに読み書きメソッドを設定します
       self.class_eval %Q {
@@ -62,13 +70,13 @@ class Nwdiy::Packet
         self.instance_variable_set(var, val)
       end
     when String
-      fixed = data.unpack(@@template[self])
+      list = data.unpack(@@template[self])
       @@fields[self].each do |tf|
         type, field = tf
-        self.instance_variable_set(field, type.new(fixed.shift))
+        self.instance_variable_set(field, type.new(list.shift))
       end
       if self.respond_to?(:parse_data)
-        self.parse_data(fixed.shift)
+        self.parse_data(list.shift)
       end
     end
   end
@@ -76,8 +84,6 @@ class Nwdiy::Packet
   ################################################################
   # 以上ここまで未検証の書きかけ
   ################################################################
-
-
 
   ################
   # 複数のバッファからチェックサム計算します。
