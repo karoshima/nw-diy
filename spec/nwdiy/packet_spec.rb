@@ -126,8 +126,8 @@ RSpec.describe Nwdiy::Packet do
       attr_accessor :data
     end
 
-    dst = "\x0e\x00\x00\x00\x00\x01"
-    src = "\x0e\x00\x00\x00\x00\x02"
+    dst = "\x00\x00\x0e\x00\x00\x01"
+    src = "\x00\x00\x0e\x00\x00\x02"
     type = "\x08\x00"
     data = "Hello World"
     smpl = Sample01.new(dst + src + type + data)
@@ -150,8 +150,8 @@ RSpec.describe Nwdiy::Packet do
       attr_accessor :data
     end
 
-    dst = "\x0e\x00\x00\x00\x00\x01"
-    src = "\x0e\x00\x00\x00\x00\x02"
+    dst = "\x00\x00\x0e\x00\x00\x01"
+    src = "\x00\x00\x0e\x00\x00\x02"
     type = "\x08\x00"
     data = "Hello World"
     smpl = Sample02.new(dst + src + type + data)
@@ -159,8 +159,8 @@ RSpec.describe Nwdiy::Packet do
     expect(smpl.class).to be(Sample02)
     expect(smpl.dst.to_s).to eq(dst)
     expect(smpl.src.to_s).to eq(src)
-    expect(smpl.dst.inspect).to eq("0e:00:00:00:00:01")
-    expect(smpl.src.inspect).to eq("0e:00:00:00:00:02")
+    expect(smpl.dst.inspect).to eq("00:00:0e:00:00:01")
+    expect(smpl.src.inspect).to eq("00:00:0e:00:00:02")
     expect(smpl.type).to eq(0x0800)
     expect(smpl.data).to eq(data)
   end
