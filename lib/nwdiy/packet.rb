@@ -11,39 +11,38 @@ require "nwdiy"
 class Nwdiy::Packet
 
   autoload(:Binary, 'nwdiy/packet/binary')
+  autoload(:Mac,    'nwdiy/packet/mac')
 
   ################################################################
   # サブクラスを定義します
 
   @@fields = Hash.new
   @@template = Hash.new
-  @@value = Hash.new
 
   def self.inherited(subcls)
     @@fields[subcls] = Array.new
     @@template[subcls] = ""
-    @@value[subcls] = Hash.new
   end
 
   def self.def_field(type, *fields)
 
-    case type
-    when :uint8
+    if type == :uint8
       template = "C"
       cls = Integer
-    when :uint16
+    elsif type == :uint16
       template = "n"
       cls = Integer
-    when :uint32
+    elsif type == :uint32
       template = "N"
       cls = Integer
-    when /^byte(\d+)$/
+    elsif type =~ /^byte(\d+)$/
       template = "a#{$1}"
       cls = String
-    when Nwdiy::Packet
+    elsif type < Nwdiy::Packet
       template = "a#{type.bytesize}"
       cls = type
     else
+      p TypeError.new("invalid type name '#{type}'")
       raise TypeError.new("invalid type name '#{type}'")
     end
 
@@ -56,23 +55,20 @@ class Nwdiy::Packet
       @@template[self] += template
 
       # サブクラスに読み書きメソッドを設定します
-      case type
-      when Symbol
+      if type.kind_of?(Symbol)
         self.class_eval %Q{
           def #{field}
-            @@value[self.class][:#{field}]
+            @#{field}
           end
           def #{field}=(data)
-            @@value[self.class][:#{field}] = data
+            @#{field} = data
           end
         }
-      when Nwdiy::Packet
+      elsif type < Nwdiy::Packet
         self.class_eval %Q{
-          def #{field}
-            @@value[self.class][:#{field}]
-          end
+          attr_reader :#{field}
           def #{field}=(data)
-            @@value[self.class][:#{field}] = #{type}.new(data)
+            @#{field} = #{type}.new(data)
           end
         }
       end
@@ -92,11 +88,10 @@ class Nwdiy::Packet
       list = data.unpack(@@template[self.class] + "a*")
       @@fields[self.class].each do |cf|
         cls, field = cf
-        case cls
-        when Symbol
-          @@value[self.class][field] = list.shift
-        when Nwdiy::Packet
-          @@value[self.class][field] = cls.new(list.shift)
+        if cls.kind_of?(Symbol)
+          self.instance_variable_set("@#{field}", list.shift)
+        elsif cls < Nwdiy::Packet
+          self.instance_variable_set("@#{field}", cls.new(list.shift))
         end
       end
       if self.respond_to?(:parse_data)

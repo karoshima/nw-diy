@@ -115,9 +115,9 @@ RSpec.describe Nwdiy::Packet do
     expect(Nwdiy::Packet.calc_cksum(*data)).to be(0xffff)
   end
 
-  it "create an packet field" do
+  it "creates an packet field" do
 
-    class Sample < Nwdiy::Packet
+    class Sample01 < Nwdiy::Packet
       def_field :byte6, :dst, :src
       def_field :uint16, :type
       def parse_data(data)
@@ -126,15 +126,41 @@ RSpec.describe Nwdiy::Packet do
       attr_accessor :data
     end
 
-    src = "\x0e\x00\x00\x00\x00\x01"
-    dst = "\x0e\x00\x00\x00\x00\x02"
+    dst = "\x0e\x00\x00\x00\x00\x01"
+    src = "\x0e\x00\x00\x00\x00\x02"
     type = "\x08\x00"
     data = "Hello World"
-    smpl = Sample.new(dst + src + type + data)
+    smpl = Sample01.new(dst + src + type + data)
 
-    expect(smpl.class).to be(Sample)
-    expect(smpl.src).to eq(src)
+    expect(smpl.class).to be(Sample01)
     expect(smpl.dst).to eq(dst)
+    expect(smpl.src).to eq(src)
+    expect(smpl.type).to eq(0x0800)
+    expect(smpl.data).to eq(data)
+  end
+
+  it "creates an packet which include Nwdiy::Packet parts" do
+
+    class Sample02 < Nwdiy::Packet
+      def_field Nwdiy::Packet::Mac, :dst, :src
+      def_field :uint16, :type
+      def parse_data(data)
+        @data = data
+      end
+      attr_accessor :data
+    end
+
+    dst = "\x0e\x00\x00\x00\x00\x01"
+    src = "\x0e\x00\x00\x00\x00\x02"
+    type = "\x08\x00"
+    data = "Hello World"
+    smpl = Sample02.new(dst + src + type + data)
+
+    expect(smpl.class).to be(Sample02)
+    expect(smpl.dst.to_s).to eq(dst)
+    expect(smpl.src.to_s).to eq(src)
+    expect(smpl.dst.inspect).to eq("0e:00:00:00:00:01")
+    expect(smpl.src.inspect).to eq("0e:00:00:00:00:02")
     expect(smpl.type).to eq(0x0800)
     expect(smpl.data).to eq(data)
   end
