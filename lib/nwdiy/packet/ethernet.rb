@@ -17,13 +17,20 @@
 require "nwdiy/packet"
 
 class Nwdiy::Packet::Ethernet < Nwdiy::Packet
-  def_field Nwdiy::Packet::MAC,  :dst
-  def_field Nwdiy::Packet::MAC,  :src
-  def_array Nwdiy::Packet::VLAN, :vlan
+  def_field Nwdiy::Packet::Mac,  :dst
+  def_field Nwdiy::Packet::Mac,  :src
   def_field :uint16,             :type
-  def_field :datatype            :data
+  def parse_data(data)
+    @data = data
+  end
+  attr_accessor :data
 
-  def datatype(data)
-    Nwdiy::Packet::Binary
+  def initialize(data = nil)
+    if data == nil
+      self.dst = Nwdiy::Packet::Mac.new("00:00:00:00:00:00")
+      self.src = Nwdiy::Packet::Mac.new("00:00:00:00:00:00")
+    else
+      super(data)
+    end
   end
 end

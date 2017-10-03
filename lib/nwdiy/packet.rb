@@ -27,12 +27,15 @@ class Nwdiy::Packet
   def self.def_field(type, *fields)
 
     if type == :uint8
+      size = 1
       template = "C"
       cls = Integer
     elsif type == :uint16
+      size = 2
       template = "n"
       cls = Integer
     elsif type == :uint32
+      size = 4
       template = "N"
       cls = Integer
     elsif type =~ /^byte(\d+)$/
@@ -55,20 +58,36 @@ class Nwdiy::Packet
       @@template[self] += template
 
       # サブクラスに読み書きメソッドを設定します
-      if type.kind_of?(Symbol)
+      if type =~ /^uint/
         self.class_eval %Q{
           def #{field}
             @#{field}
           end
           def #{field}=(data)
-            @#{field} = data
+            if data.kind_of?(Integer)
+              @#{field} = data
+            elsif data.bytesize == #{size}
+              @#{field} = data.unpack("#{template}")[0]
+            else
+              @#{field} = data.to_i
+            end
+          end
+        }
+      elsif type =~ /^byte(\d+)$/
+        self.class_eval %Q{
+          def #{field}
+            @#{field}
+          end
+          def #{field}=(data)
+            @#{field} = data.to_s
           end
         }
       elsif type < Nwdiy::Packet
         self.class_eval %Q{
           attr_reader :#{field}
           def #{field}=(data)
-            @#{field} = #{type}.new(data)
+            data = #{type}.new(data) unless data.kind_of?(#{type})
+            @#{field} = data
           end
         }
       end
@@ -82,16 +101,16 @@ class Nwdiy::Packet
     case data
     when Hash
       data.each do |var, val|
-        self.instance_variable_set(var, val)
+        self.__send__("#{var}=", val)
       end
     when String
       list = data.unpack(@@template[self.class] + "a*")
       @@fields[self.class].each do |cf|
         cls, field = cf
         if cls.kind_of?(Symbol)
-          self.instance_variable_set("@#{field}", list.shift)
+          self.__send__("#{field}=", list.shift)
         elsif cls < Nwdiy::Packet
-          self.instance_variable_set("@#{field}", cls.new(list.shift))
+          self.__send__("#{field}=", cls.new(list.shift))
         end
       end
       if self.respond_to?(:parse_data)

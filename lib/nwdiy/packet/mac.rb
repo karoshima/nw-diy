@@ -5,6 +5,7 @@
 # 本ツールは Apache License 2.0 ライセンスで公開します。
 # 著作権については ./LICENSE もご確認ください
 ################################################################
+# 仕様については spec/nwdiy/packet/mac_spec.rb を参照してください
 
 require "nwdiy/packet"
 
@@ -22,7 +23,7 @@ class Nwdiy::Packet::Mac < Nwdiy::Packet
     when /^(\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)$/
       super([$1,$2,$3,$4,$5,$6].map{|c|c.hex}.pack("C6"))
     else
-      raise TypeError.new("Invalid Mac address '#{data.dump}'")
+      raise TypeError.new("Invalid Mac address '#{data}'")
     end
   end
 

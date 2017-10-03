@@ -3,20 +3,36 @@
 ################################################################
 # MAC アドレスのクラスです。
 #
-#【Nwdiy::Pacet から継承したインスタンスメソッド】
+#【Nwdiy::Pacet から継承した特異メソッド】
 #
-# new(6byteの文字列) -> Nwdiy::Packet::Mac
-#    バイト列から Mac アドレスを生成し、そのインスタンスを返します。
+# new(6byteのバイト列) -> Nwdiy::Packet::Mac
+#    バイト列から Mac アドレスインスタンスを生成して返します。
 #
 # new("xx:xx:xx:xx:xx:xx" 形式の文字列) -> Nwdiy::Packet::Mac
 #    Mac アドレス形式の文字列から Mac アドレスを生成し、
 #    そのインスタンスを返します。
 #
+#【Nwdiy::Pacet から継承したインスタンスメソッド】
+#
 # to_s -> String
 #    Mac アドレスをバイト列に変換します
 #
-# inspec -> String
+# inspect -> String
 #    Mac アドレスを可読形式で返します
+#
+#【本クラス独自の特異メソッド】
+#
+# new(Hash)
+#    乱数で Mac アドレスインスタンスを生成して返します。
+#    Hash において属性に対する値が true であれば、
+#    その属性を持ったインスタンスを作成します。
+#    Hash のキーに指定できる属性は以下のものです。
+#
+#      :unicast    ユニキャスト (multicast, broadcast と排他)
+#      :multicast  マルチキャスト (unicast と排他)
+#      :broadcast  ブロードキャスト (unicast と排他)
+#      :global     グローバルアドレス (local と排他)
+#      :local      ローカルアドレス (global と排他)
 #
 #【本クラス独自のインスタンスメソッド】
 #
