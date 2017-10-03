@@ -5,14 +5,13 @@
 # 本ツールは Apache License 2.0 ライセンスで公開します。
 # 著作権については ./LICENSE もご確認ください
 ################################################################
+# Nwdiy::Packet::Mac は MAC アドレスです。
 # 仕様については spec/nwdiy/packet/mac_spec.rb を参照してください
+################################################################
 
 require "nwdiy/packet"
 
-class Nwdiy::Packet::Mac < Nwdiy::Packet
-
-  ################
-  # Nwdiy::Packet に沿ったメソッド
+class Nwdiy::Packet::MacAddr < Nwdiy::Packet
 
   def_field :byte6, :addr
 
@@ -46,7 +45,7 @@ class Nwdiy::Packet::Mac < Nwdiy::Packet
     when /^(\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)$/
       return super([$1,$2,$3,$4,$5,$6].map{|c|c.hex}.pack("C6"))
     end
-    raise TypeError.new("Invalid Mac address '#{data}'")
+    raise TypeError.new("Invalid Mac address '#{data.dump}'")
   end
 
   def to_s
@@ -69,7 +68,7 @@ class Nwdiy::Packet::Mac < Nwdiy::Packet
     when /^......$/
       return @addr == other
     when /^(\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)$/
-      othermac = Nwdiy::Packet::Mac.new(other)
+      othermac = Nwdiy::Packet::MacAddr.new(other)
       return @addr == othermac.addr
     else
       raise TypeError.new("Invalid Mac address '#{data.dump}'")

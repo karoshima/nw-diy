@@ -3,9 +3,18 @@
 ################################################################
 # Ethernet フレームのクラスです。
 #
-#【Nwdiy::Packet から継承した特異メソッド】
+#【特異メソッド】
+#
+# new -> Nwdiy::Packet::Ethernet
+#    (Nwdiy::Packet から継承)
+#    Ethernet フレームの空箱インスタンスを生成して返します。
+#
+# new(バイト列) -> Nwdiy::Packet::Ethernet
+#    (Nwdiy::Packet から継承)
+#    バイト列から Ethernet フレームインスタンスを生成して返します。
 #
 # new(Hash) -> Nwdiy::Packet::Ethernet
+#    (Nwdiy::Packet から継承)
 #    ハッシュ値から Ethernet フレームインスタンスを生成して返します。
 #    ハッシュのキーには以下のキーが使用できます。
 #    :dst    宛先 Mac (バイト列あるいは Nwdiy::Packet::Mac インスタンス)
@@ -13,28 +22,26 @@
 #    :type   データ種別 (バイト列あるいは数値)
 #    :data   データ部 (バイト列あるいは適切なインスタンス)
 #
-# new(バイト列) -> Nwdiy::Packet::Ethernet
-#    バイト列から Ethernet フレームインスタンスを生成して返します。
-#
-# new -> Nwdiy::Packet::Ethernet
-#    Ethernet フレームの空箱インスタンスを生成して返します。
-#
-#【Nwdiy::Packet から継承したインスタンスメソッド】
+#【インスタンスメソッド】
 #
 # dst -> Nwdiy::Packet::Mac
 # src -> Nwdiy::Packet::Mac
+#    (Nwdiy::Packet から継承)
 #    Ethernet フレームの宛先/送信元アドレスを返します。
 #
 # dst=(mac)
 # src=(mac)
+#    (Nwdiy::Packet から継承)
 #    Ethernet フレームの宛先/送信元アドレスを設定します。
 #    mac は 6byte のバイト列, 可読形式の Mac アドレス,
 #    あるいは Nwdiy::Packet::Mac インスタンスのいすれかです。
 #
 # to_s -> String
+#    (Nwdiy::Packet から継承)
 #    Ethernet フレームをバイト列に変換します。
 #
 # inspect -> String
+#    (Nwdiy::Packet から継承)
 #    Ethernet フレームを可読形式で返します。
 #
 ################################################################

@@ -9,9 +9,8 @@
 #    バイト列から Mac アドレスインスタンスを生成して返します。
 #
 # new("xx:xx:xx:xx:xx:xx" 形式の文字列) -> Nwdiy::Packet::Mac
-#    (Nwdiy::Pacet から継承)
-#    Mac アドレス形式の文字列から Mac アドレスを生成し、
-#    そのインスタンスを返します。
+#    (本クラス独自)
+#    Mac アドレス形式の文字列から Mac アドレスを生成して返します。
 #
 # new(Hash) -> Nwdiy::Packet::Mac
 #    (本クラス独自のメソッド)
@@ -20,11 +19,11 @@
 #    その属性を持ったインスタンスを作成します。
 #    Hash のキーに指定できる属性は以下のものです。
 #
-#      :unicast    ユニキャスト (multicast, broadcast と排他)
-#      :multicast  マルチキャスト (unicast と排他)
-#      :broadcast  ブロードキャスト (unicast と排他)
-#      :global     グローバルアドレス (local と排他)
-#      :local      ローカルアドレス (global と排他)
+#      :unicast =>    ユニキャスト (multicast, broadcast と排他)
+#      :multicast =>  マルチキャスト (unicast と排他)
+#      :broadcast =>  ブロードキャスト (unicast と排他)
+#      :global =>     グローバルアドレス (local と排他)
+#      :local =>      ローカルアドレス (global と排他)
 #
 #【インスタンスメソッド】
 #
@@ -48,7 +47,7 @@
 
 require "spec_helper"
 
-RSpec.describe Nwdiy::Packet::Mac do
+RSpec.describe Nwdiy::Packet::MacAddr do
   test = { unicast: {
              byte: "\x00\x00\x0e\x01\x02\x03",
              name: "00:00:0e:01:02:03",
@@ -94,7 +93,7 @@ RSpec.describe Nwdiy::Packet::Mac do
     [ :byte, :name ].each do |src|
       addr = hash[src]
       it "creates an #{theme} Mac addr from #{addr.dump}" do
-        mac = Nwdiy::Packet::Mac.new(addr)
+        mac = Nwdiy::Packet::MacAddr.new(addr)
         expect(mac.to_s).to eq hash[:byte]
         expect(mac.inspect).to eq hash[:name].gsub(/[\.\-]/, ":")
         expect(mac.unicast?).to be hash[:unicast?]
@@ -116,12 +115,12 @@ RSpec.describe Nwdiy::Packet::Mac do
             error = (uni && (multi || broad)) || (global && local) || (broad && local)
             if error
               it "fails to create Ethernet frame on #{uni},#{multi},#{broad},#{global},#{local}" do
-                expect { Nwdiy::Packet::Mac.new(hash) }.to raise_error(TypeError)
+                expect { Nwdiy::Packet::MacAddr.new(hash) }.to raise_error(TypeError)
               end
             else
               it "can create Ethernet frame on #{uni},#{multi},#{broad},#{global},#{local}" do
-                mac = Nwdiy::Packet::Mac.new(hash)
-                expect(mac).to be_a(Nwdiy::Packet::Mac)
+                mac = Nwdiy::Packet::MacAddr.new(hash)
+                expect(mac).to be_a(Nwdiy::Packet::MacAddr)
               end
             end
           end

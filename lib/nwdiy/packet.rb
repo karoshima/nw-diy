@@ -10,9 +10,7 @@ require "nwdiy"
 
 class Nwdiy::Packet
 
-  autoload(:Binary,   'nwdiy/packet/binary')
   autoload(:Ethernet, 'nwdiy/packet/ethernet')
-  autoload(:Mac,      'nwdiy/packet/mac')
 
   ################################################################
   # サブクラスを定義します

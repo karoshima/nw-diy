@@ -6,29 +6,55 @@
 # 著作権については ./LICENSE もご確認ください
 ################################################################
 # Nwdiy::Packet::Ethernet はイーサネットフレームです
-# 802.3 LLC や SNAP は将来検討です。
-#
-# 以下のメソッドで、フレーム種別を確認できます。
-# - ethernet?
-#
-# そのほか Nwdiy::Packet の各種メソッドも使用可能です
+# 仕様については spec/nwdiy/packet/ethernet_spec.rb を参照してください。
 ################################################################
 
 require "nwdiy/packet"
 
+class Nwdiy::Packet
+  autoload(:Arp,      'nwdiy/packet/arp')
+  autoload(:MacAddr,  'nwdiy/packet/macaddr')
+end
+
 class Nwdiy::Packet::Ethernet < Nwdiy::Packet
-  def_field Nwdiy::Packet::Mac,  :dst
-  def_field Nwdiy::Packet::Mac,  :src
-  def_field :uint16,             :type
-  def parse_data(data)
-    @data = data
+  def_field Nwdiy::Packet::MacAddr,  :dst
+  def_field Nwdiy::Packet::MacAddr,  :src
+  def_field :uint16,                 :type
+  def parse_data(obj)
+    self.data = obj
   end
+
+  @@ethertypes = Hash.new
+  @@etherclass = Hash.new
+
+  # type は @data があればそのクラスを見て @type を見ない
+  def type
+    @@ethertypes[@data.class] ? @@ethertypes[@data.class] : @type
+  end
+
+  # データとして Nwdiy::Packet::XXX インスタンスを与えられたら
+  # そのクラスに応じて @type も書き換える
+  # そうじゃないデータを与えられたら
+  # @type に応じて Nwdiy::Packet::XXX インスタンス化する
   attr_accessor :data
+  def data=(obj)
+
+    p @@ethertypes, @@etherclass, obj.class, self.type, @type
+
+    if @@ethertypes[obj.class]
+      @type = @@ethertypes[obj.class]
+      @data = obj
+    elsif @@etherclass[self.type]
+      @data = @@etherclass[self.type].new(obj)
+    else
+      @data = obj
+    end
+  end
 
   def initialize(data = nil)
     if data == nil
-      self.dst = Nwdiy::Packet::Mac.new("00:00:00:00:00:00")
-      self.src = Nwdiy::Packet::Mac.new("00:00:00:00:00:00")
+      self.dst = Nwdiy::Packet::MacAddr.new("00:00:00:00:00:00")
+      self.src = Nwdiy::Packet::MacAddr.new("00:00:00:00:00:00")
     else
       super(data)
     end

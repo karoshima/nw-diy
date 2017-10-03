@@ -66,7 +66,7 @@
 #    recvmsg() などで受信したバイト列 (String) を SubPacket として読み、
 #    生成したインスタンスを返します。
 #
-# new(キーワード引数) -> SubPacket
+# new(Hash) -> SubPacket
 #    フィールド名ごとに値を指定して作成したインスタンスを返します。
 #
 #【サブクラスに定義する特異メソッド】
@@ -91,6 +91,8 @@
 # フィールド名=(value) -> 値
 #    value が String ではない場合、
 #    def_field で定義したフィールドに value を設定し、それを返します。
+#
+#【サブクラスに定義するインスタンスメソッド】
 #
 # to_s -> String
 #    パケットをバイト列 (String) に変換します。
@@ -142,7 +144,7 @@ RSpec.describe Nwdiy::Packet do
   it "creates an packet which include Nwdiy::Packet parts" do
 
     class Sample02 < Nwdiy::Packet
-      def_field Nwdiy::Packet::Mac, :dst, :src
+      def_field Nwdiy::Packet::MacAddr, :dst, :src
       def_field :uint16, :type
       def parse_data(data)
         @data = data
