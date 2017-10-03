@@ -18,13 +18,35 @@ class Nwdiy::Packet::Mac < Nwdiy::Packet
 
   def initialize(data)
     case data
+    when Hash
+      if data[:broadcast]
+        if data[:unicast]
+          raise TypeError.new("Broadcast MAC cannot be unicast")
+        end
+        if data[:local]
+          raise TypeError.new("Broadcast MAC cannot be local")
+        end
+        return super("\xff\xff\xff\xff\xff\xff")
+      end
+      if data[:multicast]
+        if data[:unicast]
+          raise TypeError.new("Multicast MAC cannot be unicast")
+        end
+        um = 1
+      else
+        um = 0
+      end
+      if data[:global] && data[:local]
+        raise TypeError.new("MAC cannot be global & local")
+      end
+      gl = data[:local] ? 2 : 0
+      return super(([um+gl] + (1..5).map { rand(256) }).pack("C6"))
     when /^......$/
-      super(data)
+      return super(data)
     when /^(\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)$/
-      super([$1,$2,$3,$4,$5,$6].map{|c|c.hex}.pack("C6"))
-    else
-      raise TypeError.new("Invalid Mac address '#{data}'")
+      return super([$1,$2,$3,$4,$5,$6].map{|c|c.hex}.pack("C6"))
     end
+    raise TypeError.new("Invalid Mac address '#{data}'")
   end
 
   def to_s

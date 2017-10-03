@@ -3,26 +3,18 @@
 ################################################################
 # MAC アドレスのクラスです。
 #
-#【Nwdiy::Pacet から継承した特異メソッド】
-#
+#【特異メソッド】
 # new(6byteのバイト列) -> Nwdiy::Packet::Mac
+#    (Nwdiy::Pacet から継承)
 #    バイト列から Mac アドレスインスタンスを生成して返します。
 #
 # new("xx:xx:xx:xx:xx:xx" 形式の文字列) -> Nwdiy::Packet::Mac
+#    (Nwdiy::Pacet から継承)
 #    Mac アドレス形式の文字列から Mac アドレスを生成し、
 #    そのインスタンスを返します。
 #
-#【Nwdiy::Pacet から継承したインスタンスメソッド】
-#
-# to_s -> String
-#    Mac アドレスをバイト列に変換します
-#
-# inspect -> String
-#    Mac アドレスを可読形式で返します
-#
-#【本クラス独自の特異メソッド】
-#
-# new(Hash)
+# new(Hash) -> Nwdiy::Packet::Mac
+#    (本クラス独自のメソッド)
 #    乱数で Mac アドレスインスタンスを生成して返します。
 #    Hash において属性に対する値が true であれば、
 #    その属性を持ったインスタンスを作成します。
@@ -34,13 +26,22 @@
 #      :global     グローバルアドレス (local と排他)
 #      :local      ローカルアドレス (global と排他)
 #
-#【本クラス独自のインスタンスメソッド】
+#【インスタンスメソッド】
+#
+# to_s -> String
+#    (Nwdiy::Pacet から継承)
+#    Mac アドレスをバイト列に変換します
+#
+# inspect -> String
+#    (Nwdiy::Pacet から継承)
+#    Mac アドレスを可読形式で返します
 #
 # unicast? -> bool
 # multicast? -> bool
 # broadcast? -> bool
 # global? -> bool
 # local? -> bool
+#    (本クラス独自のメソッド)
 #    アドレスの性質を返します
 #
 ################################################################
@@ -101,6 +102,30 @@ RSpec.describe Nwdiy::Packet::Mac do
         expect(mac.broadcast?).to be hash[:broadcast?]
         expect(mac.global?).to be hash[:global?]
         expect(mac.local?).to be hash[:local?]
+      end
+    end
+  end
+
+  [nil, true, false].each do |uni|
+    [nil, true, false].each do |multi|
+      [nil, true, false].each do |broad|
+        [nil, true, false].each do |global|
+          [nil, true, false].each do |local|
+            hash = { unicast: uni, multicast: multi, broadcast: broad,
+                     global: global, local: local }
+            error = (uni && (multi || broad)) || (global && local) || (broad && local)
+            if error
+              it "fails to create Ethernet frame on #{uni},#{multi},#{broad},#{global},#{local}" do
+                expect { Nwdiy::Packet::Mac.new(hash) }.to raise_error(TypeError)
+              end
+            else
+              it "can create Ethernet frame on #{uni},#{multi},#{broad},#{global},#{local}" do
+                mac = Nwdiy::Packet::Mac.new(hash)
+                expect(mac).to be_a(Nwdiy::Packet::Mac)
+              end
+            end
+          end
+        end
       end
     end
   end

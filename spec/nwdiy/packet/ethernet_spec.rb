@@ -3,7 +3,7 @@
 ################################################################
 # Ethernet フレームのクラスです。
 #
-#【Nwdiy::Packet から継承したインスタンスメソッド】
+#【Nwdiy::Packet から継承した特異メソッド】
 #
 # new(Hash) -> Nwdiy::Packet::Ethernet
 #    ハッシュ値から Ethernet フレームインスタンスを生成して返します。
@@ -18,6 +18,18 @@
 #
 # new -> Nwdiy::Packet::Ethernet
 #    Ethernet フレームの空箱インスタンスを生成して返します。
+#
+#【Nwdiy::Packet から継承したインスタンスメソッド】
+#
+# dst -> Nwdiy::Packet::Mac
+# src -> Nwdiy::Packet::Mac
+#    Ethernet フレームの宛先/送信元アドレスを返します。
+#
+# dst=(mac)
+# src=(mac)
+#    Ethernet フレームの宛先/送信元アドレスを設定します。
+#    mac は 6byte のバイト列, 可読形式の Mac アドレス,
+#    あるいは Nwdiy::Packet::Mac インスタンスのいすれかです。
 #
 # to_s -> String
 #    Ethernet フレームをバイト列に変換します。
