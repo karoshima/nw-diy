@@ -44,7 +44,6 @@ class Nwdiy::Packet
       template = "a#{type.bytesize}"
       cls = type
     else
-      p TypeError.new("invalid type name '#{type}'")
       raise TypeError.new("invalid type name '#{type}'")
     end
 

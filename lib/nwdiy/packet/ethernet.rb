@@ -39,8 +39,6 @@ class Nwdiy::Packet::Ethernet < Nwdiy::Packet
   attr_accessor :data
   def data=(obj)
 
-    p @@ethertypes, @@etherclass, obj.class, self.type, @type
-
     if @@ethertypes[obj.class]
       @type = @@ethertypes[obj.class]
       @data = obj
