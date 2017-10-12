@@ -41,7 +41,6 @@
 ################################################################
 
 require "spec_helper"
-require "nwdiy/packet/arp"
 
 RSpec.describe Nwdiy::Packet::ARP do
   it "can create ARP from packet bytes" do

@@ -41,7 +41,6 @@
 ################################################################
 
 require "spec_helper"
-require "nwdiy/packet/ipv4addr"
 
 RSpec.describe Nwdiy::Packet::IPv4Addr do
   test = { unicast: {
