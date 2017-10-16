@@ -76,7 +76,8 @@ RSpec.describe Nwdiy::Func do
 
   it "returns dummy results" do
     func = Nwdiy::Func.new
-    expect(func.on).to be false
+    expect(func.on).to be true
+    expect(func.power).to be true
     expect(func.off).to be false
     expect(func.power).to be false
     expect { func.attach_left(nil) }.to raise_error(NotImplementedError)

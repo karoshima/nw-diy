@@ -9,14 +9,15 @@
 require "nwdiy"
 
 class Nwdiy::Func
+
+  autoload(:Out, 'nwdiy/func/out')
+
+  @power; attr_accessor :power
   def on
-    false
+    @power = true
   end
   def off
-    false
-  end
-  def power
-    false
+    @power = false
   end
   def attach_left(pipe)
     raise NotImplementedError.new("attach_left must be overwritten")

@@ -10,11 +10,18 @@ require "nwdiy"
 
 module Nwdiy::Debug
   @@debug = Hash.new
-  def debug(msg)
-    caller(1)[0] =~ %r{(lib/nwdiy/.*)$}
-    puts "#{$1}: " + msg if @@debug[self.class]
+
+  # なんで include Nwdiy::Debug しても
+  # ここで def self.debugging したのが効かないんだろう？
+  # 仕方ないので引数にクラスを入れて誤魔化す
+
+  def self.set(cls, flag = true)
+    @@debug[cls] = flag
+    p self
   end
-  def debugging(flag = true)
-    @@debug[self.class] = flag
+  def self.msg(cls, msg)
+    return unless @@debug[cls]
+    caller(1)[0] =~ %r{(lib/nwdiy/.*)$}
+    puts "#{$1}: " + msg
   end
 end

@@ -10,10 +10,11 @@
 # 代理で行ないます
 ################################################################
 
-require "bundler/setup"
 require "nwdiy"
 
-begin
-  Nwdiy::Interface::Ethernet::ProxyDaemon.new.run
-rescue Interrupt
+if $0 == __FILE__
+  begin
+    Nwdiy::Func::Out.start_server.join
+  rescue Interrupt
+  end
 end

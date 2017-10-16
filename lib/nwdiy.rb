@@ -8,10 +8,11 @@
 
 require "socket"
 require "nwdiy/version"
+require "nwdiy/config"
 
 module Nwdiy
 
-  #  autoload(:Debug,     'nwdiy/debug')
+  autoload(:Debug,     'nwdiy/debug')
   autoload(:Func,      'nwdiy/func')
   autoload(:Packet,    'nwdiy/packet')
 
