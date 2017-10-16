@@ -73,4 +73,14 @@ RSpec.describe Nwdiy::Func do
     expect(func.respond_to?(:attach_right)).to be true
     expect(func.respond_to?(:detach)).to be true
   end
+
+  it "returns dummy results" do
+    func = Nwdiy::Func.new
+    expect(func.on).to be false
+    expect(func.off).to be false
+    expect(func.power).to be false
+    expect { func.attach_left(nil) }.to raise_error(NotImplementedError)
+    expect { func.attach_right(nil) }.to raise_error(NotImplementedError)
+    expect { func.detach(nil) }.to raise_error(NotImplementedError)
+  end
 end
