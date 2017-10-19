@@ -47,7 +47,7 @@ RSpec.describe Nwdiy::Packet::ARP do
     hdst = "\x00\x00\x0e\x00\x00\x01"
     hsrc = "\x00\x00\x0e\x00\x00\x02"
     htype = "\x08\x06"
-    arp = "\x00\x01\x08\x00\x06\x04\x01"
+    arp = "\x00\x01\x08\x00\x06\x04\x00\x01"
     pdst = "\x0a\x00\x00\x01"
     psrc = "\x0a\x00\x00\x02"
     eth = Nwdiy::Packet::Ethernet.new(hdst + hsrc + htype + arp + hsrc + psrc + hdst + pdst)

@@ -28,7 +28,7 @@ end
 class Nwdiy::Packet::ARP
   def_field :uint16, :htype, :ptype
   def_field :uint8,  :hlen,  :plen
-  def_field :uint8,  :op
+  def_field :uint16, :op
   def_field Nwdiy::Packet::MacAddr,  :hsnd
   def_field Nwdiy::Packet::IPv4Addr, :psnd
   def_field Nwdiy::Packet::MacAddr,  :htgt
