@@ -10,12 +10,22 @@
 # 代理で行ないます
 ################################################################
 
+require "optparse"
 require "nwdiy"
 
 if $0 == __FILE__
-  class Nwdiy::Func::Out
-    debugging(true)
+
+  opt = OptionParser.new
+  opt.on("-d") do |val|
+    if val
+      class Nwdiy::Func::Out
+        debugging(true)
+      end
+    end
   end
+
+  opt.parse!(ARGV)
+
   begin
     Nwdiy::Func::Out.start_server.join
   rescue Interrupt
