@@ -12,7 +12,6 @@ require "nwdiy"
 class Nwdiy::Func::Out < Nwdiy::Func
 
   include Nwdiy::Debug
-  Nwdiy::Debug.set(self, true)
 
   def initialize(arg)
     case arg
@@ -21,7 +20,7 @@ class Nwdiy::Func::Out < Nwdiy::Func
         begin
           @sock = TCPSocket.new("::1", $NWDIY_INTERFACE_PROXY_PORT)
         rescue Errno::ECONNREFUSED => e
-          Nwdiy::Debug.msg(self, "#{e}")
+          debug("#{e}")
           self.class.start_server
           retry
         end
@@ -67,7 +66,7 @@ class Nwdiy::Func::Out < Nwdiy::Func
 
     # 待ち受けソケット
     @@sock = TCPServer.new("::1", $NWDIY_INTERFACE_PROXY_PORT)
-    Nwdiy::Debug.msg(self, "listening #{@@sock}")
+    debug("listening #{@@sock}")
 
     # インターフェース名ごとの、Nwdiy::Func::Out インスタンス配列
     @@peer = Hash.new { |hash,key| hash[key] = Array.new }
@@ -85,12 +84,12 @@ class Nwdiy::Func::Out < Nwdiy::Func
         check += @@peer.values.flatten
         check += @@os.values.compact
 
-        Nwdiy::Debug.msg(self, "waiting #{check}")
+        debug("waiting #{check}")
 
         can_read, = IO.select(check)
         can_read.each do |io|
 
-          Nwdiy::Debug.msg(self, "accepted on #{io}")
+          debug(self, "accepted on #{io}")
 
           if io == @@sock
             accept_newsock(io)
@@ -101,7 +100,7 @@ class Nwdiy::Func::Out < Nwdiy::Func
       end
     end
 
-    Nwdiy::Debug.msg(self, "thread #{@@thread}")
+    debug("thread #{@@thread}")
     @@thread
   end
 
@@ -110,7 +109,7 @@ class Nwdiy::Func::Out < Nwdiy::Func
     acc = sock.accept
     begin
       ifname = acc.sysread(1024)
-      Nwdiy::Debug.msg(self, "ifname #{ifname}")
+      debug(self, "ifname #{ifname}")
     rescue EOFError
       return
     end
@@ -125,7 +124,7 @@ class Nwdiy::Func::Out < Nwdiy::Func
       Socket.getifaddrs.each do |ifa|
         next unless ifa.name == ifname
         begin
-          Nwdiy::Debug.msg(self, "try OS interface")
+          debug("try OS interface")
           os = Socket.new(Socket::AF_PACKET, Socket::SOCK_RAW, Nwdiy::ETH_P_ALL.htons)
           os.bind(Socket.pack_sockaddr_ll(Nwdiy::ETH_P_ALL, ifa.ifindex))
           self.clean_ossock(os)
@@ -133,7 +132,7 @@ class Nwdiy::Func::Out < Nwdiy::Func
           @@os[ifname] = os
           @@name[os.fileno] = ifname
         rescue Errno::EPERM => e
-          Nwdiy::Debug.msg(self, "#{e} on OS interface")
+          debug("#{e} on OS interface")
         end
         break
       end
@@ -168,10 +167,10 @@ class Nwdiy::Func::Out < Nwdiy::Func
   # パケットが来たので転送する
   def self.recv_data(sock)
     ifname = @@name[sock.fileno]
-    Nwdiy::Debug.msg(self, "recv from #{ifname} (#{sock})")
+    debug("recv from #{ifname} (#{sock})")
     begin
       pkt = sock.sysread(65536)
-      Nwdiy::Debug.msg(self, "recv #{pkt.bytesize} bytes")
+      debug("recv #{pkt.bytesize} bytes")
     rescue EOFError
       @@peer[ifname].delete(sock)
       @@name[sock.fileno] = nil
@@ -185,10 +184,10 @@ class Nwdiy::Func::Out < Nwdiy::Func
     end
     dest = @@peer[ifname] + [@@os[ifname]]
     dest.compact!
-    Nwdiy::Debug.msg(self, "from #{sock} to #{dest}")
+    debug("from #{sock} to #{dest}")
     dest.each do |peer|
       next if peer == sock
-      Nwdiy::Debug.msg(self, "send to #{peer}")
+      debug("send to #{peer}")
       peer.syswrite(pkt)
     end
   end

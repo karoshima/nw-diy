@@ -9,19 +9,36 @@
 require "nwdiy"
 
 module Nwdiy::Debug
-  @@debug = Hash.new
 
-  # なんで include Nwdiy::Debug しても
-  # ここで def self.debugging したのが効かないんだろう？
-  # 仕方ないので引数にクラスを入れて誤魔化す
+  def self.included(cls)
+    cls.include Nwdiy::Debug::InstanceMethods
+    cls.extend  Nwdiy::Debug::ClassMethods
+  end
 
-  def self.set(cls, flag = true)
-    @@debug[cls] = flag
-    p self
+  module InstanceMethods
+    # インスタンスメソッドの debug() は
+    # クラスメソッドの debug() に処理をまわす
+    def debug(*msg)
+      self.class.debug(*msg)
+    end
   end
-  def self.msg(cls, msg)
-    return unless @@debug[cls]
-    caller(1)[0] =~ %r{(lib/nwdiy/.*)$}
-    puts "#{$1}: " + msg
+
+  module ClassMethods
+    def debug_on(*msg)
+      caller(1)[0] =~ %r{(lib/nwdiy/.*)$}
+      puts "#{$1}: " + msg.join(", ")
+    end
+    def debug_off(*msg)
+    end
+
+    alias :debug :debug_on
+    def debugging(flag = true)
+      if flag
+        alias :debug :debug_on
+      else
+        alias :debug :debug_off
+      end
+    end
   end
+
 end
