@@ -26,12 +26,13 @@ module Nwdiy::Debug
   module ClassMethods
     def debug_on(*msg)
       caller(1)[0] =~ %r{(lib/nwdiy/.*)$}
-      puts "#{$1}: " + msg.join(", ")
+      tm = Time.now.strftime "%T.%6N"
+      puts "#{tm}: #{$1}: " + msg.join(", ")
     end
     def debug_off(*msg)
     end
 
-    alias :debug :debug_on
+    alias :debug :debug_off
     def debugging(flag = true)
       if flag
         alias :debug :debug_on

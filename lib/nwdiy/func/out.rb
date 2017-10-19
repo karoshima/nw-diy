@@ -42,7 +42,7 @@ class Nwdiy::Func::Out < Nwdiy::Func
   def on
     # on 前のものは無かったことにしてから on にする
     while @sock.ready?
-      @sock.recvpkt
+      @sock.nwdiy_recvpkt
     end
     super()
   end
@@ -60,15 +60,29 @@ class Nwdiy::Func::Out < Nwdiy::Func
     @sock.nwdiy_sendpkt(pkt.to_s)
   end
 
-  # TCP ソケットでパケットを送受信するための
+  # パケットを送受信するための
   # ソケットインスタンス用 extend モジュール
   module SendRecvViaTCP
     def nwdiy_sendpkt(buf)
+      Nwdiy::Func::Out.debug "send #{pkt.bytesize} bytes to #{self}: (#{pkt&.dump}"
       self.syswrite([buf.bytesize].pack("n") + buf)
     end
     def nwdiy_recvpkt
       size = self.sysread(2).unpack("n")[0]
-      self.sysread(size)
+      pkt = self.sysread(size)
+      Nwdiy::Func::Out.debug "recv from #{self}: #{pkt&.dump}"
+      pkt
+    end
+  end
+  module SendRecvViaRTSock
+    def nwdiy_sendpkt(buf)
+      self.syswrite(buf)
+      Nwdiy::Func::Out.debug "send to #{self}: (#{pkt&.dump}"
+    end
+    def nwdiy_recvpkt
+      pkt = self.sysread(65536)
+      Nwdiy::Func::Out.debug "recv from #{self}: #{pkt&.dump}"
+      pkt
     end
   end
 
@@ -141,6 +155,7 @@ class Nwdiy::Func::Out < Nwdiy::Func
           debug("try OS interface")
           os = Socket.new(Socket::AF_PACKET, Socket::SOCK_RAW, Nwdiy::ETH_P_ALL.htons)
           os.bind(Socket.pack_sockaddr_ll(Nwdiy::ETH_P_ALL, ifa.ifindex))
+          os.extend SendRecvViaRTSock
           self.clean_ossock(os)
           self.set_promisc(ifa.ifindex, os)
           @@os[ifname] = os
@@ -183,9 +198,9 @@ class Nwdiy::Func::Out < Nwdiy::Func
     ifname = @@name[sock.fileno]
     debug("recv from #{ifname} (#{sock})")
     begin
-      pkt = sock.recvpkt
+      pkt = sock.nwdiy_recvpkt
       debug("recv #{pkt.bytesize} bytes")
-    rescue Errno::ECONNRESET
+    rescue Errno::ECONNRESET, EOFError
       @@peer[ifname].delete(sock)
       @@name[sock.fileno] = nil
       if @@peer[ifname].length == 0

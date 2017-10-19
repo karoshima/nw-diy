@@ -13,6 +13,9 @@
 require "nwdiy"
 
 if $0 == __FILE__
+  class Nwdiy::Func::Out
+    debugging(true)
+  end
   begin
     Nwdiy::Func::Out.start_server.join
   rescue Interrupt
