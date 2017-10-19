@@ -19,13 +19,14 @@ class Nwdiy::Func::Out < Nwdiy::Func
       begin
         begin
           @sock = TCPSocket.new("::1", $NWDIY_INTERFACE_PROXY_PORT)
+          @sock.extend SendRecvViaTCP
         rescue Errno::ECONNREFUSED => e
           debug("#{e}")
           self.class.start_server
           retry
         end
-        @sock.syswrite(arg) # プロキシにインターフェース名を通知して
-        @sock.sysread(1024)  # Ack をもらう
+        @sock.nwdiy_sendpkt(arg) # プロキシにインターフェース名を通知して
+        @sock.nwdiy_recvpkt      # Ack をもらう
       end
     when Socket
       @sock = arg  # self.pair で生成されたソケットを使うようにする
@@ -41,7 +42,7 @@ class Nwdiy::Func::Out < Nwdiy::Func
   def on
     # on 前のものは無かったことにしてから on にする
     while @sock.ready?
-      @sock.sysread(1024)
+      @sock.recvpkt
     end
     super()
   end
@@ -52,11 +53,23 @@ class Nwdiy::Func::Out < Nwdiy::Func
 
   def recv
     return nil unless self.power
-    @sock.sysread(65536)
+    @sock.nwdiy_recvpkt
   end
 
   def send(pkt)
-    @sock.syswrite(pkt.to_s)
+    @sock.nwdiy_sendpkt(pkt.to_s)
+  end
+
+  # TCP ソケットでパケットを送受信するための
+  # ソケットインスタンス用 extend モジュール
+  module SendRecvViaTCP
+    def nwdiy_sendpkt(buf)
+      self.syswrite([buf.bytesize].pack("n") + buf)
+    end
+    def nwdiy_recvpkt
+      size = self.sysread(2).unpack("n")[0]
+      self.sysread(size)
+    end
   end
 
   ################################################################
@@ -107,8 +120,9 @@ class Nwdiy::Func::Out < Nwdiy::Func
   # 新しいアクセスが来たのでインターフェース名を教えてもらって登録する
   def self.accept_newsock(sock)
     acc = sock.accept
+    acc.extend SendRecvViaTCP
     begin
-      ifname = acc.sysread(1024)
+      ifname = acc.nwdiy_recvpkt
       debug(self, "ifname #{ifname}")
     rescue EOFError
       return
@@ -139,7 +153,7 @@ class Nwdiy::Func::Out < Nwdiy::Func
     end
 
     # 最後に Ack を返す
-    acc.syswrite(ifname)
+    acc.nwdiy_sendpkt(ifname)
   end
 
   # Socket.new してから bind() するまでの間に受信しちゃったパケットは
@@ -169,9 +183,9 @@ class Nwdiy::Func::Out < Nwdiy::Func
     ifname = @@name[sock.fileno]
     debug("recv from #{ifname} (#{sock})")
     begin
-      pkt = sock.sysread(65536)
+      pkt = sock.recvpkt
       debug("recv #{pkt.bytesize} bytes")
-    rescue EOFError
+    rescue Errno::ECONNRESET
       @@peer[ifname].delete(sock)
       @@name[sock.fileno] = nil
       if @@peer[ifname].length == 0
@@ -188,7 +202,7 @@ class Nwdiy::Func::Out < Nwdiy::Func
     dest.each do |peer|
       next if peer == sock
       debug("send to #{peer}")
-      peer.syswrite(pkt)
+      peer.nwdiy_sendpkt(pkt)
     end
   end
 
