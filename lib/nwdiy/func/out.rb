@@ -53,7 +53,7 @@ class Nwdiy::Func::Out < Nwdiy::Func
 
   def recv
     return nil unless self.power
-    @sock.nwdiy_recvpkt
+    Nwdiy::Packet::Ethernet.new @sock.nwdiy_recvpkt
   end
 
   def send(pkt)
@@ -63,9 +63,9 @@ class Nwdiy::Func::Out < Nwdiy::Func
   # パケットを送受信するための
   # ソケットインスタンス用 extend モジュール
   module SendRecvViaTCP
-    def nwdiy_sendpkt(buf)
-      Nwdiy::Func::Out.debug "send #{pkt.bytesize} bytes to #{self}: (#{pkt&.dump}"
-      self.syswrite([buf.bytesize].pack("n") + buf)
+    def nwdiy_sendpkt(pkt)
+      Nwdiy::Func::Out.debug "send #{pkt.bytesize} bytes to #{self}: (#{pkt.dump}"
+      self.syswrite([pkt.bytesize].pack("n") + pkt)
     end
     def nwdiy_recvpkt
       size = self.sysread(2).unpack("n")[0]
@@ -75,8 +75,8 @@ class Nwdiy::Func::Out < Nwdiy::Func
     end
   end
   module SendRecvViaRTSock
-    def nwdiy_sendpkt(buf)
-      self.syswrite(buf)
+    def nwdiy_sendpkt(pkt)
+      self.syswrite(pkt)
       Nwdiy::Func::Out.debug "send to #{self}: (#{pkt&.dump}"
     end
     def nwdiy_recvpkt
