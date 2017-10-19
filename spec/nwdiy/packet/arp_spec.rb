@@ -62,5 +62,6 @@ RSpec.describe Nwdiy::Packet::ARP do
     expect(eth.data.psnd.inspect).to eq("10.0.0.2")
     expect(eth.data.htgt.inspect).to eq("00:00:0e:00:00:01")
     expect(eth.data.ptgt.inspect).to eq("10.0.0.1")
+    expect(eth.inspect).to eq "[Ethernet 00:00:0e:00:00:02 => 00:00:0e:00:00:01 0806 [ARP Request 00:00:0e:00:00:02/10.0.0.2 => 00:00:0e:00:00:01/10.0.0.1]]"
   end
 end

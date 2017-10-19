@@ -57,4 +57,11 @@ class Nwdiy::Packet::Ethernet < Nwdiy::Packet
       super(data)
     end
   end
+
+  def inspect
+    sprintf("[Ethernet %s => %s %04x %s]", 
+            src.inspect, dst.inspect, 
+            type, 
+            data.inspect)
+  end
 end

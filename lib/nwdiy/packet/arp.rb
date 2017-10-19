@@ -33,4 +33,13 @@ class Nwdiy::Packet::ARP
   def_field Nwdiy::Packet::IPv4Addr, :psnd
   def_field Nwdiy::Packet::MacAddr,  :htgt
   def_field Nwdiy::Packet::IPv4Addr, :ptgt
+
+  OPNAME = [nil, "Request", "Response"]
+
+  def inspect
+    sprintf("[ARP %s %s/%s => %s/%s]",
+            OPNAME[op] || "Unknown#{op}",
+            hsnd.inspect, psnd.inspect,
+            htgt.inspect, ptgt.inspect)
+  end
 end

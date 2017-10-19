@@ -77,5 +77,6 @@ RSpec.describe Nwdiy::Packet::Ethernet do
     expect(eth.src).to eq(src)
     expect(eth.type).to eq(0x0802)
     expect(eth.data).to eq(data)
+    expect(eth.inspect).to eq "[Ethernet 00:00:0e:00:00:02 => 00:00:0e:00:00:01 0802 \"Hello World\"]"
   end
 end
