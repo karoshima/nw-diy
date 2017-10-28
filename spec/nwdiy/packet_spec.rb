@@ -8,6 +8,13 @@
 #【サブクラスの作りかた】
 #
 # 単純なパケットの例
+#
+# class Nwdiy::Packet
+#   autoload(:ARP,  'nwdiy/packet/arp')
+#   autoload(:IPv4, 'nwdiy/packet/ipv4')
+#   autoload(:IPv6, 'nwdiy/packet/ipv6')
+# end
+#
 # class SubPacket < Nwdiy::Packet
 #   def_field Nwdiy::Packet::Mac,  :dst, :src
 #   def_field :uint16,             :type
@@ -69,10 +76,7 @@
 # そのときは def_field ではなく def_typed_field を使用して、
 # タイプとして扱うフィールドのフィールド名シンボル,
 # データとして扱うフィールドのフィールド名シンボル,
-# タイプとデータの対応表を設定します。
-#
-# この対応表は def_type_class で定義します。
-# 
+# 続けてタイプとデータの対応表をハッシュで設定します。
 #
 #【このクラスの特異メソッド】
 #
@@ -89,6 +93,27 @@
 #    フィールド名ごとに値を指定して作成したインスタンスを返します。
 #
 #【サブクラスに定義する特異メソッド】
+#
+# def_field(type, *name)
+#    type 型の変数 name を定義します。
+#    type には以下いずれかのシンボルを使うことができます。
+#        :uint8    8 bit 整数
+#        :uint16  16 bit 整数
+#        :uint32  32 bit 整数
+#        :byteN    N byte データ
+#    type はこれ以外に、Nwdiy::Packet の子クラスを指定することもできます。
+#    name には任意のシンボルを使うことができます。
+#    ここに指定したシンボルはフィールド名となり、
+#    インスタンス変数として、そしてインスタンスメソッドとして、
+#    代入や参照できます。
+#
+# def_typed_field(type, name, hash)
+#    type には def_field で指定した数値フィールド名をシンボルで指定します。
+#    name は def_field と同様に変数名となります。
+#    hash には type 値と name クラスの対応表を指定します。
+#    このハッシュには、クラスそのものではなく文字列で記載することもできます。
+#    文字列で記載することで、起動時にライブラリをすべて読み込んで
+#    しまうのでなく、必要なクラスだけ遅延読み込みにすることができます。
 #
 # bytesize -> String
 #    固定長のサブクラスでは、そのバイト長を返してください。
@@ -184,5 +209,35 @@ RSpec.describe Nwdiy::Packet do
     expect(smpl.src.inspect).to eq("00:00:0e:00:00:02")
     expect(smpl.type).to eq(0x0800)
     expect(smpl.data).to eq(data)
+  end
+
+  it "creates an packet which uses def_typed_field" do
+    class Nwdiy::Packet
+      autoload(:MacAddr,  'nwdiy/packet/macaddr')
+      autoload(:IPv4Addr, 'nwdiy/packet/ipv4addr')
+    end
+    class Sample03 < Nwdiy::Packet
+      def_field :uint8, :type
+      def_typed_field :type, :addr,
+                      1 => "Nwdiy::Packet::MacAddr",
+                      2 => "Nwdiy::Packet::IPv4Addr"
+    end
+
+    smpl1 = Sample03.new("\x01" + "\x80\x81\x82\x83\x84\x85")
+    expect(smpl1).to be_a Sample03
+    expect(smpl1.type).to eq 1
+    expect(smpl1.data).to be_a Nwdiy::Packet::MacAddr
+
+    smpl2 = Sample03.new("\x02" + "\x80\x81\x82\x83")
+    expect(smpl1).to be_a Sample03
+    expect(smpl1.type).to eq 2
+    expect(smpl1.data).to be_a Nwdiy::Packet::IPv4Addr
+
+    smpl3 = Sample03.new
+    smpl3.data = Nwdiy::Packet::MacAddr.new("00:00:0e:00:00:01")
+    expect(smpl3.type).to be 1
+
+    smpl3.data = Nwdiy::Packet::IPv4Addr.new("1.1.1.1")
+    expect(smpl3.type).to be 2
   end
 end
