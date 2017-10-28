@@ -19,15 +19,13 @@
 #   def_field Nwdiy::Packet::Mac,  :dst, :src
 #   def_field :uint16,             :type
 #
-#   def_typed_field :type, :data,
+#   def_typed_field :type, nil, :data,
 #     0x0800 => "Nwdiy::Packet::IPv4",
 #     0x0806 => "Nwdiy::Packet::ARP",
 #     0x8100 => "Nwdiy::Packet::VLAN",
 #     0x86dd => "Nwdiy::Packet::IPv6"
 #
-#   def parse_data(data)
-#     [@field1, @field2] = data.unpack("...")
-#   end
+#   def_trailer :fcs
 #
 #   def to_s
 #     dst.to_s + src.to_s + vlan.map{|v|v.to_s} + type.to_s + data.to_s
@@ -40,22 +38,18 @@
 #   end
 # end
 #
-# 一般的にパケットは、前半に固定長フィールドが配置され、
-# 後半に可変長フィールドが配置されています。
+# 一般的にパケットは、固定長フィールドと後続データで構成されます。
+# 稀に後続データのあとに「トレーラー」と称するデータを付けて
+# 認証などに利用することもあります。
 #
-# サブクラスを定義するときは、まず前半の固定長フィールドを 
-# def_field 文で定義し、続けて可変長フィールドを
-# インスタンスメソッドやインスタンス変数として定義します。
-# def_field 文で定義したフィールドは、インスタンスメソッドや
+# パケットのクラスを定義するときは、Nwdiy::Packet を継承します。
+# その中では、まず固定長フィールドを def_field 文で定義し、
+# 次に後続データとトレーラーをそれぞれ def_typed_field 文と
+# def_trailer 文で定義します。
+# 定義したフィールドは、インスタンスメソッドや
 # インスタンス変数として参照できます。
 #
-# パケットのバイナリデータからパケットインスタンスを作成するとき、
-# 前半の固定長フィールドは自動的に設定されます。
-# 固定長フィールドで使用しなかった後半のデータは
-# 各クラスで定義する parse_data() メソッドに渡されます。
-# このメソッドでは、後半の可変長フィールドを設定してください。
-#
-# 型には以下の種類があります
+# def_field で使用する型には以下の種類があります
 #
 #   固定長バイト列として :uint8, :uint16, :uint32 があります。
 #   このフィールドを参照すると、設定された値を Integer で返します。
@@ -71,6 +65,11 @@
 #   このフィールドに代入する時は、指定したサブクラスのインスタンス
 #   あるいはバイト列で設定できます。
 #
+# 後続データは一般的に、固定長フィールド中どれかの値によって
+# 型とサイズが決まります。
+#
+
+
 # ありがちなパケットの形態として、タイプ値によって後続データの型が決まる
 # というものがあります。
 # そのときは def_field ではなく def_typed_field を使用して、
@@ -95,25 +94,40 @@
 #【サブクラスに定義する特異メソッド】
 #
 # def_field(type, *name)
+#
 #    type 型の変数 name を定義します。
 #    type には以下いずれかのシンボルを使うことができます。
-#        :uint8    8 bit 整数
-#        :uint16  16 bit 整数
-#        :uint32  32 bit 整数
-#        :byteN    N byte データ
+#        :uint8     8 bit の Integer
+#        :uint16   16 bit の Integer
+#        :uint32   32 bit の Integer
+#        :byteN    N byte の String
 #    type はこれ以外に、Nwdiy::Packet の子クラスを指定することもできます。
+#
 #    name には任意のシンボルを使うことができます。
 #    ここに指定したシンボルはフィールド名となり、
 #    インスタンス変数として、そしてインスタンスメソッドとして、
-#    代入や参照できます。
+#    代入や参照ができるようになります。
 #
-# def_typed_field(type, name, hash)
+# def_typed_field(type, length, name, hash)
+#
 #    type には def_field で指定した数値フィールド名をシンボルで指定します。
+#    TCP のポート番号のように複数のフィールドがある場合は、配列にします。
+#
+#    length にはデータの長さを指定します。
+#    コーディング時に分かっている場合には整数を指定します。
+#    他のフィールドから読み取れるときは、そのフィールド名シンボルを指定します。
+#    分からない場合には nil を指定します。
+#
 #    name は def_field と同様に変数名となります。
+#
 #    hash には type 値と name クラスの対応表を指定します。
 #    このハッシュには、クラスそのものではなく文字列で記載することもできます。
 #    文字列で記載することで、起動時にライブラリをすべて読み込んで
 #    しまうのでなく、必要なクラスだけ遅延読み込みにすることができます。
+#
+# def_trailer(name)
+#
+#    残ったデータがバイト列 (String) で格納されます。
 #
 # bytesize -> String
 #    固定長のサブクラスでは、そのバイト長を返してください。
@@ -218,26 +232,29 @@ RSpec.describe Nwdiy::Packet do
     end
     class Sample03 < Nwdiy::Packet
       def_field :uint8, :type
-      def_typed_field :type, :addr,
+      def_typed_field :type, nil, :addr,
                       1 => "Nwdiy::Packet::MacAddr",
                       2 => "Nwdiy::Packet::IPv4Addr"
+      def_trailer :fcs
     end
 
     smpl1 = Sample03.new("\x01" + "\x80\x81\x82\x83\x84\x85")
     expect(smpl1).to be_a Sample03
     expect(smpl1.type).to eq 1
-    expect(smpl1.data).to be_a Nwdiy::Packet::MacAddr
+    expect(smpl1.addr).to be_a Nwdiy::Packet::MacAddr
+    expect(smpl1.fcs).to be_nil
 
-    smpl2 = Sample03.new("\x02" + "\x80\x81\x82\x83")
+    smpl2 = Sample03.new("\x02" + "\x80\x81\x82\x83\x84\x85")
     expect(smpl1).to be_a Sample03
     expect(smpl1.type).to eq 2
-    expect(smpl1.data).to be_a Nwdiy::Packet::IPv4Addr
+    expect(smpl1.addr).to be_a Nwdiy::Packet::IPv4Addr
+    expect(smpl1.fcs).to eq "\x84\x85"
 
     smpl3 = Sample03.new
-    smpl3.data = Nwdiy::Packet::MacAddr.new("00:00:0e:00:00:01")
+    smpl3.addr = Nwdiy::Packet::MacAddr.new("00:00:0e:00:00:01")
     expect(smpl3.type).to be 1
 
-    smpl3.data = Nwdiy::Packet::IPv4Addr.new("1.1.1.1")
+    smpl3.addr = Nwdiy::Packet::IPv4Addr.new("1.1.1.1")
     expect(smpl3.type).to be 2
   end
 end
