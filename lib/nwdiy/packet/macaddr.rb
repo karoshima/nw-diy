@@ -13,7 +13,7 @@ require "nwdiy/packet"
 
 class Nwdiy::Packet::MacAddr < Nwdiy::Packet
 
-  def_field :byte6, :addr
+  def_head :byte6, :addr
 
   def initialize(data)
     case data
@@ -48,11 +48,8 @@ class Nwdiy::Packet::MacAddr < Nwdiy::Packet
     raise TypeError.new("Invalid Mac address '#{data.dump}'")
   end
 
-  def to_s
-    self.addr
-  end
   def bytesize
-    6
+    self.class.bytesize
   end
   def self.bytesize
     6

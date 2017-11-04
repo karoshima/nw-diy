@@ -47,7 +47,7 @@
 #   # body_type(フィールド名シンボル, タイプ値) でクラスが分かり、
 #   # body_type(フィールド名シンボル, インスタンス) でタイプ値が分かります。
 #
-#   def_body_type :data1,
+#   def_body_type :data2,
 #                 1,  "Nwdiy::Packet::ICMP",
 #                 6,  "Nwdiy::Packet::TCP",
 #                 14  "Nwdiy::Packet::UDP"
@@ -55,9 +55,9 @@
 #   def data2=(xxx)
 #     case xxx
 #     when String
-#       @nwdiy_field[:data2] = self.class.body_type(:next, xxx)
+#       @nwdiy_field[:data2] = self.body_type(:data2, self.next).new(xxx)
 #     when Nwdiy::Packet
-#       self.type = self.class.body_type(xxx)
+#       self.next = self.body_type(:data2, xxx)
 #     end
 #   end
 #
@@ -220,6 +220,7 @@ RSpec.describe Nwdiy::Packet do
       def data=(val)
         @nwdiy_field[:data] = val
       end
+      attr_accessor :nwdiy_field
     end
 
     dst = "\x00\x00\x0e\x00\x00\x01"
@@ -245,7 +246,7 @@ RSpec.describe Nwdiy::Packet do
       def_head :uint16, :type
       def_body :data
       def data=(xxx)
-        @data = xxx
+        @nwdiy_field[:data] = xxx
       end
     end
 

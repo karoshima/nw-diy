@@ -19,15 +19,24 @@ class Nwdiy::Packet
   ################################################################
   # サブクラスを定義します
 
-  @@fields = Hash.new
+  @@headers = Hash.new
+  @@types = Hash.new
   @@template = Hash.new
+  @@hlen = Hash.new
+  @@bodies = Hash.new
+  @@classes = Hash.new
 
   def self.inherited(subcls)
-    @@fields[subcls] = Array.new
+    @@headers[subcls] = Array.new
+    @@types[subcls] = Hash.new
     @@template[subcls] = ""
+    @@hlen[subcls] = 0
+    @@bodies[subcls] = Array.new
+    @@classes[subcls] = Hash.new
   end
 
-  def self.def_field(type, *fields)
+  # ヘッダフィールド定義
+  def self.def_head(type, *fields)
 
     if type == :uint8
       size = 1
@@ -42,9 +51,11 @@ class Nwdiy::Packet
       template = "N"
       cls = Integer
     elsif type =~ /^byte(\d+)$/
+      size = $1.to_i
       template = "a#{$1}"
       cls = String
     elsif type < Nwdiy::Packet
+      size = type.bytesize
       template = "a#{type.bytesize}"
       cls = type
     else
@@ -56,68 +67,155 @@ class Nwdiy::Packet
     fields.each do |field|
 
       # サブクラスに定義順にフィールドを並べます
-      @@fields[self] << [type, field]
+      @@headers[self] << field
+      @@types[self][field] = type
       @@template[self] += template
+      @@hlen[self] += size
 
       # サブクラスに読み書きメソッドを設定します
-      if type =~ /^uint/
-        self.class_eval %Q{
-          def #{field}
-            @#{field}
-          end
-          def #{field}=(data)
-            if data.kind_of?(Integer)
-              @#{field} = data
-            elsif data.bytesize == #{size}
-              @#{field} = data.unpack("#{template}")[0]
-            else
-              @#{field} = data.to_i
-            end
-          end
-        }
-      elsif type =~ /^byte(\d+)$/
-        self.class_eval %Q{
-          def #{field}
-            @#{field}
-          end
-          def #{field}=(data)
-            @#{field} = data.to_s
-          end
-        }
-      elsif type < Nwdiy::Packet
-        self.class_eval %Q{
-          attr_reader :#{field}
-          def #{field}=(data)
-            data = #{type}.new(data) unless data.kind_of?(#{type})
-            @#{field} = data
-          end
-        }
-      end
+      self.class_eval "
+        def #{field}
+          self.nwdiy_get(:#{field})
+        end
+        def #{field}=(data)
+          self.nwdiy_set(:#{field}, data)
+        end
+      "
     end
+  end
+
+  # ボディフィールド定義
+  def self.def_body (*fields)
+    fields.each do |field|
+      field = field.to_sym
+      @@bodies[self] << field
+      @@types[self][field] = :body
+      self.class_eval "
+        def #{field}
+          self.nwdiy_get(:#{field})
+        end
+      "
+    end
+  end
+
+  # ボディフィールドの型定義
+  def self.def_body_type(field, classes)
+    classes.update(classes.invert)
+    @@classes[self][field.to_sym] = classes
   end
 
   ################################################################
   # サブクラスのインスタンスを生成します
 
   def initialize(data)
+    @nwdiy_field = Hash.new
     case data
     when Hash
       data.each do |var, val|
-        self.__send__("#{var}=", val)
+        self.nwdiy_set(var.to_sym, val)
       end
     when String
-      list = data.unpack(@@template[self.class] + "a*")
-      @@fields[self.class].each do |cf|
-        cls, field = cf
-        if cls.kind_of?(Symbol)
-          self.__send__("#{field}=", list.shift)
-        elsif cls < Nwdiy::Packet
-          self.__send__("#{field}=", cls.new(list.shift))
-        end
+      # ヘッダフィールドの切り出し
+      values = data.unpack(@@template[self.class] + "a*")
+      @@headers[self.class].each do |field|
+        self.nwdiy_set(field, values.shift)
       end
-      if self.respond_to?(:parse_data)
-        self.parse_data(list.shift)
+      value = values.join
+      @@bodies[self.class].each do |field|
+        self.__send__("#{field}=", value)
+        # 使ったぶん削る
+        len = @nwdiy_field[field].bytesize
+        value = value[len, value.bytesize-len]
       end
+    end
+  end
+
+  # フィールドの読み書き
+  def nwdiy_get(field)
+    @nwdiy_field[field.to_sym]
+  end
+  def nwdiy_set(field, value)
+    field = field.to_sym
+
+    type = @@types[self.class][field]
+    if type == nil
+      raise "Unknown field #{field}"
+
+    # ボディ部への代入なら、ユーザー定義にすべてを任せる
+    elsif type == :body
+      return self.__send__("#{field}=", value)
+
+    # ヘッダ部への代入なら、ここで頑張る
+
+    # 数値のときは uintX への代入だよね
+    elsif value.kind_of?(Integer)
+      unless @@types[self.class][field] =~ /^uint(\d+)$/
+        raise TypeError.new "field #{field} is not an #{@@types.class} field"
+      end
+      return @nwdiy_field[field] = value
+
+    # パケットデータなら、型一致だよね
+    elsif value.kind_of?(Nwdiy::Packet)
+      return @nwdiy_field[field] = value if
+        value.kind_of?(@@types[self.class][field])
+      raise "value #{value.inspect} is not a kind of #{@@types[self.class][field]}"
+
+    # 文字列のときは型ごとの解釈
+    elsif ! value.kind_of?(String)
+      raise "Unknown type of data #{value.inspect}"
+    elsif type == :uint8
+      return @nwdiy_field[field] = value.unpack("C")[0]
+    elsif type == :uint16
+      return @nwdiy_field[field] = value.unpack("n")[0]
+    elsif type == :uint32
+      return @nwdiy_field[field] = value.unpack("N")[0]
+    elsif type =~ /^byte(\d+)$/
+      len = $1.to_i
+      return @nwdiy_field[field] = value[0, len] if len <= value.bytesize
+      return @nwdiy_field[field] = value + ("\x00" * (len - value.bytesize))
+    elsif type < Nwdiy::Packet
+      return @nwdiy_field[field] = @@types[self.class][field].new(value)
+    end
+  end
+  
+
+  # データからタイプ値を求める
+  # タイプ値からデータを求める
+  def body_type(field, type)
+    self.class.body_type(field, arg)
+  end
+  def self.body_type(field, arg)
+    case arg
+    when Integer
+      # 数値ならクラスを返す
+      # クラスが文字列なら、クラス定数に変換してからね
+      cls = @@classes[self][arg]
+      return cls unless cls.kind_of?(String)
+      cls = cls.split(/::/).inject(Module) { |c,s| c.const_get(s) }
+      @@classes[self][arg] = cls
+      return cls
+    end
+  end
+
+  # パケットデータにする
+  def to_s
+    # ヘッダ部
+    cls = self.class
+    s = @@headers[cls].map {|h| @nwdiy_field[h] }.pack(@@template[cls])
+    # ボディ部
+    @@bodies[cls].inject(s) { |str, b| s + @nwdiy_field[b].to_s }
+  end
+  # パケットを可視化する
+  def inspect
+    cls = self.class
+    headers = @@headers[cls].map {|h| "#{h}="+@nwdiy_field[h].inspect }
+    bodies = @@bodies[cls].map {|b| "#{b}="+@nwdiy_field[b].inspect }
+    "[#{self.class.to_s} " + (headers + bodies).join(", ") + "]"
+  end
+
+  def bytesize
+    @@bodies[self.class].inject(@@hlen[self.class]) do |sum, body|
+      sum + @nwdiy_field[body].bytesize
     end
   end
 
