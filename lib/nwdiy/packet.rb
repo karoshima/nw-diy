@@ -182,18 +182,26 @@ class Nwdiy::Packet
   # データからタイプ値を求める
   # タイプ値からデータを求める
   def body_type(field, type)
-    self.class.body_type(field, arg)
+    self.class.body_type(field, type)
   end
   def self.body_type(field, arg)
     case arg
     when Integer
       # 数値ならクラスを返す
       # クラスが文字列なら、クラス定数に変換してからね
-      cls = @@classes[self][arg]
+      cls = @@classes[self][field][arg]
+      return Nwdiy::Packet::Binary unless cls
       return cls unless cls.kind_of?(String)
       cls = cls.split(/::/).inject(Module) { |c,s| c.const_get(s) }
-      @@classes[self][arg] = cls
+      @@classes[self][field][arg] = cls
       return cls
+    when Nwdiy::Packet
+      type = @@classes[self][field][arg.class]
+      return type if type
+      type = @@classes[self][field][arg.class.to_s]
+      return type unless type
+      return @@classes[self][field][arg.class] =
+        @@classes[self][field].delete(arg.class.to_s)
     end
   end
 
@@ -216,7 +224,7 @@ class Nwdiy::Packet
     cls = self.class
     headers = @@headers[cls].map {|h| "#{h}="+@nwdiy_field[h].inspect }
     bodies = @@bodies[cls].map {|b| "#{b}="+@nwdiy_field[b].inspect }
-    "[#{self.class.to_pkt} " + (headers + bodies).join(", ") + "]"
+    "[#{self.class.to_s} " + (headers + bodies).join(", ") + "]"
   end
 
   def bytesize

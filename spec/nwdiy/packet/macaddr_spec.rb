@@ -27,7 +27,7 @@
 #
 #【インスタンスメソッド】
 #
-# to_s -> String
+# to_pkt -> String
 #    (Nwdiy::Pacet から継承)
 #    Mac アドレスをバイト列に変換します
 #
@@ -94,7 +94,7 @@ RSpec.describe Nwdiy::Packet::MacAddr do
       addr = hash[src]
       it "creates an #{theme} Mac addr from #{addr.dump}" do
         mac = Nwdiy::Packet::MacAddr.new(addr)
-        expect(mac.to_s).to eq hash[:byte]
+        expect(mac.to_pkt).to eq hash[:byte]
         expect(mac.inspect).to eq hash[:name].gsub(/[\.\-]/, ":")
         expect(mac.unicast?).to be hash[:unicast?]
         expect(mac.multicast?).to be hash[:multicast?]

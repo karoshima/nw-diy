@@ -13,5 +13,10 @@
 require "nwdiy/packet"
 
 class Nwdiy::Packet::Binary < Nwdiy::Packet
-  def_array :uint8, :data
+  def_body :data
+  def data=(seed)
+    @nwdiy_field[:data] = seed.to_s
+  end
+  alias :to_pkt :data
+  alias :inspect :data
 end

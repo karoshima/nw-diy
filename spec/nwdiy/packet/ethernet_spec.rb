@@ -51,7 +51,7 @@ require "spec_helper"
 RSpec.describe Nwdiy::Packet::Ethernet do
   it "creates empty ethernet packet" do
     pkt = Nwdiy::Packet::Ethernet.new
-    expect(pkt.dst).to eq("00:00:00:00:00:00")
+    expect(pkt.dst.inspect).to eq("00:00:00:00:00:00")
   end
 
   it "creates an ethernet packet with bytes" do
@@ -60,10 +60,10 @@ RSpec.describe Nwdiy::Packet::Ethernet do
     type = "\x08\x01"
     data = "Hello World"
     eth = Nwdiy::Packet::Ethernet.new(dst + src + type + data)
-    expect(eth.dst).to eq(dst)
-    expect(eth.src).to eq(src)
+    expect(eth.dst.to_pkt).to eq(dst)
+    expect(eth.src.to_pkt).to eq(src)
     expect(eth.type).to eq(0x0801)
-    expect(eth.data).to eq(data)
+    expect(eth.data.to_pkt).to eq(data)
   end
 
   it "creates an ethernet packet with hash" do
@@ -73,10 +73,10 @@ RSpec.describe Nwdiy::Packet::Ethernet do
     data = "Hello World"
     eth = Nwdiy::Packet::Ethernet.new(dst: dst, src: src, 
                                       type: type, data: data)
-    expect(eth.dst).to eq(dst)
-    expect(eth.src).to eq(src)
+    expect(eth.dst.to_pkt).to eq(dst)
+    expect(eth.src.to_pkt).to eq(src)
     expect(eth.type).to eq(0x0802)
-    expect(eth.data).to eq(data)
-    expect(eth.inspect).to eq "[Ethernet 00:00:0e:00:00:02 => 00:00:0e:00:00:01 0802 \"Hello World\"]"
+    expect(eth.data.to_pkt).to eq(data)
+    expect(eth.inspect).to eq "[Ethernet 00:00:0e:00:00:02 => 00:00:0e:00:00:01 0802 Hello World]"
   end
 end

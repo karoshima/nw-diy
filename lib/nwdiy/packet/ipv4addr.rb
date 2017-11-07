@@ -12,7 +12,7 @@
 require "nwdiy/packet"
 
 class Nwdiy::Packet::IPv4Addr < Nwdiy::Packet
-  def_field :uint32, :addr
+  def_head :uint32, :addr
 
   def self.bytesize
     4
@@ -22,36 +22,36 @@ class Nwdiy::Packet::IPv4Addr < Nwdiy::Packet
   end
 
   def initialize(data)
-    @addr = self.class.addr2uint32(data)
+    super(addr: self.class.addr2uint32(data))
   end
 
   def to_s
-    [@addr].pack("N")
+    [self.addr].pack("N")
   end
   def inspect
     sprintf("%u.%u.%u.%u",
-            (@addr & 0xff000000) >> 24,
-            (@addr & 0x00ff0000) >> 16,
-            (@addr & 0x0000ff00) >>  8,
-            (@addr & 0x000000ff))
+            (self.addr & 0xff000000) >> 24,
+            (self.addr & 0x00ff0000) >> 16,
+            (self.addr & 0x0000ff00) >>  8,
+            (self.addr & 0x000000ff))
   end
 
   def unicast?
     !self.multicast?
   end
   def loopback?
-    (@addr & 0xff000000) == 0x7f000000
+    (self.addr & 0xff000000) == 0x7f000000
   end
   def multicast?
-    (@addr & 0xf0000000) == 0xe0000000
+    (self.addr & 0xf0000000) == 0xe0000000
   end
 
   def broadcast?(mask)
-    (@addr | self.addr2uint32(mask)) == 0xffffffff
+    (self.addr | self.addr2uint32(mask)) == 0xffffffff
   end
 
   def included?(address, mask)
-    ((@addr ^ address) & self.addr2uint32(mask)) == 0
+    ((self.addr ^ address) & self.addr2uint32(mask)) == 0
   end
 
   private

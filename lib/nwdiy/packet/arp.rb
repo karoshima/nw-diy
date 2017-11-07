@@ -18,21 +18,13 @@ class Nwdiy::Packet
 end
 
 class Nwdiy::Packet::ARP < Nwdiy::Packet
-end
-
-class Nwdiy::Packet::Ethernet
-  @@ethertypes[Nwdiy::Packet::ARP] = 0x0806
-  @@etherclass[0x0806] = Nwdiy::Packet::ARP
-end
-
-class Nwdiy::Packet::ARP
-  def_field :uint16, :htype, :ptype
-  def_field :uint8,  :hlen,  :plen
-  def_field :uint16, :op
-  def_field Nwdiy::Packet::MacAddr,  :hsnd
-  def_field Nwdiy::Packet::IPv4Addr, :psnd
-  def_field Nwdiy::Packet::MacAddr,  :htgt
-  def_field Nwdiy::Packet::IPv4Addr, :ptgt
+  def_head :uint16, :htype, :ptype
+  def_head :uint8,  :hlen,  :plen
+  def_head :uint16, :op
+  def_head Nwdiy::Packet::MacAddr,  :hsnd
+  def_head Nwdiy::Packet::IPv4Addr, :psnd
+  def_head Nwdiy::Packet::MacAddr,  :htgt
+  def_head Nwdiy::Packet::IPv4Addr, :ptgt
 
   OPNAME = [nil, "Request", "Response"]
 

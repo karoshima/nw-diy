@@ -17,44 +17,27 @@ class Nwdiy::Packet
 end
 
 class Nwdiy::Packet::Ethernet < Nwdiy::Packet
-  def_field Nwdiy::Packet::MacAddr,  :dst
-  def_field Nwdiy::Packet::MacAddr,  :src
-  def_field :uint16,                 :type
-  def parse_data(obj)
-    self.data = obj
-  end
-
-  @@ethertypes = Hash.new
-  @@etherclass = Hash.new
-
-  # type は @data があればそのクラスを見て @type を見ない
-  def type
-    @@ethertypes[@data.class] ? @@ethertypes[@data.class] : @type
-  end
-
-  # データとして Nwdiy::Packet::XXX インスタンスを与えられたら
-  # そのクラスに応じて @type も書き換える
-  # そうじゃないデータを与えられたら
-  # @type に応じて Nwdiy::Packet::XXX インスタンス化する
-  attr_accessor :data
-  def data=(obj)
-
-    if @@ethertypes[obj.class]
-      @type = @@ethertypes[obj.class]
-      @data = obj
-    elsif @@etherclass[self.type]
-      @data = @@etherclass[self.type].new(obj)
-    else
-      @data = obj
+  def_head Nwdiy::Packet::MacAddr,  :dst
+  def_head Nwdiy::Packet::MacAddr,  :src
+  def_head :uint16,                 :type
+  def_body :data
+  def_body_type :data,
+                0x0806 => "Nwdiy::Packet::ARP"
+  def data=(seed)
+    case seed
+    when String
+      @nwdiy_field[:data] = self.body_type(:data, self.type).new(seed)
+    when Nwdiy::Packet
+      self.type = self.body_type(:data, seed)
+      @nwdiy_field[:data] = seed
     end
   end
 
   def initialize(data = nil)
+    super(data)
     if data == nil
       self.dst = Nwdiy::Packet::MacAddr.new("00:00:00:00:00:00")
       self.src = Nwdiy::Packet::MacAddr.new("00:00:00:00:00:00")
-    else
-      super(data)
     end
   end
 

@@ -63,26 +63,26 @@ class Nwdiy::Packet::MacAddr < Nwdiy::Packet
   def ==(other)
     case other
     when /^......$/
-      return @addr == other
+      return self.addr == other
     when /^(\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)$/
       othermac = Nwdiy::Packet::MacAddr.new(other)
-      return @addr == othermac.addr
+      return self.addr == othermac.addr
     else
       raise TypeError.new("Invalid Mac address '#{data.dump}'")
     end
   end
 
   def unicast?
-    (@addr.unpack("C")[0] & 0x01) == 0
+    (self.addr.unpack("C")[0] & 0x01) == 0
   end
   def multicast?
     !self.unicast?
   end
   def broadcast?
-    @addr == "\xFF\xFF\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
+    self.addr == "\xFF\xFF\xFF\xFF\xFF\xFF".force_encoding("ASCII-8BIT")
   end
   def global?
-    self.broadcast? || (@addr.unpack("C")[0] & 0x02) == 0
+    self.broadcast? || (self.addr.unpack("C")[0] & 0x02) == 0
   end
   def local?
     !self.broadcast? && !self.global?
