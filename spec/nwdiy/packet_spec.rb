@@ -74,13 +74,13 @@
 #
 #   ################
 #   # インスタンスの実データ化, 可視化
-#   # インスタンスをパケットデータに変換する to_s や
+#   # インスタンスをパケットデータに変換する to_pkt や
 #   # インスタンスを可視化する inspect は
 #   # 上記の def_head, def_body によって生成されています。
 #   # 変更したいときは、def_head, def_body のあとに続けて
 #   # メソッドを再定義してください。
 #
-#   def to_s
+#   def to_pkt
 #     ...
 #   end
 #   def inspect
@@ -129,14 +129,14 @@
 #    fields には任意のシンボルを使うことができます。
 #    ここに指定したシンボルはフィールド名となります。
 #    そしてインスタンスメソッドとして代入や参照できるようになります。
-#    インスタンスメソッド to_s や inspect に反映されます。
+#    インスタンスメソッド to_pkt や inspect に反映されます。
 #
 # def_body(*fields)
 #
 #    fields には任意のシンボルを使うことができます。
 #    ここに指定したシンボルはフィールド名となります。
 #    そしてインスタンスメソッドとして参照できるようになります。
-#    インスタンスメソッド to_s や inspect に反映されます。
+#    インスタンスメソッド to_pkt や inspect に反映されます。
 #
 # def フィールド名=(xxx)
 #   @nwdiy_field[フィールド名シンボル] = ...
@@ -188,7 +188,7 @@
 #
 #【サブクラスで使えるインスタンスメソッド】
 #
-# to_s -> String
+# to_pkt -> String
 #    パケットをバイト列 (String) に変換します。
 #
 # bytesize -> Integer
@@ -235,7 +235,7 @@ RSpec.describe Nwdiy::Packet do
     expect(smpl.src).to eq(src)
     expect(smpl.type).to eq(0x0800)
     expect(smpl.data).to eq(data)
-    expect(smpl.to_s).to eq(pkt)
+    expect(smpl.to_pkt).to eq(pkt)
     expect(smpl.bytesize).to eq(pkt.bytesize)
   end
 
@@ -257,8 +257,8 @@ RSpec.describe Nwdiy::Packet do
     smpl = Sample02.new(dst + src + type + data)
 
     expect(smpl).to be_a(Sample02)
-    expect(smpl.dst.to_s).to eq(dst)
-    expect(smpl.src.to_s).to eq(src)
+    expect(smpl.dst.to_pkt).to eq(dst)
+    expect(smpl.src.to_pkt).to eq(src)
     expect(smpl.dst.inspect).to eq("00:00:0e:00:00:01")
     expect(smpl.src.inspect).to eq("00:00:0e:00:00:02")
     expect(smpl.type).to eq(0x0800)

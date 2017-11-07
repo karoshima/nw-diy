@@ -198,19 +198,25 @@ class Nwdiy::Packet
   end
 
   # パケットデータにする
-  def to_s
+  def to_pkt
     # ヘッダ部
     cls = self.class
     s = @@headers[cls].map {|h| @nwdiy_field[h] }.pack(@@template[cls])
     # ボディ部
-    @@bodies[cls].inject(s) { |str, b| s + @nwdiy_field[b].to_s }
+    @@bodies[cls].inject(s) do |str, b|
+      if @nwdiy_field[b].respond_to? :to_pkt
+        s + @nwdiy_field[b].to_pkt
+      else
+        s + @nwdiy_field[b].to_s
+      end
+    end
   end
   # パケットを可視化する
   def inspect
     cls = self.class
     headers = @@headers[cls].map {|h| "#{h}="+@nwdiy_field[h].inspect }
     bodies = @@bodies[cls].map {|b| "#{b}="+@nwdiy_field[b].inspect }
-    "[#{self.class.to_s} " + (headers + bodies).join(", ") + "]"
+    "[#{self.class.to_pkt} " + (headers + bodies).join(", ") + "]"
   end
 
   def bytesize
