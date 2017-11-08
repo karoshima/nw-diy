@@ -12,6 +12,7 @@ require "nwdiy"
 class Nwdiy::Func::Out < Nwdiy::Func
 
   include Nwdiy::Debug
+  #  debugging true
 
   def initialize(arg)
     case arg
@@ -30,11 +31,12 @@ class Nwdiy::Func::Out < Nwdiy::Func
       end
     when Socket
       @sock = arg  # self.pair で生成されたソケットを使うようにする
+      @sock.extend SendRecvViaTCP
     end
   end
 
   def self.pair
-    Socket.socketpair(Socket::AF_INET6, Socket::SOCK_STREAM).map do |so| 
+    Socket.socketpair(Socket::AF_INET, Socket::SOCK_STREAM).map do |so| 
       self.new(so)
     end
   end
@@ -53,19 +55,22 @@ class Nwdiy::Func::Out < Nwdiy::Func
 
   def recv
     return nil unless self.power
-    Nwdiy::Packet::Ethernet.new @sock.nwdiy_recvpkt
+    pkt = Nwdiy::Packet::Ethernet.new @sock.nwdiy_recvpkt
+    debug("received #{pkt.inspect}")
+    pkt
   end
 
   def send(pkt)
-    @sock.nwdiy_sendpkt(pkt.to_s)
+    Nwdiy::Func::Out.debug "send(#{pkt.to_pkt.inspect})"
+    @sock.nwdiy_sendpkt(pkt.to_pkt)
   end
 
   # パケットを送受信するための
   # ソケットインスタンス用 extend モジュール
   module SendRecvViaTCP
     def nwdiy_sendpkt(pkt)
-      Nwdiy::Func::Out.debug "send #{pkt.bytesize} bytes to #{self}: (#{pkt.dump}"
-      self.syswrite([pkt.bytesize].pack("n") + pkt)
+      Nwdiy::Func::Out.debug "send #{pkt.bytesize} bytes to #{self}: (#{pkt.inspect}"
+      self.syswrite([pkt.bytesize].pack("n") + pkt) - 2
     end
     def nwdiy_recvpkt
       size = self.sysread(2).unpack("n")[0]

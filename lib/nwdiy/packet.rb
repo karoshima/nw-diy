@@ -132,7 +132,20 @@ class Nwdiy::Packet
 
   # フィールドの読み書き
   def nwdiy_get(field)
-    @nwdiy_field[field.to_sym]
+
+    field = field.to_sym
+    return @nwdiy_field[field] if @nwdiy_field[field]
+
+    type = @@types[self.class][field]
+
+    if type =~ /^uint/
+      self.nwdiy_set(field, 0)
+    elsif type =~ /^byte(\d+)$/
+      self.nwdiy_set(field, "\x00" * $1.to_i)
+    elsif type.kind_of?(Class) && type < Nwdiy::Packet
+      self.nwdiy_set(field, nil)
+    end
+    return @nwdiy_field[field]
   end
   def nwdiy_set(field, value)
     field = field.to_sym
@@ -160,6 +173,9 @@ class Nwdiy::Packet
         value.kind_of?(@@types[self.class][field])
       raise "value #{value.inspect} is not a kind of #{@@types[self.class][field]}"
 
+    # Nwdiy::Packet 型のときは、nil 初期化もあり得る
+    elsif value == nil && type < Nwdiy::Packet
+      return @nwdiy_field[field] = type.new(nil)
     # 文字列のときは型ごとの解釈
     elsif ! value.kind_of?(String)
       raise "Unknown type of data #{value.inspect}"
@@ -174,7 +190,7 @@ class Nwdiy::Packet
       return @nwdiy_field[field] = value[0, len] if len <= value.bytesize
       return @nwdiy_field[field] = value + ("\x00" * (len - value.bytesize))
     elsif type < Nwdiy::Packet
-      return @nwdiy_field[field] = @@types[self.class][field].new(value)
+      return @nwdiy_field[field] = type.new(value)
     end
   end
   
@@ -209,13 +225,17 @@ class Nwdiy::Packet
   def to_pkt
     # ヘッダ部
     cls = self.class
-    s = @@headers[cls].map {|h| @nwdiy_field[h] }.pack(@@template[cls])
+    s = @@headers[cls].map do |h|
+      field = self.nwdiy_get(h)
+      field.kind_of?(Nwdiy::Packet) ? field.to_pkt : field
+    end
+    sp = s.pack(@@template[cls])
     # ボディ部
-    @@bodies[cls].inject(s) do |str, b|
+    @@bodies[cls].inject(sp) do |str, b|
       if @nwdiy_field[b].respond_to? :to_pkt
-        s + @nwdiy_field[b].to_pkt
+        str + @nwdiy_field[b].to_pkt
       else
-        s + @nwdiy_field[b].to_s
+        str + @nwdiy_field[b].to_s
       end
     end
   end
@@ -229,7 +249,7 @@ class Nwdiy::Packet
 
   def bytesize
     @@bodies[self.class].inject(@@hlen[self.class]) do |sum, body|
-      sum + @nwdiy_field[body].bytesize
+      sum + (@nwdiy_field[body]&.bytesize || 0)
     end
   end
 

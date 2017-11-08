@@ -14,8 +14,9 @@
 #    ただし、以下の条件に合致すると、OS のインターフェースを開きます。
 #
 #    a. name が OS のインターフェース名であること
-#    b. Linux であること (PCAP 未対応であり AF_PACKET で実装しているため)
+#    b. Linux であること (AF_PACKET に対応していること)
 #    c. 最初に root 権限で ethernet_proxy.rb を動かしてあること
+#       あるいは本プログラム自身を root 権限で動かしていること
 #
 # pair => Nwdiy::Func::Out, Nwdiy::Func::Out
 #    ふたつのインターフェースを開きます。
@@ -56,7 +57,6 @@ RSpec.describe Nwdiy::Func::Out do
   end
 
   it "has instance methods" do
-    puts Nwdiy::Func::Out
     hoge = Nwdiy::Func::Out.new("hoge")
     expect(hoge).to be_a_kind_of(Nwdiy::Func::Out)
     expect(hoge.on).to be true
@@ -66,15 +66,42 @@ RSpec.describe Nwdiy::Func::Out do
     Nwdiy::Func::Out.stop_daemon
   end
 
-  # it "act as pair" do
-  #   foo, bar = Nwdiy::Func::Out.pair
-  #   expect(foo.on).to be true
-  #   expect(bar.on).to be true
+  it "act as pair" do
+    foo, bar = Nwdiy::Func::Out.pair
+    expect(foo.on).to be true
+    expect(bar.on).to be true
 
-  #   pkt = "Hello world"
-  #   expect(foo.ready?).to be false
-  #   expect(bar.send(pkt)).to be pkt.bytesize
-  #   expect(foo.ready?).to be true
-  #   expect(foo.recv).to eq pkt
-  # end
+    pkt = Nwdiy::Packet::Ethernet.new
+    pkt.dst = "00:00:0e:00:00:01"
+    pkt.src = "00:00:0e:00:00:02"
+
+    expect(foo.ready?).to be false
+    expect(bar.send(pkt)).to eq pkt.bytesize
+    expect(foo.ready?).to be true
+    pkt2 = foo.recv
+    expect(pkt2.to_pkt).not_to be pkt.to_pkt
+    expect(pkt2.to_pkt).to eq pkt.to_pkt
+  end
+
+  it "must check on/off status" do
+    foo, bar = Nwdiy::Func::Out.pair
+    expect(foo.on).to be true
+    expect(bar.on).to be true
+
+    pkt = Nwdiy::Packet::Ethernet.new
+    pkt.dst = "00:00:0e:00:00:01"
+    pkt.src = "00:00:0e:00:00:02"
+
+    expect(foo.ready?).to be false
+    expect(bar.send(pkt)).to eq pkt.bytesize
+    foo.off
+    expect(foo.ready?).to be false
+    expect(foo.recv).to be nil
+    foo.on
+    expect(foo.ready?).to be false
+    expect(bar.send(pkt)).to eq pkt.bytesize
+    expect(foo.ready?).to be true
+    expect(foo.recv.to_pkt).to eq pkt.to_pkt
+    expect(foo.ready?).to be false
+  end
 end
