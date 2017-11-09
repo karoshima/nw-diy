@@ -14,31 +14,35 @@ class Nwdiy::Func::Out < Nwdiy::Func
   include Nwdiy::Debug
   #  debugging true
 
-  def initialize(arg)
-    case arg
-    when String
-      begin
-        begin
-          @sock = TCPSocket.new("::1", $NWDIY_INTERFACE_PROXY_PORT)
-          @sock.extend SendRecvViaTCP
-        rescue Errno::ECONNREFUSED => e
-          debug("#{e}")
-          self.class.start_server
-          retry
-        end
-        @sock.nwdiy_sendpkt(arg) # プロキシにインターフェース名を通知して
-        @sock.nwdiy_recvpkt      # Ack をもらう
-      end
-    when Socket
-      @sock = arg  # self.pair で生成されたソケットを使うようにする
+  @@pairId = 0
+  @name
+  attr_accessor :name
+  alias :to_s :name
+
+  def initialize(name, sock=nil)
+    @name = name
+    if sock
+      @sock = sock  # self.pair で生成されたソケットを使うようにする
       @sock.extend SendRecvViaTCP
+    else
+      begin
+        @sock = TCPSocket.new("::1", $NWDIY_INTERFACE_PROXY_PORT)
+      rescue Errno::ECONNREFUSED => e
+        self.class.start_server
+        retry
+      end
+      @sock.extend SendRecvViaTCP
+      @sock.nwdiy_sendpkt(name) # プロキシにインタフェース名を通知して
+      @sock.nwdiy_recvpkt       # Ack をもらう
     end
   end
 
   def self.pair
-    Socket.socketpair(Socket::AF_INET, Socket::SOCK_STREAM).map do |so| 
-      self.new(so)
-    end
+    sp = Socket.socketpair(Socket::AF_INET, Socket::SOCK_STREAM)
+    sp[0] = self.new(sprintf("pair%03ua", @@pairId), sp[0])
+    sp[1] = self.new(sprintf("pair%03ub", @@pairId), sp[1])
+    @@pairId += 1
+    sp
   end
 
   def on
@@ -54,14 +58,18 @@ class Nwdiy::Func::Out < Nwdiy::Func
   end
 
   def recv
-    return nil unless self.power
+    debug("#{self}.recv start")
+    unless self.power
+      debug("#{self}.recv -> nil")
+      return nil
+    end
     pkt = Nwdiy::Packet::Ethernet.new @sock.nwdiy_recvpkt
-    debug("received #{pkt.inspect}")
+    debug("#{self}.recv -> #{pkt.inspect}")
     pkt
   end
 
   def send(pkt)
-    Nwdiy::Func::Out.debug "send(#{pkt.to_pkt.inspect})"
+    Nwdiy::Func::Out.debug "#{self}.send(#{pkt.to_pkt.inspect})"
     @sock.nwdiy_sendpkt(pkt.to_pkt)
   end
 
@@ -69,24 +77,20 @@ class Nwdiy::Func::Out < Nwdiy::Func
   # ソケットインスタンス用 extend モジュール
   module SendRecvViaTCP
     def nwdiy_sendpkt(pkt)
-      Nwdiy::Func::Out.debug "send #{pkt.bytesize} bytes to #{self}: (#{pkt.inspect}"
       self.syswrite([pkt.bytesize].pack("n") + pkt) - 2
     end
     def nwdiy_recvpkt
       size = self.sysread(2).unpack("n")[0]
       pkt = self.sysread(size)
-      Nwdiy::Func::Out.debug "recv from #{self}: #{pkt&.dump}"
       pkt
     end
   end
   module SendRecvViaRTSock
     def nwdiy_sendpkt(pkt)
       self.syswrite(pkt)
-      Nwdiy::Func::Out.debug "send to #{self}: (#{pkt&.dump}"
     end
     def nwdiy_recvpkt
       pkt = self.sysread(65536)
-      Nwdiy::Func::Out.debug "recv from #{self}: #{pkt&.dump}"
       pkt
     end
   end

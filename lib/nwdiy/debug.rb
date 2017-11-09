@@ -19,30 +19,32 @@ module Nwdiy::Debug
     # インスタンスメソッドの debug() は
     # クラスメソッドの debug() に処理をまわす
     def debug(*msg)
-      self.class.debug(*msg)
+      self.class.debug_msg(*msg)
     end
   end
 
   module ClassMethods
-    def debug_msg(*msg)
+
+    def debug(*msg)
+      debug_msg(msg)
+    end
+
+    def debug_on(*msg)
       caller(1)[1] =~ %r{(lib/nwdiy/.*)$}
       tm = Time.now.strftime "%T.%6N"
       puts "#{tm}: #{$1}: " + msg.join(", ")
     end
-    def debug_on(*msg)
-      debug_msg(msg)
-    end
     def debug_off(*msg)
     end
-
-    alias :debug :debug_off
+    
     def debugging(flag = true)
       if flag
-        alias :debug :debug_on
+        alias :debug_msg :debug_on
       else
-        alias :debug :debug_off
+        alias :debug_msg :debug_off
       end
     end
+    alias :debug_msg :debug_off
   end
 
 end

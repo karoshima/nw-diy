@@ -67,6 +67,8 @@
 
 require "spec_helper"
 
+Thread.abort_on_exception = true
+
 RSpec.describe Nwdiy::Func do
   it "has some methods" do
     func = Nwdiy::Func.new
@@ -87,5 +89,74 @@ RSpec.describe Nwdiy::Func do
     expect { func.attach_left(nil) }.to raise_error(NotImplementedError)
     expect { func.attach_right(nil) }.to raise_error(NotImplementedError)
     expect { func.detach(nil) }.to raise_error(NotImplementedError)
+  end
+
+  it "can chain with pipe('|')" do
+    # サンプル機能
+    # 単純に左右に渡すだけ
+    # 動的なことは考慮してないので開発の参考にはしないでね
+    class Hoge < Nwdiy::Func
+      def initialize
+        super
+        @left
+        @right
+        @l2r
+        @r2l
+        @queue = Thread::Queue.new
+      end
+      def attach_left(out)
+        @left = out
+      end
+      def attach_right(out)
+        @right = out
+      end
+      def forward(a, b)
+        Thread.new(a, b) do |ifa, ifb|
+          @queue.push(nil)
+          loop do
+            ifb.send(ifa.recv)
+          end
+        end
+      end
+      def on
+        self.off
+        @l2r = self.forward(@left, @right)
+        @r2l = self.forward(@right, @left)
+        @queue.pop
+        @queue.pop
+      end
+      def off
+        if @l2r
+          @l2r.kill
+          @l2r = nil
+        end
+        if @r2l
+          @r2l.kill
+          @r2l = nil
+        end
+      end
+    end
+
+    foo = Hoge.new
+    bar = Hoge.new
+
+    p1, p2 = Nwdiy::Func::Out.pair
+    p3, p4 = Nwdiy::Func::Out.pair
+
+    [p1, p2, p3, p4].each {|p| p.on }
+
+    p2 | foo | bar | p3
+
+    foo.on
+    bar.on
+
+    pkt = Nwdiy::Packet::Ethernet.new
+    pkt.dst = "00:00:0e:00:00:01"
+    pkt.src = "00:00:0e:00:00:02"
+
+    expect(p1.send(pkt)).to eq pkt.bytesize
+    expect(p4.recv.to_pkt).to eq pkt.to_pkt
+
+    [p1, p2, p3, p4, foo, bar].each {|p| p.off }
   end
 end
