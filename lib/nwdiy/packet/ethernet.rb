@@ -9,8 +9,6 @@
 # 仕様については spec/nwdiy/packet/ethernet_spec.rb を参照してください。
 ################################################################
 
-require "nwdiy/packet"
-
 class Nwdiy::Packet
   autoload(:Arp,      'nwdiy/packet/arp')
   autoload(:MacAddr,  'nwdiy/packet/macaddr')

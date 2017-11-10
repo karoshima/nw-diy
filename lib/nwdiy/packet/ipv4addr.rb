@@ -9,8 +9,6 @@
 # 仕様については spec/nwdiy/packet/ipv4_spec.rb を参照してください
 ################################################################
 
-require "nwdiy/packet"
-
 class Nwdiy::Packet::IPv4Addr < Nwdiy::Packet
   def_head :uint32, :addr
 

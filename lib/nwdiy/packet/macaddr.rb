@@ -9,8 +9,6 @@
 # 仕様については spec/nwdiy/packet/mac_spec.rb を参照してください
 ################################################################
 
-require "nwdiy/packet"
-
 class Nwdiy::Packet::MacAddr < Nwdiy::Packet
 
   def_head :byte6, :addr

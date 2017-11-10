@@ -58,6 +58,10 @@ RSpec.describe Nwdiy::Func::App do
   it "can handle packet" do
     # テスト用クラス, ethernet の src, dst を入れ替えて返す
     class Reflector < Nwdiy::Func::App
+      def initialize
+        super
+        @thread = nil
+      end
       def on
         if @thread
           self.off

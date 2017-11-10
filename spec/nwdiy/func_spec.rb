@@ -101,10 +101,10 @@ RSpec.describe Nwdiy::Func do
     class Hoge < Nwdiy::Func
       def initialize
         super
-        @left
-        @right
-        @l2r
-        @r2l
+        @left = nil
+        @right = nil
+        @l2r = nil
+        @r2l = nil
         @queue = Thread::Queue.new
       end
       def attach_left(out)

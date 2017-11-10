@@ -6,8 +6,6 @@
 # 著作権については ./LICENSE もご確認ください
 ################################################################
 
-require "nwdiy"
-
 class Nwdiy::Func
 
   include Nwdiy::Debug
@@ -16,7 +14,7 @@ class Nwdiy::Func
   autoload(:Out, 'nwdiy/func/out')
   autoload(:App, 'nwdiy/func/app')
 
-  @power; attr_accessor :power
+  attr_accessor :power
   def on
     @power = true
   end

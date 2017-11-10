@@ -134,7 +134,7 @@ class Addrinfo
   end
   def sll
     raise SocketError("need AF_PACKET address") unless self.packet?
-    fam, proto, @ifindex, @hatype, @pkttype, len, @addr =
+    _, _, @ifindex, @hatype, @pkttype, _, @addr =
       Socket.unpack_sockaddr_ll(self.to_sockaddr)
   end
   protected :sll

@@ -6,15 +6,14 @@
 # 著作権については ./LICENSE もご確認ください
 ################################################################
 
-require "nwdiy"
-
 class Nwdiy::Func::App < Nwdiy::Func
   
   include Nwdiy::Debug
-  debugging = true
 
-  @out
-  @name
+  def initialize
+    @out = nil
+    @name = nil
+  end
   attr_reader :name
   alias :to_s :name
 

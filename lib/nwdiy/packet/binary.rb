@@ -10,8 +10,6 @@
 # Nwdiy::Packet の各種メソッドが使用可能です。
 ################################################################
 
-require "nwdiy/packet"
-
 class Nwdiy::Packet::Binary < Nwdiy::Packet
   def_body :data
   def data=(seed)

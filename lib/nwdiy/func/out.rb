@@ -7,7 +7,6 @@
 ################################################################
 
 require "io/wait"
-require "nwdiy"
 
 class Nwdiy::Func::Out < Nwdiy::Func
 
@@ -15,7 +14,6 @@ class Nwdiy::Func::Out < Nwdiy::Func
   #  debugging true
 
   @@pairId = 0
-  @name
   attr_reader :name
   alias :to_s :name
 
@@ -27,7 +25,7 @@ class Nwdiy::Func::Out < Nwdiy::Func
     else
       begin
         @sock = TCPSocket.new("::1", $NWDIY_INTERFACE_PROXY_PORT)
-      rescue Errno::ECONNREFUSED => e
+      rescue Errno::ECONNREFUSED
         self.class.start_server
         retry
       end

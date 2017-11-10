@@ -6,8 +6,6 @@
 # 著作権については ./LICENSE もご確認ください
 ################################################################
 
-require "nwdiy"
-
 class Nwdiy::Packet
 
   autoload(:ARP,      'nwdiy/packet/arp')
@@ -17,7 +15,6 @@ class Nwdiy::Packet
   autoload(:MacAddr,  'nwdiy/packet/macaddr')
 
   include Nwdiy::Debug
-  debugging = true
 
   ################################################################
   # サブクラスを定義します
@@ -88,7 +85,7 @@ class Nwdiy::Packet
   end
 
   # ボディフィールド定義
-  def self.def_body (*fields)
+  def self.def_body(*fields)
     fields.each do |field|
       field = field.to_sym
       @@bodies[self] << field
