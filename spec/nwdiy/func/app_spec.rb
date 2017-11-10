@@ -63,10 +63,13 @@ RSpec.describe Nwdiy::Func::App do
           self.off
         end
         @thread = Thread.new do
-          loop do
-            pkt = self.attached[0].recv
-            pkt.src, pkt.dst = pkt.dst, pkt.src
-            self.attached[0].send pkt
+          begin
+            loop do
+              pkt = self.attached[0].recv
+              pkt.src, pkt.dst = pkt.dst, pkt.src
+              self.attached[0].send pkt
+            end
+          rescue EOFError
           end
         end
       end
