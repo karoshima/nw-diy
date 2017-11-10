@@ -49,15 +49,18 @@
 # power -> true(電源ON)/false(電源OFF)
 #    機器の稼動状態を返します。
 #
-# attach_left(pipe) -> self
-# attach_right(pipe) -> self
-# attach(pipe) -> self (Nwdiy::Func::Flt を除く)
-#    パイプをインスタンスの左側あるいは右側に接続します。
+# attach_left(ifp) -> self
+# attach_right(ifp) -> self
+# attach(ifp) -> self (Nwdiy::Func::Flt を除く)
+#    インタフェースをインスタンスの左側あるいは右側に接続します。
 #    ただし、Nwdiy::Func::Flt のみが本当に左右を区別するので、
-#    他のクラスでは attach(pipe) で代替できます。
+#    他のクラスでは attach(ifp) で代替できます。
 #
-# detach(pipe) -> self
-#    パイプをインスタンスから抜きます。
+# attached -> [ifp, ifp, ifp, ...]
+#    上記の attach で登録したインタフェースのリスト
+#    
+# detach(ifp) -> ifp
+#    インタフェースをインスタンスから抜きます。
 #
 # self | other -> other
 #    Nwdiy::Packet 子クラスのインスタンスである other を

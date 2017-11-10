@@ -16,6 +16,9 @@ class Nwdiy::Packet
   autoload(:IPv4Addr, 'nwdiy/packet/ipv4addr')
   autoload(:MacAddr,  'nwdiy/packet/macaddr')
 
+  include Nwdiy::Debug
+  debugging = true
+
   ################################################################
   # サブクラスを定義します
 
@@ -149,6 +152,8 @@ class Nwdiy::Packet
   end
   def nwdiy_set(field, value)
     field = field.to_sym
+
+#    debug "#{field} = #{value}(#{value.class})"
 
     type = @@types[self.class][field]
     if type == nil

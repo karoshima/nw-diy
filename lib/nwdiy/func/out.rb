@@ -16,7 +16,7 @@ class Nwdiy::Func::Out < Nwdiy::Func
 
   @@pairId = 0
   @name
-  attr_accessor :name
+  attr_reader :name
   alias :to_s :name
 
   def initialize(name, sock=nil)

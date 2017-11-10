@@ -14,6 +14,7 @@ class Nwdiy::Func
   #  debugging true
 
   autoload(:Out, 'nwdiy/func/out')
+  autoload(:App, 'nwdiy/func/app')
 
   @power; attr_accessor :power
   def on
@@ -22,13 +23,13 @@ class Nwdiy::Func
   def off
     @power = false
   end
-  def attach_left(pipe)
+  def attach_left(ifp)
     raise NotImplementedError.new("attach_left must be overwritten")
   end
-  def attach_right(pipe)
+  def attach_right(ifp)
     raise NotImplementedError.new("attach_left must be overwritten")
   end
-  def detach(pipe)
+  def detach(ifp)
     raise NotImplementedError.new("attach_left must be overwritten")
   end
 
