@@ -11,6 +11,7 @@ require "io/wait"
 class Nwdiy::Func::Out < Nwdiy::Func
 
   autoload(:Ethernet, 'nwdiy/func/out/ethernet')
+  autoload(:Pipe,     'nwdiy/func/out/pipe')
 
   include Nwdiy::Debug
 
