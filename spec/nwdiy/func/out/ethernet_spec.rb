@@ -64,7 +64,7 @@ RSpec.describe Nwdiy::Func::Out::Ethernet do
 
   ifname.values.each do |name|
     it "can open #{name}" do
-      puts ifp = Nwdiy::Func::Out::Ethernet.new(name)
+      ifp = Nwdiy::Func::Out::Ethernet.new(name)
       expect(ifp).not_to be nil
     end
   end
