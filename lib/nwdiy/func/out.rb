@@ -10,8 +10,9 @@ require "io/wait"
 
 class Nwdiy::Func::Out < Nwdiy::Func
 
+  autoload(:Ethernet, 'nwdiy/func/out/ethernet')
+
   include Nwdiy::Debug
-  #  debugging true
 
   @@pairId = 0
   attr_reader :name

@@ -16,18 +16,13 @@ require "nwdiy"
 if $0 == __FILE__
 
   opt = OptionParser.new
-  opt.on("-d") do |val|
-    if val
-      class Nwdiy::Func::Out
-        debugging(true)
-      end
-    end
+  opt.on("-w") do |val|
+    $VERBOSE = true
   end
-
   opt.parse!(ARGV)
 
   begin
-    Nwdiy::Func::Out.start_server.join
+    Nwdiy::Func::Out::Ethernet.start_server.join
   rescue Interrupt
   end
 end
