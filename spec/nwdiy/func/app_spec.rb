@@ -41,7 +41,7 @@ RSpec.describe Nwdiy::Func::App do
     expect(hoge.off).to be false
     expect(hoge.power).to be false
 
-    pair = Nwdiy::Func::Out.pair
+    pair = Nwdiy::Func::Out::Pipe.pair
     expect(hoge.attach(pair[0])).to be hoge
     expect(hoge.attached).to eq [pair[0]]
     expect(hoge.attached).to eq [pair[0]]
@@ -84,7 +84,7 @@ RSpec.describe Nwdiy::Func::App do
     end
 
     ref = Reflector.new
-    p0, p1 = Nwdiy::Func::Out.pair.each {|p| p.on }
+    p0, p1 = Nwdiy::Func::Out::Pipe.pair.each {|p| p.on }
     p1 | ref
     ref.on
 
@@ -92,7 +92,7 @@ RSpec.describe Nwdiy::Func::App do
                                        dst: "00:00:00:00:00:02")
     p0.send(pkt0)
     pkt1 = p0.recv
-    expect(pkt1.src.to_pkt).to eq pkt0.dst.to_pkt
-    expect(pkt1.dst.to_pkt).to eq pkt0.src.to_pkt
+    expect(pkt1.src.inspect).to eq "00:00:00:00:00:02"
+    expect(pkt1.dst.inspect).to eq "00:00:00:00:00:01"
   end
 end

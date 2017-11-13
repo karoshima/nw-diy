@@ -66,7 +66,7 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
   end
   def self.if_nametoindex(name)
     Socket::getifaddrs.each do |ifp|
-      next       unless ifp.name != name
+      next       unless ifp.name == name
       return nil unless ifp.respond_to?(:ifindex)
       return ifp.ifindex
     end
@@ -79,6 +79,7 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
     ifp.autoclose = true
     ifp.clean
     ifp.set_promisc(ifindex)
+    ifp
   end
 
   module SockPFPKT
@@ -99,7 +100,7 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
     end
     # MAC が自分宛でなくても受信できるようにする
     def set_promisc(ifindex)
-      self.setsockopt(Nwdiy::SOL_PACKET, Nwdiy::PACKET_ADD_MEMBERSHIP, [ifindex, Nwdiy:PACKET_MR_PROMISC].pack("I!S!x10"))
+      self.setsockopt(Nwdiy::SOL_PACKET, Nwdiy::PACKET_ADD_MEMBERSHIP, [ifindex, Nwdiy::PACKET_MR_PROMISC].pack("I!S!x10"))
     end
 
     # パケット送受信
@@ -138,9 +139,12 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
     # パケット送受信
     def nwdiy_recv
       size = self.sysread(2).unpack("n")[0]
-      self.sysread(size)
+      pkt = self.sysread(size)
+      Nwdiy::Func::Out::Ethernet.debug "#{[self]}.recv = #{pkt.dump}"
+      pkt
     end
     def nwdiy_send(pkt)
+      Nwdiy::Func::Out::Ethernet.debug "[#{self}].send(#{pkt.dump})"
       self.syswrite([pkt.bytesize].pack("n") + pkt) - 2
     end
   end
@@ -159,7 +163,7 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
     @@peer = Hash.new { |hash,key| hash[key] = Array.new }
 
     # ファイルデスクリプタごとの、インタフェース名
-    @@name = Array.new
+    @@name = Hash.new
 
     # インタフェース名ごとの、PF_PACKET インタフェース
     @@pfpkt = Hash.new
@@ -167,9 +171,31 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
     @@tcpserver = Thread.new do
       loop do
 
+        @@peer.each do |name, list|
+          list.delete_if do |io|
+            if io.closed?
+              @@name.delete(io)
+              true
+            else
+              false
+            end
+          end
+        end
+        @@peer.delete_if do |name, list|
+          if list.length == 0
+            pfpkt = @@pfpkt.delete(name)
+            pfpkt.close if pfpkt
+            true
+          else
+            false
+          end
+        end
+
         check = [@@sock]
         check += @@peer.values.flatten
         check += @@pfpkt.values.compact
+
+        debug "@@sock=#{@@sock} @@peer=#{@@peer} @@pfpkt=#{@@pfpkt}"
 
         can_read, _ = IO.select(check)
         can_read.each do |io|
@@ -204,7 +230,7 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
 
     # 登録
     @@peer[name] << acc
-    @@name[acc.fileno] = name
+    @@name[acc] = name
 
     debug @@pfpkt
 
@@ -213,7 +239,7 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
       pfpkt = self.open_pfpacket(name, daemon: true)
       if pfpkt
         @@pfpkt[name] = pfpkt
-        @@name[pfpkt.fileno] = name
+        @@name[pfpkt] = name
       end
     end
 
@@ -225,29 +251,25 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
 
   # パケットが来たので転送する
   def self.forward_data(io)
-    name = @@name[io.fileno]
+    name = @@name[io]
     # まずそこに来てるパケットを受信する
     # あるいはクローズ処理する
     begin
       pkt = io.nwdiy_recv
-    rescue Errno::ECONNRESET, EOFError => e
-      debug "closing #{io} (#{e})"
-      @@peer[name].delete(io)
-      @@name.delete_at(io.fileno)
+    rescue Errno::ECONNRESET, EOFError, IOError
       io.close
-      if @@peer[name].length == 0
-        pfpkt = @@pfpkt.delete(name)
-        if pfpkt
-          pfpkt.close
-        end
-      end
       return
     end
     # 他のインタフェースに転送する
     (@@peer[name] + [@@pfpkt[name]]).each do |peer|
       next unless peer
       next if peer == io
-      peer.nwdiy_send(pkt)
+      begin
+        peer.nwdiy_send(pkt)
+      rescue Errno::ECONNRESET, IOError
+        peer.close
+      end
     end
   end
+
 end

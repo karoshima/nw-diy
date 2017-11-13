@@ -58,8 +58,8 @@ RSpec.describe Nwdiy::Func::Out::Ethernet do
   case RbConfig::CONFIG['host_os']
   when /linux/
     ifas = Socket::getifaddrs
-    index = ifas.find {|ifp| ifp.name =~ /^lo/ }
-    ifname[:lo] = ifas[index].name
+    lo = ifas.find {|ifp| ifp.name =~ /^lo/ }
+    ifname[:lo] = lo.name
   end
 
   ifname.values.each do |name|

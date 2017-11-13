@@ -40,7 +40,7 @@ class Nwdiy::Func
     elsif other.kind_of?(Nwdiy::Func::Out)
       self.attach_right(other)
     else
-      p1, p2 = Nwdiy::Func::Out.pair.each {|p| p.on }
+      p1, p2 = Nwdiy::Func::Out::Pipe.pair.each {|p| p.on }
       
       self.attach_right(p1)
       other.attach_left(p2)

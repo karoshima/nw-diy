@@ -143,8 +143,8 @@ RSpec.describe Nwdiy::Func do
     foo = Hoge.new
     bar = Hoge.new
 
-    p1, p2 = Nwdiy::Func::Out.pair
-    p3, p4 = Nwdiy::Func::Out.pair
+    p1, p2 = Nwdiy::Func::Out::Pipe.pair
+    p3, p4 = Nwdiy::Func::Out::Pipe.pair
 
     [p1, p2, p3, p4].each {|p| p.on }
 
