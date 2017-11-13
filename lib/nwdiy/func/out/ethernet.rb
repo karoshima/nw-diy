@@ -52,16 +52,15 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
   ################
   # PF_PACKET ソケットを扱う
   #private
-  def self.open_pfpacket(name, daemon:false)
+  def self.open_pfpacket(name)
     ifindex = self.if_nametoindex(name)
-    debug "#{name}(#{ifindex}) (daemon:#{daemon})"
+    debug "#{name}(#{ifindex})"
     return nil unless ifindex   # 実在しない
     begin
       return self.open_pfpacket_detail(name, ifindex)
     rescue Errno::EPERM => e    # 権限がない場合
-      debug e
-      return nil unless daemon  # ユーザープロセスならデーモンに依頼する
-      raise e                   # デーモンが root 権限で開けないならもうムリ
+      $stderr.puts "open(#{name}) => #{e}"
+      return nil
     end
   end
   def self.if_nametoindex(name)
@@ -236,7 +235,7 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
 
     # 可能であれば、PF_PACKET のソケットも用意する
     unless @@pfpkt.has_key?(name)
-      pfpkt = self.open_pfpacket(name, daemon: true)
+      pfpkt = self.open_pfpacket(name)
       if pfpkt
         @@pfpkt[name] = pfpkt
         @@name[pfpkt] = name
