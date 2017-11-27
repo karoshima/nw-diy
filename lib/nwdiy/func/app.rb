@@ -8,9 +8,8 @@
 
 class Nwdiy::Func::App < Nwdiy::Func
   
-  include Nwdiy::Debug
-
   def initialize
+    super
     @out = nil
     @name = nil
   end

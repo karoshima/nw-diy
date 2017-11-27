@@ -12,7 +12,6 @@ Thread.abort_on_exception = true
 
 class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
 
-  include Nwdiy::Debug
   class EthError < Exception; end
 
   @@name_seed = 0
