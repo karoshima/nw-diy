@@ -107,8 +107,9 @@ class Nwdiy::Packet
   ################################################################
   # サブクラスのインスタンスを生成します
 
-  def initialize(data)
+  def initialize(data = nil)
     @nwdiy_field = Hash.new
+    @direction = nil
     case data
     when Hash
       data.each do |var, val|
@@ -255,9 +256,12 @@ class Nwdiy::Packet
     end
   end
 
-  ################################################################
-  # 以上ここまで未検証の書きかけ
-  ################################################################
+  # パケットの方角
+  attr_reader :direction
+  def direction=(dir)
+    sym = dir&.to_sym
+    @direction = (sym == :to_left || sym == :to_right) ? sym : nil
+  end
 
   ################
   # 複数のバッファからチェックサム計算します。

@@ -237,6 +237,7 @@ RSpec.describe Nwdiy::Packet do
     expect(smpl.data).to eq(data)
     expect(smpl.to_pkt).to eq(pkt)
     expect(smpl.bytesize).to eq(pkt.bytesize)
+    expect(smpl.direction).to be nil
   end
 
   it "creates an packet which include Nwdiy::Packet parts" do
@@ -255,6 +256,7 @@ RSpec.describe Nwdiy::Packet do
     type = "\x08\x00"
     data = "Hello World"
     smpl = Sample02.new(dst + src + type + data)
+    smpl.direction = :to_left
 
     expect(smpl).to be_a(Sample02)
     expect(smpl.dst.to_pkt).to eq(dst)
@@ -263,6 +265,7 @@ RSpec.describe Nwdiy::Packet do
     expect(smpl.src.inspect).to eq("00:00:0e:00:00:02")
     expect(smpl.type).to eq(0x0800)
     expect(smpl.data).to eq(data)
+    expect(smpl.direction).to be :to_left
   end
 
 end

@@ -64,7 +64,7 @@
 #
 # self | other -> other
 #    Nwdiy::Packet 子クラスのインスタンスである other を
-#    パイプで繋ぎます。
+#    パイプで右に繋ぎます。
 #
 ################################################################
 
@@ -153,12 +153,19 @@ RSpec.describe Nwdiy::Func do
     foo.on
     bar.on
 
-    pkt = Nwdiy::Packet::Ethernet.new
-    pkt.dst = "00:00:0e:00:00:01"
-    pkt.src = "00:00:0e:00:00:02"
+    inpkt = Nwdiy::Packet::Ethernet.new
+    inpkt.dst = "00:00:0e:00:00:01"
+    inpkt.src = "00:00:0e:00:00:02"
 
-    expect(p1.send(pkt)).to eq pkt.bytesize
-    expect(p4.recv.to_pkt).to eq pkt.to_pkt
+    expect(p1.send(inpkt)).to eq inpkt.bytesize
+    outpkt = p4.recv
+    expect(outpkt.to_pkt).to eq inpkt.to_pkt
+    expect(outpkt.direction).to be :to_right
+
+    expect(p4.send(inpkt)).to eq inpkt.bytesize
+    outpkt = p1.recv
+    expect(outpkt.to_pkt).to eq inpkt.to_pkt
+    expect(outpkt.direction).to be :to_left
 
     [p1, p2, p3, p4, foo, bar].each {|p| p.off }
   end

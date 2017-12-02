@@ -65,7 +65,9 @@ class Nwdiy::Packet::IPv4Addr < Nwdiy::Packet
                 0xfffffff8, 0xfffffffc, 0xfffffffe, 0xffffffff ]
 
   def self.addr2uint32(addr)
-    if addr.bytesize == 4
+    if addr == nil
+      return 0
+    elsif addr.bytesize == 4
       return addr.unpack("N")[0]
     elsif addr =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/
       a = [$1,$2,$3,$4].map{|c|c.to_i}
