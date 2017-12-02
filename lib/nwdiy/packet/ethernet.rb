@@ -31,14 +31,6 @@ class Nwdiy::Packet::Ethernet < Nwdiy::Packet
     end
   end
 
-  def initialize(data = nil)
-    super(data)
-    if data == nil
-      self.dst = Nwdiy::Packet::MacAddr.new("00:00:00:00:00:00")
-      self.src = Nwdiy::Packet::MacAddr.new("00:00:00:00:00:00")
-    end
-  end
-
   def inspect
     sprintf("[Ethernet %s => %s %04x %s]", 
             src.inspect, dst.inspect, 

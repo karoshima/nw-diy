@@ -66,38 +66,38 @@ Thread.abort_on_exception = true
 RSpec.describe Nwdiy::Func::Flt do
   it "has some methods" do
     flt = Nwdiy::Func::Flt.new
-    expect(func.respond_to?(:on)).to be true
-    expect(func.respond_to?(:off)).to be true
-    expect(func.respond_to?(:power)).to be true
-    expect(func.respond_to?(:attach_left)).to be true
-    expect(func.respond_to?(:attach_right)).to be true
-    expect(func.respond_to?(:attached)).to be true
-    expect(func.respond_to?(:detach_left)).to be true
-    expect(func.respond_to?(:detach_right)).to be true
-    expect(func.respond_to?(:|)).to be true
+    expect(flt.respond_to?(:on)).to be true
+    expect(flt.respond_to?(:off)).to be true
+    expect(flt.respond_to?(:power)).to be true
+    expect(flt.respond_to?(:attach_left)).to be true
+    expect(flt.respond_to?(:attach_right)).to be true
+    expect(flt.respond_to?(:attached)).to be true
+    expect(flt.respond_to?(:detach_left)).to be true
+    expect(flt.respond_to?(:detach_right)).to be true
+    expect(flt.respond_to?(:|)).to be true
   end
 
-  it "can check ICMP" do
+  it "can check ARP" do
     # サンプル機能
-    # ICMP の数をかぞえる
+    # ARP の数をかぞえる
     # 動的なことは考慮してないので開発の参考にはしないでね
-    class ICMPCounter < Nwdiy::Func::Flt
+    class ARPCounter < Nwdiy::Func::Flt
 
       @count
       attr_reader :count
 
       def initialize
         super
-        @count = Hash.new
+        @count = Hash.new { 0 }
       end
 
       def forward(pkt)
-        @count[pkt.direction] += 1
+        @count[pkt.direction] += 1 if pkt.type == 0x0806
         pkt
       end
     end
 
-    flt = ICMPCounter.new
+    flt = ARPCounter.new
 
     p1, p2 = Nwdiy::Func::Out::Pipe.pair
     p3, p4 = Nwdiy::Func::Out::Pipe.pair
@@ -113,45 +113,38 @@ RSpec.describe Nwdiy::Func::Flt do
     expect(p4.recv.to_pkt).to eq pkt.to_pkt
 
     # まだ ICMP は数えられていない
-    expect(flt.count[:to_left]).to be 0
-    expect(flt.count[:to_right]).to be nil
-    expect(flt.count[:to_left]).to be nil
+    expect(flt.count[:to_left]).to eq 0
+    expect(flt.count[:to_right]).to eq 0
 
     # p4 から送ったら p3→count→p2 と通って p1 から出てくるはず
     expect(p4.send(pkt)).to eq pkt.bytesize
     expect(p1.recv.to_pkt).to eq pkt.to_pkt
 
-    # まだ ICMP は数えられていない
-    expect(flt.count[:to_left]).to be 0
-    expect(flt.count[:to_right]).to be 0
-    expect(flt.count[:to_left]).to be nil
+    # まだ ARP は数えられていない
+    expect(flt.count[:to_left]).to eq 0
+    expect(flt.count[:to_right]).to eq 0
 
-    # パケットに ICMP データを載せたら、計上されるはず
-    pkt.data = Nwdiy::Packet::IPv4.new
-    pkt.data.data = Nwdiy::Packet::ICMPv4.new
+    # パケットに ARP データを載せたら、計上されるはず
+    pkt.data = Nwdiy::Packet::ARP.new
     expect(p1.send(pkt)).to eq pkt.bytesize
     expect(p4.recv.to_pkt).to eq pkt.to_pkt
-    expect(flt.count[:to_left]).to be 1
-    expect(flt.count[:to_right]).to be 0
-    expect(flt.count[:to_left]).to be nil
+    expect(flt.count[:to_left]).to eq 0
+    expect(flt.count[:to_right]).to eq 1
     expect(p4.send(pkt)).to eq pkt.bytesize
     expect(p1.recv.to_pkt).to eq pkt.to_pkt
-    expect(flt.count[:to_left]).to be 1
-    expect(flt.count[:to_right]).to be 1
-    expect(flt.count[:to_left]).to be nil
+    expect(flt.count[:to_left]).to eq 1
+    expect(flt.count[:to_right]).to eq 1
 
-    # パケットが UDP だったら計上されない
-    pkt.data.data = Nwdiy::Packet::UDP.new
+    # パケットが ARP 以外だったら計上されない
+    pkt.type = 0x0800
     expect(p1.send(pkt)).to eq pkt.bytesize
     expect(p4.recv.to_pkt).to eq pkt.to_pkt
-    expect(flt.count[:to_left]).to be 1
-    expect(flt.count[:to_right]).to be 1
-    expect(flt.count[:to_left]).to be nil
+    expect(flt.count[:to_left]).to eq 1
+    expect(flt.count[:to_right]).to eq 1
     expect(p4.send(pkt)).to eq pkt.bytesize
     expect(p1.recv.to_pkt).to eq pkt.to_pkt
-    expect(flt.count[:to_left]).to be 1
-    expect(flt.count[:to_right]).to be 1
-    expect(flt.count[:to_left]).to be nil
+    expect(flt.count[:to_left]).to eq 1
+    expect(flt.count[:to_right]).to eq 1
 
   end
 end

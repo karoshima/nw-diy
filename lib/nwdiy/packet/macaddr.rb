@@ -42,6 +42,8 @@ class Nwdiy::Packet::MacAddr < Nwdiy::Packet
       return super(data)
     when /^(\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)$/
       return super([$1,$2,$3,$4,$5,$6].map{|c|c.hex}.pack("C6"))
+    when nil
+      return super("\x00\x00\x00\x00\x00\x00")
     end
     raise TypeError.new("Invalid Mac address '#{data.dump}'")
   end
