@@ -50,13 +50,14 @@
 #   def_body_type :data2,
 #                 1,  "Nwdiy::Packet::ICMP",
 #                 6,  "Nwdiy::Packet::TCP",
-#                 14  "Nwdiy::Packet::UDP"
+#                 14, "Nwdiy::Packet::UDP"
 #
 #   def data2=(xxx)
 #     case xxx
 #     when String
 #       @nwdiy_field[:data2] = self.body_type(:data2, self.next).new(xxx)
 #     when Nwdiy::Packet
+#       @nwdiy_field[:data2] = xxx
 #       self.next = self.body_type(:data2, xxx)
 #     end
 #   end
