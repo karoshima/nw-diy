@@ -80,10 +80,10 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
     @nwdiy_field[:option] = byte[0..(self.hlen-20)]
   end
 
-  def_type_body :data,
-                1,  "Nwdiy::Packet::ICMP",
-                6,  "Nwdiy::Packet::TCP",
-                14, "Nwdiy::Packet::UDP"
+  def_body_type :data,
+                1  => "Nwdiy::Packet::ICMP",
+                6  => "Nwdiy::Packet::TCP",
+                14 => "Nwdiy::Packet::UDP"
   def data=(seed)
     case seed
     when String

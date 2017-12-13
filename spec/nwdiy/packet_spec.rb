@@ -247,8 +247,17 @@ RSpec.describe Nwdiy::Packet do
       def_head Nwdiy::Packet::MacAddr, :dst, :src
       def_head :uint16, :type
       def_body :data
+      def_body_type :data,
+                    1 => "Nwdiy::Packet::ICMP",
+                    6 => "Nwdiy::Packet::TCP"
       def data=(xxx)
-        @nwdiy_field[:data] = xxx
+        case xxx
+        when String
+          @nwdiy_field[:data] = self.body_type(:data, self.type).new(xxx)
+        when Nwdiy::Packet
+          self.type = self.body_type(:data, xxx)
+          @nwdiy_field[:data] = xxx
+        end
       end
     end
 
@@ -265,7 +274,7 @@ RSpec.describe Nwdiy::Packet do
     expect(smpl.dst.inspect).to eq("00:00:0e:00:00:01")
     expect(smpl.src.inspect).to eq("00:00:0e:00:00:02")
     expect(smpl.type).to eq(0x0800)
-    expect(smpl.data).to eq(data)
+    expect(smpl.data.to_pkt).to eq(data)
     expect(smpl.direction).to be :to_left
   end
 
