@@ -17,6 +17,16 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
   def_head Nwdiy::Packet::IPv4Addr, :src, :dst
   def_body          :option, :data
 
+  def initialize(seed = {vhl: 0x45, length: 20, ttl: 64})
+    case seed
+    when Hash
+      seed[:vhl]    = 0x45 unless seed.has_key? :vhl
+      seed[:length] =   20 unless seed.has_key? :length
+      seed[:ttl]    =   64 unless seed.has_key? :ttl
+    end
+    super(seed)
+  end
+
   # vhl 詳細
   def vhl=(value)
     @nwdiy_field[:vhl] = 0x40 | (value & 0x0f)
@@ -25,7 +35,7 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
     4
   end
   def hlen
-    self.vhl & 0x0f
+    (self.vhl & 0x0f) * 4
   end
   # def hlen=()
   #   option への代入を詳細するとき検討する
@@ -55,47 +65,51 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
     self.frag &= 0x1fff
   end
   def offset=(off)
+    unless 0 <= off && off <= 0x1fff
+      raise RangeError.new "IPv4 offset (#{off}) is out of range"
+    end
     self.frag = (self.frag & 0x6000) | (off & 0x1fff)
   end
 
   # チェックサム計算
   #    cksum 部を除いたヘッダ部のバイト列から
   #    チェックサム値を求める
-  HEAD = [:vhl, :tos, :length, :id, :frag, :ttl, :proto, :src, :dst, :option]
   def cksum
-    seed = HEAD.inject("") do |str, head|
-      if @nwdiy_field[head].respond_to? :to_pkt
-        str += @@nwdiy_field[head].to_pkt
-      else
-        str += @@nwdiy_field[head].to_s
-      end
-    end
-    self.class.calc_cksum(str)
+    self.cksum = 0
+    header = self.to_pkt(body: false)
+    self.cksum = self.class.calc_cksum(header)
   end
 
   # オプション設定
   #    パケットのバイト列から取り込むところだけ実装してある
   #    内容に関する処理を実装する必要がある (TBD)
   def option=(byte)
-    @nwdiy_field[:option] = byte[0..(self.hlen-20)]
+    if self.hlen <= 20
+      @nwdiy_field[:option] = ""
+    else
+      @nwdiy_field[:option] = byte[0..(self.hlen-20)]
+    end
   end
 
-  def_body_type :data,
-                1  => "Nwdiy::Packet::ICMP",
-                6  => "Nwdiy::Packet::TCP",
-                14 => "Nwdiy::Packet::UDP"
+#  def_body_type :data,
+#                1  => "Nwdiy::Packet::ICMP",
+#                6  => "Nwdiy::Packet::TCP",
+#                14 => "Nwdiy::Packet::UDP"
+  def_body_type :data, {}
   def data=(seed)
     case seed
     when String
       @nwdiy_field[:data] = self.body_type(:data, self.proto).new(seed)
     when Nwdiy::Packet
-      self.proto = self.body_type(:data2, seed)
+      btype = self.body_type(:data2, seed)
+      self.proto = btype if btype
       @nwdiy_field[:data] = seed
     end
+    self.length = self.hlen + @nwdiy_field[:data].to_pkt.bytesize
   end
 
   def inspect
     sprintf("[IPv4 %s => %s %s]",
-            self.src, self.dst, self.data)
+            self.src.inspect, self.dst.inspect, self.data)
   end
 end

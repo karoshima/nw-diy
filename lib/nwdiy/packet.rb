@@ -119,10 +119,12 @@ class Nwdiy::Packet
     when String
       # ヘッダフィールドの切り出し
       values = data.unpack(@@template[self.class] + "a*")
+      puts "values=#{values}"
       @@headers[self.class].each do |field|
         self.nwdiy_set(field, values.shift)
       end
       value = values.join
+      puts "joined=#{value.dump}"
       @@bodies[self.class].each do |field|
         self.__send__("#{field}=", value)
         # 使ったぶん削る
@@ -226,22 +228,29 @@ class Nwdiy::Packet
   end
 
   # パケットデータにする
-  def to_pkt
-    # ヘッダ部
+  def to_pkt(head: true, body: true)
     cls = self.class
-    s = @@headers[cls].map do |h|
-      field = self.nwdiy_get(h)
-      field.kind_of?(Nwdiy::Packet) ? field.to_pkt : field
+    # ヘッダ部
+    if head
+      s = @@headers[cls].map do |h|
+        field = self.nwdiy_get(h)
+        field.kind_of?(Nwdiy::Packet) ? field.to_pkt : field
+      end
+      sp = s.pack(@@template[cls])
+    else
+      sp = ""
     end
-    sp = s.pack(@@template[cls])
     # ボディ部
-    @@bodies[cls].inject(sp) do |str, b|
-      if @nwdiy_field[b].respond_to? :to_pkt
-        str + @nwdiy_field[b].to_pkt
-      else
-        str + @nwdiy_field[b].to_s
+    if body
+      @@bodies[cls].each do |b|
+        if @nwdiy_field[b].respond_to? :to_pkt
+          sp += @nwdiy_field[b].to_pkt
+        else
+          sp += @nwdiy_field[b].to_s
+        end
       end
     end
+    return sp
   end
   # パケットを可視化する
   def inspect
@@ -267,10 +276,7 @@ class Nwdiy::Packet
   ################
   # 複数のバッファからチェックサム計算します。
   def self.calc_cksum(*bufs)
-    sum = bufs.inject(0) do |bufsum, buf|
-      buf += "\x00" if buf.length % 2 == 1
-      buf.unpack("n*").inject(bufsum, :+)
-    end
+    sum  = bufs.map {|b1| (b1+"\x00").unpack("n*") }.flatten.inject(0, :+)
     sum = (sum & 0xffff) + (sum >> 16) while sum > 0xffff;
     sum ^ 0xffff
   end

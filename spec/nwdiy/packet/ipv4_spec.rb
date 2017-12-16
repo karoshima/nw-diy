@@ -72,4 +72,16 @@ RSpec.describe Nwdiy::Packet::IPv4 do
     pkt = Nwdiy::Packet::IPv4.new(vhl + tos + len + id + frg + ttl + pro + sum + src + dst + data)
     expect(pkt).to be_a Nwdiy::Packet::IPv4
   end
+
+  it 'ttl を減算したら cksum も追随する' do
+    ipv4 = Nwdiy::Packet::IPv4.new
+    expect(ipv4).not_to be nil
+    ipv4.id = 1
+    ipv4.ttl = 64
+    ipv4.src = '127.0.0.1'
+    ipv4.data = data = "xxxxxxxxxxxxxxxx"
+    expect(ipv4.cksum).to be == 0xfbd8 # 勝手にちゃんと計算されるし
+    ipv4.ttl -= 1                      # TTL 減算したら
+    expect(ipv4.cksum).to be == 0xfcd8 # 勝手にちゃんと計算されてること
+  end
 end

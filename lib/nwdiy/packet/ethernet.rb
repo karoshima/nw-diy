@@ -20,6 +20,7 @@ class Nwdiy::Packet::Ethernet < Nwdiy::Packet
   def_head :uint16,                 :type
   def_body :data
   def_body_type :data,
+                0x0800 => "Nwdiy::Packet::IPv4",
                 0x0806 => "Nwdiy::Packet::ARP"
   def data=(seed)
     case seed
