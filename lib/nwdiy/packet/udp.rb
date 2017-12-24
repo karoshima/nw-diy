@@ -17,6 +17,7 @@ class Nwdiy::Packet::UDP < Nwdiy::Packet
   #    cksum 部を除いたヘッダ部のバイト列から
   #    チェックサム値を求める
   def cksum
+    warn "Nwdiy::Packet::UDP の cksum 計算は、まだ疑似ヘッダを加えていません"
     self.cksum = 0
     pkt = self.to_pkt
     self.cksum = self.class.calc_cksum(pkt)
