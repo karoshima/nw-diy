@@ -8,12 +8,13 @@
 
 class Nwdiy::Packet
 
-  autoload(:ARP,      'nwdiy/packet/arp')
   autoload(:Binary,   'nwdiy/packet/binary')
   autoload(:Ethernet, 'nwdiy/packet/ethernet')
+  autoload(:MacAddr,  'nwdiy/packet/macaddr')
   autoload(:IPv4,     'nwdiy/packet/ipv4')
   autoload(:IPv4Addr, 'nwdiy/packet/ipv4addr')
-  autoload(:MacAddr,  'nwdiy/packet/macaddr')
+  autoload(:ARP,      'nwdiy/packet/arp')
+  autoload(:UDP,      'nwdiy/packet/udp')
 
   include Nwdiy::Debug
 
@@ -119,12 +120,10 @@ class Nwdiy::Packet
     when String
       # ヘッダフィールドの切り出し
       values = data.unpack(@@template[self.class] + "a*")
-      puts "values=#{values}"
       @@headers[self.class].each do |field|
         self.nwdiy_set(field, values.shift)
       end
       value = values.join
-      puts "joined=#{value.dump}"
       @@bodies[self.class].each do |field|
         self.__send__("#{field}=", value)
         # 使ったぶん削る

@@ -6,7 +6,7 @@
 # 著作権については ./LICENSE もご確認ください
 ################################################################
 # Nwdiy::Packet::IPv4 は IPv4 パケットです
-# 仕様については spec/nwdiy/packet/arp_spec.rb を参照してください。
+# 仕様については spec/nwdiy/packet/ipv4_spec.rb を参照してください。
 ################################################################
 
 class Nwdiy::Packet::IPv4 < Nwdiy::Packet
