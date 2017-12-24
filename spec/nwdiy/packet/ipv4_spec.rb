@@ -22,7 +22,7 @@
 #      :id       => 識別子
 #      :frag     => フラグメント関連 (DF, MF, Offset)
 #      :ttl      => TTL
-#      :protocol => 次ヘッダの型
+#      :proto    => 次ヘッダの型
 #      :src      => 送信元 IPv4 アドレス
 #      :dst      => 送信先 IPv4 アドレス
 #
@@ -83,5 +83,14 @@ RSpec.describe Nwdiy::Packet::IPv4 do
     expect(ipv4.cksum).to be == 0xfbd8 # 勝手にちゃんと計算されるし
     ipv4.ttl -= 1                      # TTL 減算したら
     expect(ipv4.cksum).to be == 0xfcd8 # 勝手にちゃんと計算されてること
+  end
+
+  it 'UDP データを突っ込んだら proto が UDP になること' do
+    data = Nwdiy::Packet::UDP.new
+    pkt = Nwdiy::Packet::IPv4.new
+    pkt.data = data
+    expect(pkt.proto).to be 14
+    pkt = Nwdiy::Packet::IPv4.new(:data => data)
+    expect(pkt.proto).to be 14
   end
 end

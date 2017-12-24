@@ -95,13 +95,14 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
 #                1  => "Nwdiy::Packet::ICMP",
 #                6  => "Nwdiy::Packet::TCP",
 #                14 => "Nwdiy::Packet::UDP"
-  def_body_type :data, {}
+  def_body_type :data,
+                14 => "Nwdiy::Packet::UDP"
   def data=(seed)
     case seed
     when String
       @nwdiy_field[:data] = self.body_type(:data, self.proto).new(seed)
     when Nwdiy::Packet
-      btype = self.body_type(:data2, seed)
+      btype = self.body_type(:data, seed)
       self.proto = btype if btype
       @nwdiy_field[:data] = seed
     end
