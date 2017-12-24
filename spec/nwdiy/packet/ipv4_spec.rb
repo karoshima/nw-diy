@@ -93,4 +93,11 @@ RSpec.describe Nwdiy::Packet::IPv4 do
     pkt = Nwdiy::Packet::IPv4.new(:data => data)
     expect(pkt.proto).to be 14
   end
+
+  it 'proto を 14 にしたら UDP になること' do 
+    data = "xxxxxxxxxxxxxxxx"
+    pkt = Nwdiy::Packet::IPv4.new(:proto => 14)
+    pkt.data = data
+    expect(pkt.data).to be_a Nwdiy::Packet::UDP
+  end
 end
