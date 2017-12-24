@@ -18,12 +18,7 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
   def_body          :option, :data
 
   def initialize(seed = {vhl: 0x45, length: 20, ttl: 64})
-    case seed
-    when Hash
-      seed[:vhl]    = 0x45 unless seed.has_key? :vhl
-      seed[:length] =   20 unless seed.has_key? :length
-      seed[:ttl]    =   64 unless seed.has_key? :ttl
-    end
+    super(vhl: 0x45, length: 20, ttl: 64)
     super(seed)
   end
 
@@ -71,6 +66,10 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
     self.frag = (self.frag & 0x6000) | (off & 0x1fff)
   end
 
+  def proto
+    self.body_type(:data, self.data) || @nwdiy_field[:proto] || 0
+  end
+
   # チェックサム計算
   #    cksum 部を除いたヘッダ部のバイト列から
   #    チェックサム値を求める
@@ -78,6 +77,15 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
     self.cksum = 0
     header = self.to_pkt(body: false)
     self.cksum = self.class.calc_cksum(header)
+  end
+
+  def src=(addr)
+    self.nwdiy_set(:src, addr)
+    self.set_pseudo_header
+  end
+  def dst=(addr)
+    self.nwdiy_set(:dst, addr)
+    self.set_pseudo_header
   end
 
   # オプション設定
@@ -96,7 +104,7 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
 #                6  => "Nwdiy::Packet::TCP",
 #                14 => "Nwdiy::Packet::UDP"
   def_body_type :data,
-                14 => "Nwdiy::Packet::UDP"
+                17 => "Nwdiy::Packet::UDP"
   def data=(seed)
     case seed
     when String
@@ -107,7 +115,16 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
       @nwdiy_field[:data] = seed
     end
     self.length = self.hlen + @nwdiy_field[:data].to_pkt.bytesize
+    self.set_pseudo_header
   end
+
+  # 値が代わったときなどに TCP や UDP のチェックサムを計算し直す
+  def set_pseudo_header
+    return unless self.data && self.data.respond_to?(:pseudo_header=)
+    self.data.pseudo_header = self.src.to_pkt + self.dst.to_pkt +
+                              [ 0, self.proto, self.data.bytesize ].pack("ccn")
+  end
+
 
   def inspect
     sprintf("[IPv4 %s => %s %s]",

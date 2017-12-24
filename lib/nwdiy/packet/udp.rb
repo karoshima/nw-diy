@@ -13,13 +13,21 @@ class Nwdiy::Packet::UDP < Nwdiy::Packet
   def_head :uint16, :src, :dst, :length, :cksum
   def_body :data
 
+  def initialize(seed = {length: 8})
+    @pseudo = ""
+    super(length: 8)
+    super(seed)
+  end
+
   # チェックサム計算
   #    cksum 部を除いたヘッダ部のバイト列から
   #    チェックサム値を求める
+  def pseudo_header=(head)
+    @pseudo = head
+  end
   def cksum
-    warn "Nwdiy::Packet::UDP の cksum 計算は、まだ疑似ヘッダを加えていません"
     self.cksum = 0
-    pkt = self.to_pkt
+    pkt = @pseudo + self.to_pkt
     self.cksum = self.class.calc_cksum(pkt)
   end
 
@@ -38,5 +46,6 @@ class Nwdiy::Packet::UDP < Nwdiy::Packet
       seed = cls.new(seed)
     end
     @nwdiy_field[:data] = seed
+    self.length = 8 + seed.bytesize
   end
 end

@@ -29,6 +29,10 @@
 #
 #【インスタンスメソッド】
 #
+# pseudo_header = String
+#    UDP パケットのチェックサム計算に用いる pseudo header を
+#    L3 ヘッダから貰います
+#
 # to_pkt -> String
 #    UDP パケットをバイト列に変換します
 #

@@ -258,6 +258,13 @@ class Nwdiy::Packet
     bodies = @@bodies[cls].map {|b| "#{b}="+@nwdiy_field[b].inspect }
     "[#{self.class.to_s} " + (headers + bodies).join(", ") + "]"
   end
+  # パケットを Hash 化する
+  def to_hash
+    cls = self.class
+    hash = Hash.new
+    (@@headers[cls] + @@bodies[cls]).each { |h| hash[h] = @nwdiy_field[h] }
+    hash
+  end
 
   def bytesize
     @@bodies[self.class].inject(@@hlen[self.class]) do |sum, body|

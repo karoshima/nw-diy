@@ -89,15 +89,36 @@ RSpec.describe Nwdiy::Packet::IPv4 do
     data = Nwdiy::Packet::UDP.new
     pkt = Nwdiy::Packet::IPv4.new
     pkt.data = data
-    expect(pkt.proto).to be 14
+    expect(pkt.proto).to be 17
     pkt = Nwdiy::Packet::IPv4.new(:data => data)
-    expect(pkt.proto).to be 14
+    expect(pkt.proto).to be 17
   end
 
-  it 'proto を 14 にしたら UDP になること' do 
+  it 'proto を 17 にしたら UDP になること' do 
     data = "xxxxxxxxxxxxxxxx"
-    pkt = Nwdiy::Packet::IPv4.new(:proto => 14)
+    pkt = Nwdiy::Packet::IPv4.new(:proto => 17)
     pkt.data = data
     expect(pkt.data).to be_a Nwdiy::Packet::UDP
+  end
+
+  it 'TCP/UDP であれば pseudo header を与えてあげる' do
+    pkt = Nwdiy::Packet::IPv4.new(src: '127.0.0.1')
+    xxx = Nwdiy::Packet::UDP.new(data: "xxxxxxxx")
+    pkt.data = xxx
+    expect(pkt.data.cksum).to be 40683
+  end
+
+  it '実データをキャプチャしたものから' do
+    pkt = Nwdiy::Packet::IPv4.new("\x45\x00\x00\x47\xe6\x4b\x40\x00" + 
+                                  "\x40\x11\xce\x99\xc0\xa8\x02\x6f" +
+                                  "\xc0\xa8\x02\x01\xc4\xf1\x00\x35" +
+                                  "\x00\x33\x4c\x5f\xb0\x68\x01\x20" +
+                                  "\x00\x01\x00\x00\x00\x00\x00\x01" +
+                                  "\x03www\x06google\x03com\x00" +
+                                  "\x00\x01\x00\x01\x00\x00\x29\x10" +
+                                  "\x00\x00\x00\x00\x00\x00\x00")
+    expect(pkt.cksum).to eq 0xce99
+    expect(pkt.data).to be_a Nwdiy::Packet::UDP
+    expect(pkt.data.cksum).to eq 0x4c5f
   end
 end
