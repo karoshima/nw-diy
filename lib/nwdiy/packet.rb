@@ -15,6 +15,7 @@ class Nwdiy::Packet
   autoload(:IPv4Addr, 'nwdiy/packet/ipv4addr')
   autoload(:ARP,      'nwdiy/packet/arp')
   autoload(:UDP,      'nwdiy/packet/udp')
+  autoload(:ICMP4,    'nwdiy/packet/icmp4')
 
   include Nwdiy::Debug
 

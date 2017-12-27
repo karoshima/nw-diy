@@ -27,10 +27,10 @@ class Nwdiy::Packet::UDP < Nwdiy::Packet
   end
   def cksum
     self.cksum = 0
-    pkt = @pseudo + self.to_pkt
-    self.cksum = self.class.calc_cksum(pkt)
+    self.cksum = self.class.calc_cksum(@pseudo, self.to_pkt)
   end
 
+  # ボディ部
   def_body_type :data, {}
   # def_body_type :data,
   #               7 => "Nwdiy::Packet::Echo",
