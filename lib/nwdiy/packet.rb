@@ -8,11 +8,14 @@
 
 class Nwdiy::Packet
 
-  autoload(:ARP,      'nwdiy/packet/arp')
   autoload(:Binary,   'nwdiy/packet/binary')
   autoload(:Ethernet, 'nwdiy/packet/ethernet')
-  autoload(:IPv4Addr, 'nwdiy/packet/ipv4addr')
   autoload(:MacAddr,  'nwdiy/packet/macaddr')
+  autoload(:IPv4,     'nwdiy/packet/ipv4')
+  autoload(:IPv4Addr, 'nwdiy/packet/ipv4addr')
+  autoload(:ARP,      'nwdiy/packet/arp')
+  autoload(:UDP,      'nwdiy/packet/udp')
+  autoload(:ICMP4,    'nwdiy/packet/icmp4')
 
   include Nwdiy::Debug
 
@@ -225,22 +228,29 @@ class Nwdiy::Packet
   end
 
   # パケットデータにする
-  def to_pkt
-    # ヘッダ部
+  def to_pkt(head: true, body: true)
     cls = self.class
-    s = @@headers[cls].map do |h|
-      field = self.nwdiy_get(h)
-      field.kind_of?(Nwdiy::Packet) ? field.to_pkt : field
+    # ヘッダ部
+    if head
+      s = @@headers[cls].map do |h|
+        field = self.nwdiy_get(h)
+        field.kind_of?(Nwdiy::Packet) ? field.to_pkt : field
+      end
+      sp = s.pack(@@template[cls])
+    else
+      sp = ""
     end
-    sp = s.pack(@@template[cls])
     # ボディ部
-    @@bodies[cls].inject(sp) do |str, b|
-      if @nwdiy_field[b].respond_to? :to_pkt
-        str + @nwdiy_field[b].to_pkt
-      else
-        str + @nwdiy_field[b].to_s
+    if body
+      @@bodies[cls].each do |b|
+        if @nwdiy_field[b].respond_to? :to_pkt
+          sp += @nwdiy_field[b].to_pkt
+        else
+          sp += @nwdiy_field[b].to_s
+        end
       end
     end
+    return sp
   end
   # パケットを可視化する
   def inspect
@@ -248,6 +258,13 @@ class Nwdiy::Packet
     headers = @@headers[cls].map {|h| "#{h}="+@nwdiy_field[h].inspect }
     bodies = @@bodies[cls].map {|b| "#{b}="+@nwdiy_field[b].inspect }
     "[#{self.class.to_s} " + (headers + bodies).join(", ") + "]"
+  end
+  # パケットを Hash 化する
+  def to_hash
+    cls = self.class
+    hash = Hash.new
+    (@@headers[cls] + @@bodies[cls]).each { |h| hash[h] = @nwdiy_field[h] }
+    hash
   end
 
   def bytesize
@@ -266,10 +283,7 @@ class Nwdiy::Packet
   ################
   # 複数のバッファからチェックサム計算します。
   def self.calc_cksum(*bufs)
-    sum = bufs.inject(0) do |bufsum, buf|
-      buf += "\x00" if buf.length % 2 == 1
-      buf.unpack("n*").inject(bufsum, :+)
-    end
+    sum  = bufs.map {|b1| (b1+"\x00").unpack("n*") }.flatten.inject(0, :+)
     sum = (sum & 0xffff) + (sum >> 16) while sum > 0xffff;
     sum ^ 0xffff
   end
