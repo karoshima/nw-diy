@@ -37,10 +37,8 @@ class Nwdiy::Func
     raise "This is not Nwdiy::Packet: '#{other}'" unless
       other.kind_of?(Nwdiy::Func)
     if self.kind_of?(Nwdiy::Func::Out)
-      self.set_left
       other.attach_left(self)
     elsif other.kind_of?(Nwdiy::Func::Out)
-      other.set_right
       self.attach_right(other)
     else
       p1, p2 = Nwdiy::Func::Out::Pipe.pair.each {|p| p.on }

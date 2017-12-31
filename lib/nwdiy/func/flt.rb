@@ -52,11 +52,11 @@ class Nwdiy::Func::Flt < Nwdiy::Func
   def thread_start(src, dst)
     return nil unless @attached[src]
     Thread.new(src, dst) do |sss, ddd|
-      dir = [:to_right, :to_left][src]
       loop do
          # パケットひとつ受信する
-        inpkt = @attached[src].recv
-        inpkt.direction = dir
+        inpkt = @attached[sss].recv
+        inpkt.from = @attached[sss]
+        inpkt.to = @attached[ddd]
 
         # Flt の子クラスに定義した forward メソッドで
         # 受信したパケットを処理する
@@ -64,13 +64,8 @@ class Nwdiy::Func::Flt < Nwdiy::Func
 
         # 処理したパケットを送信する
         outpkts.each do |outpkt|
-          if outpkt
-            case outpkt.direction
-            when :to_left
-              @attached[0].send(outpkt) if @attached[0]
-            when :to_right
-              @attached[1].send(outpkt) if @attached[1]
-            end
+          if outpkt && outpkt.to
+            outpkt.to.send(outpkt)
           end
         end
       end

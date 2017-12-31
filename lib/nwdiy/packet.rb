@@ -112,7 +112,6 @@ class Nwdiy::Packet
 
   def initialize(data = nil)
     @nwdiy_field = Hash.new
-    @direction = nil
     case data
     when Hash
       data.each do |var, val|
@@ -273,11 +272,22 @@ class Nwdiy::Packet
     end
   end
 
-  # パケットの方角
-  attr_reader :direction
-  def direction=(dir)
-    sym = dir&.to_sym
-    @direction = (sym == :to_left || sym == :to_right) ? sym : nil
+  # パケット送受信インターフェース
+  def from
+    @from
+  end
+  def from=(ifp)
+    return @from = ifp if ifp == nil
+    return @from = ifp if ifp.kind_of?(Nwdiy::Func::Out)
+    raise NotInterfaceError.new "#{ifp}(#{ifp.class}) must be Nwdiy::Func::Out instance"
+  end
+  def to
+    @to
+  end
+  def to=(ifp)
+    return @to = ifp if ifp == nil
+    return @to = ifp if ifp.kind_of?(Nwdiy::Func::Out)
+    raise NotInterfaceError.new "#{ifp}(#{ifp.class}) must be Nwdiy::Func::Out instance"
   end
 
   ################
@@ -297,4 +307,6 @@ class Nwdiy::Packet
   end
 
   class Invalid < Exception; end  # パケット生成時の内容が変
+
+  class NotInterfaceError < Exception; end  # 送受信インターフェースおかしい
 end

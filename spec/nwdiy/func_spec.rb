@@ -160,12 +160,10 @@ RSpec.describe Nwdiy::Func do
     expect(p1.send(inpkt)).to eq inpkt.bytesize
     outpkt = p4.recv
     expect(outpkt.to_pkt).to eq inpkt.to_pkt
-    expect(outpkt.direction).to be :to_right
 
     expect(p4.send(inpkt)).to eq inpkt.bytesize
     outpkt = p1.recv
     expect(outpkt.to_pkt).to eq inpkt.to_pkt
-    expect(outpkt.direction).to be :to_left
 
     [p1, p2, p3, p4, foo, bar].each {|p| p.off }
   end
