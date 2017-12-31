@@ -14,8 +14,12 @@ class Nwdiy::Func::Out::Pipe < Nwdiy::Func::Out
     b.set_peer(a)
     return a, b
   end
+
+  attr_accessor :sent, :received
+
   def initialize
     @queue = Thread::Queue.new
+    @sent = @received = 0
   end
   def set_peer(peer)
     @peer = peer
@@ -28,11 +32,14 @@ class Nwdiy::Func::Out::Pipe < Nwdiy::Func::Out
   end
 
   def recv
-    @queue.shift
+    pkt = @queue.shift
+    @received += 1
+    return pkt
   end
 
   def send(pkt)
     @peer.queue.push(pkt)
+    @sent += 1
     pkt.bytesize
   end
 

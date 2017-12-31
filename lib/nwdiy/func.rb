@@ -13,6 +13,7 @@ class Nwdiy::Func
 
   autoload(:Out, 'nwdiy/func/out')
   autoload(:App, 'nwdiy/func/app')
+  autoload(:Swc, 'nwdiy/func/swc')
   autoload(:Flt, 'nwdiy/func/flt')
 
   attr_accessor :power

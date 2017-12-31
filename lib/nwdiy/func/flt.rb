@@ -18,10 +18,13 @@ class Nwdiy::Func::Flt < Nwdiy::Func
     super
     @threads[0] = self.thread_start(0, 1)
     @threads[1] = self.thread_start(1, 0)
+    true
   end
 
   def off
+    super
     @threads.map!{|t| t.kill }.map!{|t| t.join; nil }
+    false
   end
 
   def attach_left(ifp)
@@ -64,9 +67,10 @@ class Nwdiy::Func::Flt < Nwdiy::Func
 
         # 処理したパケットを送信する
         outpkts.each do |outpkt|
-          if outpkt && outpkt.to
-            outpkt.to.send(outpkt)
-          end
+          ifp = outpkt&.to
+          outpkt.from = nil
+          outpkt.to = nil
+          ifp.send(outpkt) if ifp
         end
       end
     end
