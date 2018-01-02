@@ -121,5 +121,29 @@ RSpec.describe Nwdiy::Func::Swc do
     expect(p3.sent).to be 0
     expect(p5.sent).to be 0
     expect(p7.sent).to be 0
+
+    # 逆に p7 から送ったら、p1, p3, p5 に来る
+    expect(p7.send(pkt)).to eq pkt.bytesize
+    expect(p1.recv.to_pkt).to eq pkt.to_pkt
+    expect(p3.recv.to_pkt).to eq pkt.to_pkt
+    expect(p5.recv.to_pkt).to eq pkt.to_pkt
+    expect(p7.ready?).to be false
+    # パケットが流れた数
+    expect(p1.sent).to be 1
+    expect(p1.received).to be 1
+    expect(p2.sent).to be 1
+    expect(p2.received).to be 1
+    expect(p3.sent).to be 0
+    expect(p3.received).to be 2
+    expect(p4.sent).to be 2
+    expect(p4.received).to be 0
+    expect(p5.sent).to be 0
+    expect(p5.received).to be 2
+    expect(p6.sent).to be 2
+    expect(p6.received).to be 0
+    expect(p7.sent).to be 1
+    expect(p7.received).to be 1
+    expect(p8.sent).to be 1
+    expect(p8.received).to be 1
   end
 end

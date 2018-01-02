@@ -157,10 +157,12 @@ RSpec.describe Nwdiy::Func do
     inpkt.dst = "00:00:0e:00:00:01"
     inpkt.src = "00:00:0e:00:00:02"
 
+    # 右方向に伝播できること
     expect(p1.send(inpkt)).to eq inpkt.bytesize
     outpkt = p4.recv
     expect(outpkt.to_pkt).to eq inpkt.to_pkt
 
+    # 左方向に伝播できること
     expect(p4.send(inpkt)).to eq inpkt.bytesize
     outpkt = p1.recv
     expect(outpkt.to_pkt).to eq inpkt.to_pkt
