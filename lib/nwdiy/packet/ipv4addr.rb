@@ -23,9 +23,6 @@ class Nwdiy::Packet::IPv4Addr < Nwdiy::Packet
     super(addr: self.class.addr2uint32(data))
   end
 
-  def to_s
-    [self.addr].pack("N")
-  end
   def inspect
     sprintf("%u.%u.%u.%u",
             (self.addr & 0xff000000) >> 24,

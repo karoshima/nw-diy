@@ -4,9 +4,9 @@
 # IPv4 アドレスのクラスです。
 #
 #【特異メソッド】
-# new(4byteのバイト列) -> Nwdiy::Packet::IPv4
+# new(4byteのバイト列) -> Nwdiy::Packet::IPv4Addr
 #    (Nwdiy::Packet から継承)
-#    バイト列から IPv4 アドレスインスタンスを生成して返します。
+#    バイト列から IPv4 アドレスを生成して返します。
 #
 # new("xxx.xxx.xxx.xxx" 形式の文字列) -> Nwdiy::Packet::IPv4
 #    (本クラス独自)
@@ -14,13 +14,13 @@
 #
 #【インスタンスメソッド】
 #
-# to_s -> String
+# to_pkt -> String
 #    (Nwdiy::Pacet から継承)
-#    Mac アドレスをバイト列に変換します
+#    IPv4 アドレスをバイト列に変換します
 #
 # inspect -> String
 #    (Nwdiy::Pacet から継承)
-#    Mac アドレスを可読形式で返します
+#    IPv4 アドレスを可読形式で返します
 #
 # unicast? -> bool
 # loopback? -> bool
@@ -66,7 +66,7 @@ RSpec.describe Nwdiy::Packet::IPv4Addr do
       addr = hash[src]
       it "creates an #{theme} IPv4 addr from #{addr.dump}" do
         ip = Nwdiy::Packet::IPv4Addr.new(addr)
-        expect(ip.to_s).to eq hash[:byte]
+        expect(ip.to_pkt).to eq hash[:byte]
         expect(ip.inspect).to eq hash[:name]
         expect(ip.unicast?).to eq hash[:unicast?]
         expect(ip.loopback?).to eq hash[:loopback?]
