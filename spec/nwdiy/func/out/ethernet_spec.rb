@@ -59,7 +59,6 @@ RSpec.describe Nwdiy::Func::Out::Ethernet do
     expect(hoge.respond_to?(:send)).to be true
   end
 
-
   ifname = { sock: "dummy" }
   case RbConfig::CONFIG['host_os']
   when /linux/

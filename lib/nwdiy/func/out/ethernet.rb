@@ -22,8 +22,9 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
   def initialize(name = nil)
     super(name)
     # パケットをやりとりするための @sock を作る
-    @sock = self.class.open_pfpacket(name) || self.class.open_sock(name)
+    @sock = self.class.open_pfpacket(self.to_s) || self.class.open_sock(self.to_s)
     @sent = @received = 0
+    debug "init #{self.to_s} done."
   end
   def class_name
     "eth"
