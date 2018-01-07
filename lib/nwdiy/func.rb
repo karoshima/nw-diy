@@ -35,7 +35,7 @@ class Nwdiy::Func
 
   def |(other)
     debug "#{self}(#{self.class}) | #{other}(#{other.class})"
-    raise "This is not Nwdiy::Packet: '#{other}'" unless
+    raise "This is not Nwdiy::Func: '#{other}(#{other.class})'" unless
       other.kind_of?(Nwdiy::Func)
     if self.kind_of?(Nwdiy::Func::Out)
       other.attach_left(self)

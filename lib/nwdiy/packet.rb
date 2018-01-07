@@ -178,9 +178,9 @@ class Nwdiy::Packet
         value.kind_of?(@@types[self.class][field])
       raise "value #{value.inspect} is not a kind of #{@@types[self.class][field]}"
 
-    # Nwdiy::Packet 型のときは、nil 初期化もあり得る
-    elsif value == nil && type < Nwdiy::Packet
-      return @nwdiy_field[field] = type.new(nil)
+    # Nwdiy::Packet 型のときは、nil 初期化や Hash 初期化もあり得る
+    elsif (value == nil || value.kind_of?(Hash)) && type < Nwdiy::Packet
+      return @nwdiy_field[field] = type.new(value)
     # 文字列のときは型ごとの解釈
     elsif ! value.kind_of?(String)
       raise "Unknown type of data #{value.inspect}"
@@ -287,6 +287,12 @@ class Nwdiy::Packet
   def to=(ifp)
     return @to = ifp if ifp == nil
     return @to = ifp if ifp.kind_of?(Nwdiy::Func::Out)
+    if ifp.kind_of?(Array)
+      ifp.compact!
+      if ifp.all? { |ifpp| ifpp.kind_of?(Nwdiy::Func::Out) }
+        return @to = ifp
+      end
+    end
     raise NotInterfaceError.new "#{ifp}(#{ifp.class}) must be Nwdiy::Func::Out instance"
   end
 

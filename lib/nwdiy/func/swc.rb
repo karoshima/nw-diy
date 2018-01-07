@@ -8,6 +8,8 @@
 
 class Nwdiy::Func::Swc < Nwdiy::Func
 
+  autoload(:Ethernet, 'nwdiy/func/swc/ethernet')
+
   attr_accessor :to_s
   attr_accessor :attached
 
@@ -17,9 +19,13 @@ class Nwdiy::Func::Swc < Nwdiy::Func
       @to_s = name
     else
       @@swc_index += 1
-      @to_s = "swc#{@@swc_index}"
+      @to_s = self.class_name + @@swc_index.to_s
     end
     @interfaces = Hash.new
+  end
+  # ホスト名省略時値につける文字列
+  def class_name
+    "swc"
   end
 
   def on
@@ -78,10 +84,16 @@ class Nwdiy::Func::Swc < Nwdiy::Func
 
         # 処理したパケットを送信する
         outpkts.each do |outpkt|
-          ifp = outpkt&.to
+          next unless outpkt
+          ifp = outpkt.to
           outpkt.from = nil
           outpkt.to = nil
-          ifp.send(outpkt) if ifp
+          case ifp
+          when Nwdiy::Func::Out
+            ifp.send(outpkt)
+          when Array
+            ifp.each {|ifpp| ifpp.send(outpkt) }
+          end
         end
       end
     end
