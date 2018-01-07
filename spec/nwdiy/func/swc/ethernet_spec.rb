@@ -29,10 +29,10 @@ Thread.abort_on_exception = true
 RSpec.describe Nwdiy::Func::Swc::Ethernet do
   it "can transfer Ethernet frame" do
 
-    p1, p2 = Nwdiy::Func::Out::Pipe.pair
-    p3, p4 = Nwdiy::Func::Out::Pipe.pair
+    p1, p2 = Nwdiy::Func::Out::Pipe.pair("p1", "p2")
+    p3, p4 = Nwdiy::Func::Out::Pipe.pair("p3", "p4")
 
-    sw = Nwdiy::Func::Swc::Ethernet.new
+    sw = Nwdiy::Func::Swc::Ethernet.new("sw")
     
     p2 | sw | p3
 
@@ -41,7 +41,7 @@ RSpec.describe Nwdiy::Func::Swc::Ethernet do
     # p1 から送った非イーサネットパケットは出てこない
     # p1 から送ったイーサネットパケットは p4 から出てくる
     bin = Nwdiy::Packet::Binary.new("hoge")
-    eth = Nwdiy::Packet::Ethernet.new
+    eth = Nwdiy::Packet::Ethernet.new(src: { unicast: true } )
     expect(p1.send(bin)).to eq bin.bytesize
     expect(p1.send(eth)).to eq eth.bytesize
     expect(p4.recv.to_pkt).to eq eth.to_pkt
@@ -49,7 +49,7 @@ RSpec.describe Nwdiy::Func::Swc::Ethernet do
   end
 
   it "can set/get timeout" do
-    sw = Nwdiy::Func::Swc::Ethernet.new
+    sw = Nwdiy::Func::Swc::Ethernet.new("sw")
     [ 300, 299.9 ].each do |age|
       expect(sw.age = age).to be age
       expect(sw.age).to be age
@@ -59,37 +59,33 @@ RSpec.describe Nwdiy::Func::Swc::Ethernet do
   it "can forward packet based on L2 forwarding table" do
 
     ################
-    # 三角形構成を組む
+    # 二股構成を組む
 
-    p11, p12 = Nwdiy::Func::Out::Pipe.pair
-    sw1 = Nwdiy::Func::Swc::Ethernet.new
+    p11, p12 = Nwdiy::Func::Out::Pipe.pair("p11", "p12")
+    sw1 = Nwdiy::Func::Swc::Ethernet.new("sw1")
     p12 | sw1
 
-    p21, p22 = Nwdiy::Func::Out::Pipe.pair
-    sw2 = Nwdiy::Func::Swc::Ethernet.new
+    p21, p22 = Nwdiy::Func::Out::Pipe.pair("p21", "p22")
+    sw2 = Nwdiy::Func::Swc::Ethernet.new("sw2")
     p22 | sw2
 
-    p31, p32 = Nwdiy::Func::Out::Pipe.pair
-    sw3 = Nwdiy::Func::Swc::Ethernet.new
+    p31, p32 = Nwdiy::Func::Out::Pipe.pair("p31", "p32")
+    sw3 = Nwdiy::Func::Swc::Ethernet.new("sw3")
     p32 | sw3
 
-    sw1 | sw2 | sw3 | sw1
+    sw2 | sw1 | sw3
+
+    [ sw1, p11, p12, sw2, p21, p22, sw3, p31, p32 ].each {|p| p.on }
 
     ################
     # 学習させる
 
     # p11 配下に 00:00:0e:00:00:11
-    puts "OK"
     pkt = Nwdiy::Packet::Ethernet.new(dst: { broadcast: true })
-    puts "OK"
     pkt.src = "00:00:0e:00:00:11"
-    puts "OK"
     expect(p11.send(pkt)).to eq pkt.bytesize
-    puts "OK"
     expect(p21.recv.to_pkt).to eq pkt.to_pkt
-    puts "OK"
     expect(p31.recv.to_pkt).to eq pkt.to_pkt
-    puts "OK"
 
     # p21 配下に 00:00:0e:00:00:21
     pkt.src = "00:00:0e:00:00:21"
@@ -107,14 +103,25 @@ RSpec.describe Nwdiy::Func::Swc::Ethernet do
     pkt.dst = "00:00:0e:00:00:11"
     expect(p31.send(pkt)).to eq pkt.bytesize
     expect(p11.recv.to_pkt).to eq pkt.to_pkt
-    expect(p21.ready?).to be false
 
     # p31 配下から p31 配下へ送信
     pkt.dst = "00:00:0e:00:00:31"
     expect(p31.send(pkt)).to eq pkt.bytesize
-    sleep 1
-    expect(p11.ready?).to be false
-    expect(p21.ready?).to be false
+
+    # 他のインターフェースに余計なパケットは飛んでない
+    # (最後のこのブロードキャストが届くこと)
+    pkt.dst = "ff:ff:ff:ff:ff:ff"
+    pkt.src = "00:00:0e:00:00:ff"
+    pkt.data = "xxxx"
+    expect(p11.send(pkt)).to eq pkt.bytesize
+    expect(p21.recv.to_pkt).to eq pkt.to_pkt
+    expect(p31.recv.to_pkt).to eq pkt.to_pkt
+    expect(p21.send(pkt)).to eq pkt.bytesize
+    expect(p11.recv.to_pkt).to eq pkt.to_pkt
+    expect(p31.recv.to_pkt).to eq pkt.to_pkt
+    expect(p31.send(pkt)).to eq pkt.bytesize
+    expect(p21.recv.to_pkt).to eq pkt.to_pkt
+    expect(p11.recv.to_pkt).to eq pkt.to_pkt
 
     ################
     # 学習テーブルの ageout はテストに時間かかるので、、、略

@@ -20,7 +20,6 @@ class Nwdiy::Func::Swc::Ethernet < Nwdiy::Func::Swc
     @lock = Thread::Mutex.new
     @cond  = Thread::ConditionVariable.new
   end
-  # ホスト名省略時値につける文字列
   def self.class_name
     "ethernet_switch"
   end
@@ -48,13 +47,14 @@ class Nwdiy::Func::Swc::Ethernet < Nwdiy::Func::Swc
   class InvalidAgeError < Exception; end
 
   # パケット中継するよ
-  def forward(inpkt)
-    return nil unless inpkt.kind_of?(Nwdiy::Packet::Ethernet)
-    self.macdb_set(inpkt.src, inpkt.from)
-    inpkt.to = [self.macdb_get(inpkt.dst)]
-    inpkt.to = self.attached unless inpkt.to[0]
-    inpkt.to -= [inpkt.from]
-    return inpkt
+  def forward(pkt)
+    return nil unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
+    self.macdb_set(pkt.src, pkt.from)
+    pkt.to = [self.macdb_get(pkt.dst)]
+    pkt.to = self.attached unless pkt.to[0]
+    pkt.to -= [pkt.from]
+    sleep 0.1
+    return pkt
   end
 
   ################
@@ -62,9 +62,9 @@ class Nwdiy::Func::Swc::Ethernet < Nwdiy::Func::Swc
   def macdb_set(mac, ifp)
     return nil unless mac.unicast?
     @lock.synchronize do
-      entry = @macdb[mac]
-      if @macdb[mac] == nil || @macdb[mac][:ifp] != ifp
-        @macdb[mac] = { ifp: ifp, time: self.uptime }
+      entry = @macdb[mac.addr]
+      if @macdb[mac.addr] == nil || @macdb[mac.addr][:ifp] != ifp
+        @macdb[mac.addr] = { ifp: ifp, time: self.uptime }
         @cond.signal
       end
     end
@@ -72,7 +72,7 @@ class Nwdiy::Func::Swc::Ethernet < Nwdiy::Func::Swc
   def macdb_get(mac)
     return nil unless mac.unicast?
     @lock.synchronize do
-      return @macdb[mac] ? @macdb[mac][:ifp] : nil
+      return @macdb[mac.addr] ? @macdb[mac.addr][:ifp] : nil
     end
   end
 

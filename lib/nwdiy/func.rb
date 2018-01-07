@@ -16,6 +16,22 @@ class Nwdiy::Func
   autoload(:Swc, 'nwdiy/func/swc')
   autoload(:Flt, 'nwdiy/func/flt')
 
+  attr_accessor :name
+  alias :to_s :name
+
+  @@func_index = 0
+  def initialize(name = nil)
+    if name
+      @name = name
+    else
+      @@func_index += 1
+      @name = self.class_name + @@func_index.to_s
+    end
+  end
+  def class_name
+    "func"
+  end
+
   attr_accessor :power
   def on
     @power = true

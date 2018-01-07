@@ -54,8 +54,9 @@ class Nwdiy::Packet::MacAddr < Nwdiy::Packet
   def self.bytesize
     6
   end
-  def inspect
-    self.addr.unpack("C6").map{|c| "%02x"%c }.join(":")
+
+  def hash
+    self.addr.hash
   end
 
   ################

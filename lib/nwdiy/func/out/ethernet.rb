@@ -20,17 +20,13 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
 
   public
   def initialize(name = nil)
-    # 名無しなら自動で名付け
-    unless name
-      @@name_seed += 1
-      name = sprintf("diy%03u", @@name_seed)
-    end
+    super(name)
     # パケットをやりとりするための @sock を作る
-    debug name
     @sock = self.class.open_pfpacket(name) || self.class.open_sock(name)
-    debug @sock
-
     @sent = @received = 0
+  end
+  def class_name
+    "eth"
   end
 
   def ready?

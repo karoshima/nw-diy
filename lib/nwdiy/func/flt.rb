@@ -9,9 +9,13 @@
 class Nwdiy::Func::Flt < Nwdiy::Func
 
   attr_accessor :attached
-  def initialize
+  def initialize(name = nil)
+    super(name)
     @attached = [ nil, nil ]
     @threads = [ nil, nil ]
+  end
+  def class_name
+    "flt"
   end
 
   def on

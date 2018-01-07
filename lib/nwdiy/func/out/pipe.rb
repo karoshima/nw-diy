@@ -7,20 +7,25 @@
 ################################################################
 
 class Nwdiy::Func::Out::Pipe < Nwdiy::Func::Out
-  def self.pair
-    a = self.new
-    b = self.new
-    a.set_peer(b)
-    b.set_peer(a)
-    return a, b
+  def self.pair(a = nil, b = nil)
+    pipea = self.new(a)
+    pipeb = self.new(b)
+    pipea.set_peer(pipeb)
+    pipeb.set_peer(pipea)
+    return pipea, pipeb
   end
 
   attr_accessor :sent, :received
 
-  def initialize
+  def initialize(name)
+    super(name)
     @queue = Thread::Queue.new
     @sent = @received = 0
   end
+  def class_name
+    "pipe"
+  end
+
   def set_peer(peer)
     @peer = peer
   end
