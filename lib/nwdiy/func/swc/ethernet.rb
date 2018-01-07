@@ -53,7 +53,6 @@ class Nwdiy::Func::Swc::Ethernet < Nwdiy::Func::Swc
     pkt.to = [self.macdb_get(pkt.dst)]
     pkt.to = self.attached unless pkt.to[0]
     pkt.to -= [pkt.from]
-    sleep 0.1
     return pkt
   end
 
