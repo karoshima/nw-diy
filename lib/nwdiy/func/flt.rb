@@ -9,19 +9,26 @@
 class Nwdiy::Func::Flt < Nwdiy::Func
 
   attr_accessor :attached
-  def initialize
+  def initialize(name = nil)
+    super(name)
     @attached = [ nil, nil ]
     @threads = [ nil, nil ]
+  end
+  def class_name
+    "flt"
   end
 
   def on
     super
     @threads[0] = self.thread_start(0, 1)
     @threads[1] = self.thread_start(1, 0)
+    true
   end
 
   def off
+    super
     @threads.map!{|t| t.kill }.map!{|t| t.join; nil }
+    false
   end
 
   def attach_left(ifp)
@@ -52,11 +59,11 @@ class Nwdiy::Func::Flt < Nwdiy::Func
   def thread_start(src, dst)
     return nil unless @attached[src]
     Thread.new(src, dst) do |sss, ddd|
-      dir = [:to_right, :to_left][src]
       loop do
          # パケットひとつ受信する
-        inpkt = @attached[src].recv
-        inpkt.direction = dir
+        inpkt = @attached[sss].recv
+        inpkt.from = @attached[sss]
+        inpkt.to = @attached[ddd]
 
         # Flt の子クラスに定義した forward メソッドで
         # 受信したパケットを処理する
@@ -64,14 +71,10 @@ class Nwdiy::Func::Flt < Nwdiy::Func
 
         # 処理したパケットを送信する
         outpkts.each do |outpkt|
-          if outpkt
-            case outpkt.direction
-            when :to_left
-              @attached[0].send(outpkt) if @attached[0]
-            when :to_right
-              @attached[1].send(outpkt) if @attached[1]
-            end
-          end
+          ifp = outpkt&.to
+          outpkt.from = nil
+          outpkt.to = nil
+          ifp.send(outpkt) if ifp
         end
       end
     end

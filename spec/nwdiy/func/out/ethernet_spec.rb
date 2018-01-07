@@ -32,6 +32,12 @@
 #    パケットを送信します。
 #    パケットサイズを返します。
 #
+# sent -> Integer
+#    送信したパケットの数を返す
+#
+# received -> Integer
+#    受信したパケットの数を返す
+#
 ################################################################
 
 require "spec_helper"
@@ -52,7 +58,6 @@ RSpec.describe Nwdiy::Func::Out::Ethernet do
     expect(hoge.respond_to?(:recv)).to be true
     expect(hoge.respond_to?(:send)).to be true
   end
-
 
   ifname = { sock: "dummy" }
   case RbConfig::CONFIG['host_os']
@@ -81,7 +86,11 @@ RSpec.describe Nwdiy::Func::Out::Ethernet do
     ifp1.on
 
     expect(ifp0.send(frame)).to be frame.bytesize
+    expect(ifp0.sent).to be 1
+    expect(ifp0.received).to be 0
     expect(ifp1.recv.to_pkt).to eq frame.to_pkt
+    expect(ifp1.sent).to be 0
+    expect(ifp1.received).to be 1
     expect { ifp0.send("hoge") }.to raise_error Nwdiy::Func::Out::Ethernet::EthError
 
   end

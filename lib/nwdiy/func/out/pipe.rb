@@ -7,28 +7,27 @@
 ################################################################
 
 class Nwdiy::Func::Out::Pipe < Nwdiy::Func::Out
-  def self.pair
-    a = self.new
-    b = self.new
-    a.set_peer(b)
-    b.set_peer(a)
-    return a, b
+  def self.pair(a = nil, b = nil)
+    pipea = self.new(a)
+    pipeb = self.new(b)
+    pipea.set_peer(pipeb)
+    pipeb.set_peer(pipea)
+    return pipea, pipeb
   end
-  def initialize
+
+  attr_accessor :sent, :received
+
+  def initialize(name)
+    super(name)
     @queue = Thread::Queue.new
-    @recv_dir = nil
-    @send_dir = nil
+    @sent = @received = 0
   end
+  def class_name
+    "pipe"
+  end
+
   def set_peer(peer)
     @peer = peer
-  end
-  def set_left
-    @recv_dir = :to_right
-    @send_dir = :to_left
-  end
-  def set_right
-    @recv_dir = :to_left
-    @send_dir = :to_right
   end
 
   attr_reader :queue
@@ -39,13 +38,13 @@ class Nwdiy::Func::Out::Pipe < Nwdiy::Func::Out
 
   def recv
     pkt = @queue.shift
-    pkt.direction = @recv_dir if @recv_dir
-    pkt
+    @received += 1
+    return pkt
   end
 
   def send(pkt)
-    pkt.direction = @send_dir if @send_dir
     @peer.queue.push(pkt)
+    @sent += 1
     pkt.bytesize
   end
 

@@ -49,13 +49,13 @@
 #    送出するパケットを返します。
 #    nil を返すと、パケットの送信は行ないません。
 #
-#    受信パケットの向きは pkt.direction で確認することができます。
-#    送信パケットの送信先は、返り値であるパケットの direct で決定されます。
-#
 #    左右の両方にパケットを送出するときには
 #    メソッドの返り値として、それぞれのパケットを返してください。
 #    これは例えば、ファイヤーウォールが TCP を切断するときに
 #    送信元と宛先の双方に RST を送信するような場合に使える方法です。
+#
+#    受信したパケットの from と to は事前に設定してあります。
+#    パケットの出力先を変えるときは、to を再設定して返してください。
 #
 ################################################################
 
@@ -92,8 +92,8 @@ RSpec.describe Nwdiy::Func::Flt do
       end
 
       def forward(pkt)
-        @count[pkt.direction] += 1 if pkt.type == 0x0806
-        pkt
+        @count[pkt.from] += 1 if pkt.type == 0x0806
+        return pkt
       end
     end
 
@@ -113,38 +113,38 @@ RSpec.describe Nwdiy::Func::Flt do
     expect(p4.recv.to_pkt).to eq pkt.to_pkt
 
     # まだ ICMP は数えられていない
-    expect(flt.count[:to_left]).to eq 0
-    expect(flt.count[:to_right]).to eq 0
+    expect(flt.count[p2]).to eq 0
+    expect(flt.count[p3]).to eq 0
 
     # p4 から送ったら p3→count→p2 と通って p1 から出てくるはず
     expect(p4.send(pkt)).to eq pkt.bytesize
     expect(p1.recv.to_pkt).to eq pkt.to_pkt
 
     # まだ ARP は数えられていない
-    expect(flt.count[:to_left]).to eq 0
-    expect(flt.count[:to_right]).to eq 0
+    expect(flt.count[p2]).to eq 0
+    expect(flt.count[p3]).to eq 0
 
     # パケットに ARP データを載せたら、計上されるはず
     pkt.data = Nwdiy::Packet::ARP.new
     expect(p1.send(pkt)).to eq pkt.bytesize
     expect(p4.recv.to_pkt).to eq pkt.to_pkt
-    expect(flt.count[:to_left]).to eq 0
-    expect(flt.count[:to_right]).to eq 1
+    expect(flt.count[p2]).to eq 1
+    expect(flt.count[p3]).to eq 0
     expect(p4.send(pkt)).to eq pkt.bytesize
     expect(p1.recv.to_pkt).to eq pkt.to_pkt
-    expect(flt.count[:to_left]).to eq 1
-    expect(flt.count[:to_right]).to eq 1
+    expect(flt.count[p2]).to eq 1
+    expect(flt.count[p3]).to eq 1
 
     # パケットが ARP 以外だったら計上されない
     pkt.type = 0x0800
     expect(p1.send(pkt)).to eq pkt.bytesize
     expect(p4.recv.to_pkt).to eq pkt.to_pkt
-    expect(flt.count[:to_left]).to eq 1
-    expect(flt.count[:to_right]).to eq 1
+    expect(flt.count[p2]).to eq 1
+    expect(flt.count[p3]).to eq 1
     expect(p4.send(pkt)).to eq pkt.bytesize
     expect(p1.recv.to_pkt).to eq pkt.to_pkt
-    expect(flt.count[:to_left]).to eq 1
-    expect(flt.count[:to_right]).to eq 1
+    expect(flt.count[p2]).to eq 1
+    expect(flt.count[p3]).to eq 1
 
   end
 end

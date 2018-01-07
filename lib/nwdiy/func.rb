@@ -13,7 +13,24 @@ class Nwdiy::Func
 
   autoload(:Out, 'nwdiy/func/out')
   autoload(:App, 'nwdiy/func/app')
+  autoload(:Swc, 'nwdiy/func/swc')
   autoload(:Flt, 'nwdiy/func/flt')
+
+  attr_accessor :name
+  alias :to_s :name
+
+  @@func_index = 0
+  def initialize(name = nil)
+    if name
+      @name = name
+    else
+      @@func_index += 1
+      @name = self.class_name + @@func_index.to_s
+    end
+  end
+  def class_name
+    "func"
+  end
 
   attr_accessor :power
   def on
@@ -34,13 +51,11 @@ class Nwdiy::Func
 
   def |(other)
     debug "#{self}(#{self.class}) | #{other}(#{other.class})"
-    raise "This is not Nwdiy::Packet: '#{other}'" unless
+    raise "This is not Nwdiy::Func: '#{other}(#{other.class})'" unless
       other.kind_of?(Nwdiy::Func)
     if self.kind_of?(Nwdiy::Func::Out)
-      self.set_left
       other.attach_left(self)
     elsif other.kind_of?(Nwdiy::Func::Out)
-      other.set_right
       self.attach_right(other)
     else
       p1, p2 = Nwdiy::Func::Out::Pipe.pair.each {|p| p.on }

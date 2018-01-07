@@ -112,7 +112,6 @@ class Nwdiy::Packet
 
   def initialize(data = nil)
     @nwdiy_field = Hash.new
-    @direction = nil
     case data
     when Hash
       data.each do |var, val|
@@ -179,9 +178,9 @@ class Nwdiy::Packet
         value.kind_of?(@@types[self.class][field])
       raise "value #{value.inspect} is not a kind of #{@@types[self.class][field]}"
 
-    # Nwdiy::Packet 型のときは、nil 初期化もあり得る
-    elsif value == nil && type < Nwdiy::Packet
-      return @nwdiy_field[field] = type.new(nil)
+    # Nwdiy::Packet 型のときは、nil 初期化や Hash 初期化もあり得る
+    elsif (value == nil || value.kind_of?(Hash)) && type < Nwdiy::Packet
+      return @nwdiy_field[field] = type.new(value)
     # 文字列のときは型ごとの解釈
     elsif ! value.kind_of?(String)
       raise "Unknown type of data #{value.inspect}"
@@ -273,11 +272,28 @@ class Nwdiy::Packet
     end
   end
 
-  # パケットの方角
-  attr_reader :direction
-  def direction=(dir)
-    sym = dir&.to_sym
-    @direction = (sym == :to_left || sym == :to_right) ? sym : nil
+  # パケット送受信インターフェース
+  def from
+    @from
+  end
+  def from=(ifp)
+    return @from = ifp if ifp == nil
+    return @from = ifp if ifp.kind_of?(Nwdiy::Func::Out)
+    raise NotInterfaceError.new "#{ifp}(#{ifp.class}) must be Nwdiy::Func::Out instance"
+  end
+  def to
+    @to
+  end
+  def to=(ifp)
+    return @to = ifp if ifp == nil
+    return @to = ifp if ifp.kind_of?(Nwdiy::Func::Out)
+    if ifp.kind_of?(Array)
+      ifp.compact!
+      if ifp.all? { |ifpp| ifpp.kind_of?(Nwdiy::Func::Out) }
+        return @to = ifp
+      end
+    end
+    raise NotInterfaceError.new "#{ifp}(#{ifp.class}) must be Nwdiy::Func::Out instance"
   end
 
   ################
@@ -297,4 +313,6 @@ class Nwdiy::Packet
   end
 
   class Invalid < Exception; end  # パケット生成時の内容が変
+
+  class NotInterfaceError < Exception; end  # 送受信インターフェースおかしい
 end

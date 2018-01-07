@@ -8,13 +8,13 @@
 
 class Nwdiy::Func::App < Nwdiy::Func
   
-  def initialize
-    super
+  def initialize(name = nil)
+    super(name)
     @out = nil
-    @name = nil
   end
-  attr_reader :name
-  alias :to_s :name
+  def class_name
+    "app"
+  end
 
   def attach(out)
     raise Error.new "#{self} has already connected to #{@out}" if @out

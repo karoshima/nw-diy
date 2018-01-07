@@ -16,17 +16,18 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
 
   @@name_seed = 0
 
+  attr_accessor :sent, :received
+
   public
   def initialize(name = nil)
-    # 名無しなら自動で名付け
-    unless name
-      name = sprintf("diy%03u", @@name_seed)
-      @@name_seed += 1
-    end
+    super(name)
     # パケットをやりとりするための @sock を作る
-    debug name
-    @sock = self.class.open_pfpacket(name) || self.class.open_sock(name)
-    debug @sock
+    @sock = self.class.open_pfpacket(self.to_s) || self.class.open_sock(self.to_s)
+    @sent = @received = 0
+    debug "init #{self.to_s} done."
+  end
+  def class_name
+    "eth"
   end
 
   def ready?
@@ -37,7 +38,9 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
     unless self.power
       return nil
     end
-    Nwdiy::Packet::Ethernet.new(@sock.nwdiy_recv)
+    pkt = Nwdiy::Packet::Ethernet.new(@sock.nwdiy_recv)
+    @received += 1
+    return pkt
   end
 
   def send(pkt)
@@ -45,7 +48,9 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
       raise EthError.new "packet #{pkt.inspect}(#{pkt.class}) is not Nwdiy::Packet::Ethernet" 
     end
     raise Errno::EWOULDBLOCK.new "#{self} is down" unless self.power
-    @sock.nwdiy_send(pkt.to_pkt)
+    len = @sock.nwdiy_send(pkt.to_pkt)
+    @sent += 1
+    return len
   end
 
   ################
