@@ -17,8 +17,9 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
   def_head Nwdiy::Packet::IPv4Addr, :src, :dst
   def_body          :option, :data
 
-  def initialize(seed = {vhl: 0x45, length: 20, ttl: 64})
-    super(vhl: 0x45, length: 20, ttl: 64)
+  IPV4SEED = {vhl: 0x45, length: 20, ttl: 64}
+  def initialize(seed = IPV4SEED)
+    super(IPV4SEED)
     super(seed)
   end
 
@@ -124,7 +125,6 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
     self.data.pseudo_header = self.src.to_pkt + self.dst.to_pkt +
                               [ 0, self.proto, self.data.bytesize ].pack("ccn")
   end
-
 
   def inspect
     sprintf("[IPv4 %s => %s %s]",
