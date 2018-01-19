@@ -17,10 +17,9 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
   def_head Nwdiy::Packet::IPv4Addr, :src, :dst
   def_body          :option, :data
 
-  IPV4SEED = {vhl: 0x45, length: 20, ttl: 64}
-  def initialize(seed = IPV4SEED)
-    super(IPV4SEED)
-    super(seed)
+  IPV4SEED = {vhl: 0x45, length: 20, ttl: 64, option: ""}
+  def initialize(seed = nil)
+    super(seed, IPV4SEED)
   end
 
   # vhl 詳細
@@ -35,6 +34,13 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
   end
   # def hlen=()
   #   option への代入を詳細するとき検討する
+
+  # パケット長は自動算出する
+  def length
+    self.nwdiy_set(:length,
+                   20 + (self.option ? self.option.bytesize : 0) +
+                   (self.data ? self.data.bytesize : 0))
+  end
 
   # フラグメント詳細
   def df
@@ -75,8 +81,9 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
   #    cksum 部を除いたヘッダ部のバイト列から
   #    チェックサム値を求める
   def cksum
+    self.length # 参照時に自動算出される
     self.cksum = 0
-    header = self.to_pkt(body: false)
+    header = self.to_pkt(body: false) + (self.option || "")
     self.cksum = self.class.calc_cksum(header)
   end
 
@@ -115,19 +122,24 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
       self.proto = btype if btype
       @nwdiy_field[:data] = seed
     end
-    self.length = self.hlen + @nwdiy_field[:data].to_pkt.bytesize
     self.set_pseudo_header
   end
 
   # 値が代わったときなどに TCP や UDP のチェックサムを計算し直す
   def set_pseudo_header
-    return unless self.data && self.data.respond_to?(:pseudo_header=)
-    self.data.pseudo_header = self.src.to_pkt + self.dst.to_pkt +
-                              [ 0, self.proto, self.data.bytesize ].pack("ccn")
+    return unless self.data
+    return unless self.data.respond_to?(:set_ipaddr)
+    self.data.set_ipaddr(self.src, self.dst)
   end
 
+  def to_pkt(head: true, body: true)
+    return super unless body # cksum 計算途中はここで return する
+    self.cksum # 参照時に自動計算される
+    super
+  end
   def inspect
-    sprintf("[IPv4 %s => %s %s]",
-            self.src.inspect, self.dst.inspect, self.data)
+    sprintf("[IPv4 %s => %s%s]",
+            self.src.inspect, self.dst.inspect,
+            self.data ? " "+self.data.inspect : "")
   end
 end
