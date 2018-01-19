@@ -112,14 +112,9 @@ class Nwdiy::Packet
   ################################################################
   # サブクラスのインスタンスを生成します
 
-  def initialize(data = nil)
+  def initialize(data = nil, default = {})
     @nwdiy_field = Hash.new
-    case data
-    when Hash
-      data.each do |var, val|
-        self.nwdiy_set(var.to_sym, val)
-      end
-    when String
+    if data.kind_of?(String)
       # ヘッダフィールドの切り出し
       values = data.unpack(@@template[self.class] + "a*")
       @@headers[self.class].each do |field|
@@ -131,6 +126,15 @@ class Nwdiy::Packet
         # 使ったぶん削る
         len = @nwdiy_field[field].bytesize
         value = value[len, value.bytesize-len]
+      end
+    else
+      if data.kind_of?(Hash)
+        data = default.merge(data)
+      else
+        data = default
+      end
+      data.each do |var, val|
+        self.nwdiy_set(var.to_sym, val)
       end
     end
   end

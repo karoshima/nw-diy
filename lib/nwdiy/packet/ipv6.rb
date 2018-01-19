@@ -17,9 +17,8 @@ class Nwdiy::Packet::IPv6 < Nwdiy::Packet
   def_body :data
 
   IPV6SEED = {vtcf: 0x60000000, length: 0, hlim: 64}
-  def initialize(seed = IPV6SEED)
-    super(IPV6SEED)
-    super(seed)
+  def initialize(seed = nil)
+    super(seed, IPV6SEED)
   end
 
   # Version, TrafficClass, FlowInfo 詳細

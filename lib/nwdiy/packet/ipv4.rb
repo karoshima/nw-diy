@@ -17,10 +17,9 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
   def_head Nwdiy::Packet::IPv4Addr, :src, :dst
   def_body          :option, :data
 
-  IPV4SEED = {vhl: 0x45, length: 20, ttl: 64}
-  def initialize(seed = IPV4SEED)
-    super(IPV4SEED)
-    super(seed)
+  IPV4SEED = {vhl: 0x45, length: 20, ttl: 64, option: ""}
+  def initialize(seed = nil)
+    super(seed, IPV4SEED)
   end
 
   # vhl 詳細
@@ -76,7 +75,7 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
   #    チェックサム値を求める
   def cksum
     self.cksum = 0
-    header = self.to_pkt(body: false)
+    header = self.to_pkt(body: false) + (self.option || "")
     self.cksum = self.class.calc_cksum(header)
   end
 

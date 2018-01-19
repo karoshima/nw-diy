@@ -13,10 +13,9 @@ class Nwdiy::Packet::UDP < Nwdiy::Packet
   def_head :uint16, :src, :dst, :length, :cksum
   def_body :data
 
-  def initialize(seed = {length: 8})
+  def initialize(seed = nil)
     @pseudo = ""
-    super(length: 8)
-    super(seed)
+    super(seed, { length: 8 } )
   end
 
   # チェックサム計算
