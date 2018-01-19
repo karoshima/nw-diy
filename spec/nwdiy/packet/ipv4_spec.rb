@@ -80,9 +80,15 @@ RSpec.describe Nwdiy::Packet::IPv4 do
     ipv4.ttl = 64
     ipv4.src = '127.0.0.1'
     ipv4.data = data = "xxxxxxxxxxxxxxxx"
-    expect(ipv4.cksum).to be == 0xfbd8 # 勝手にちゃんと計算されるし
+    expect(ipv4.cksum).to be 0xfbd8 # 勝手にちゃんと計算されるし
     ipv4.ttl -= 1                      # TTL 減算したら
-    expect(ipv4.cksum).to be == 0xfcd8 # 勝手にちゃんと計算されてること
+    expect(ipv4.cksum).to be 0xfcd8 # 勝手にちゃんと計算されてること
+    ipv4.ttl -= 1                      # TTL 減算したら
+    expect(ipv4.to_pkt[10,2].unpack("n")[0]).to be 0xfdd8 # 勝手に計算
+    expect(ipv4.length).to be 36
+    ipv4.data = data + "x"
+    expect(ipv4.to_pkt[10,2].unpack("n")[0]).to be 0xfdd7 # 勝手に計算
+    expect(ipv4.length).to be 37
   end
 
   it 'UDP データを突っ込んだら proto が UDP になること' do

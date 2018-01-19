@@ -35,6 +35,13 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
   # def hlen=()
   #   option への代入を詳細するとき検討する
 
+  # パケット長は自動算出する
+  def length
+    self.nwdiy_set(:length,
+                   20 + (self.option ? self.option.bytesize : 0) +
+                   (self.data ? self.data.bytesize : 0))
+  end
+
   # フラグメント詳細
   def df
     (self.frag & 0x4000) != 0
@@ -74,6 +81,7 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
   #    cksum 部を除いたヘッダ部のバイト列から
   #    チェックサム値を求める
   def cksum
+    self.length # 参照時に自動算出される
     self.cksum = 0
     header = self.to_pkt(body: false) + (self.option || "")
     self.cksum = self.class.calc_cksum(header)
@@ -114,7 +122,6 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
       self.proto = btype if btype
       @nwdiy_field[:data] = seed
     end
-    self.length = self.hlen + @nwdiy_field[:data].to_pkt.bytesize
     self.set_pseudo_header
   end
 
@@ -125,6 +132,11 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
                               [ 0, self.proto, self.data.bytesize ].pack("ccn")
   end
 
+  def to_pkt(head: true, body: true)
+    return super unless body # cksum 計算途中はここで return する
+    self.cksum # 参照時に自動計算される
+    super
+  end
   def inspect
     sprintf("[IPv4 %s => %s %s]",
             self.src.inspect, self.dst.inspect, self.data)
