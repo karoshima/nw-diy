@@ -14,19 +14,22 @@ class Nwdiy::Packet::UDP < Nwdiy::Packet
   def_body :data
 
   def initialize(seed = nil)
-    @pseudo = ""
+    @ipaddr = nil
     super(seed, { length: 8 } )
   end
 
-  # チェックサム計算
-  #    cksum 部を除いたヘッダ部のバイト列から
-  #    チェックサム値を求める
-  def pseudo_header=(head)
-    @pseudo = head
+  # パケット長は自動算出する
+  def length
+    self.nwdiy_set(:length,
+                   8 + (self.data ? self.data.bytesize : 0))
+  end
+
+  def set_ipaddr(src, dst)
+    @ipaddr = [src, dst]
   end
   def cksum
-    self.cksum = 0
-    self.cksum = self.class.calc_cksum(@pseudo, self.to_pkt)
+    sum, pkt = self.sum_and_packet
+    return sum
   end
 
   # ボディ部
@@ -46,5 +49,28 @@ class Nwdiy::Packet::UDP < Nwdiy::Packet
     end
     @nwdiy_field[:data] = seed
     self.length = 8 + seed.bytesize
+  end
+
+  alias :to_pkt_original :to_pkt
+  def to_pkt
+    sum, pkt = self.sum_and_packet
+    return pkt
+  end
+  def sum_and_packet
+    len = self.length # 参照するとき自動計算される
+    unless @ipaddr
+      return self.to_pkt_original
+    end
+    pseudo = @ipaddr.map{|p| p.to_pkt } + [[17, self.length].pack("n2")]
+    udp = [self.src, self.dst, len].pack("n3")
+    data = self.data ? self.data.to_pkt : ""
+    self.cksum = sum = self.class.calc_cksum(*pseudo, udp, data)
+    udp += [sum].pack("n")
+    return sum, udp + data
+  end
+  def inspect
+    sprintf("[UDP %u => %u%s]",
+            self.src, self.dst,
+            self.data ? " "+self.data.inspect : "")
   end
 end

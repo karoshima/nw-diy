@@ -44,6 +44,11 @@ class Nwdiy::Packet::IPv6 < Nwdiy::Packet
     self.vtcf = (self.vtcf & 0xfff00000) | val
   end
 
+  def length
+    self.nwdiy_set(:length,
+                   40 + (self.data ? self.data.bytesize : 0))
+  end
+
   def next
     self.body_type(:data, self.data) || @nwdiy_field[:next] || 0
   end
@@ -68,15 +73,14 @@ class Nwdiy::Packet::IPv6 < Nwdiy::Packet
       self.next = btype if btype
       @nwdiy_field[:data] = seed
     end
-    self.length = @nwdiy_field[:data].to_pkt.bytesize
     self.set_pseudo_header
   end
 
   # 値が代わったときなどに TCP や UDP のチェックサムを計算し直す
   def set_pseudo_header
-    return unless self.data && self.data.respond_to?(:pseudo_header=)
-    self.data.pseudo_header = self.src.to_pkt + self.dst.to_pkt +
-                              [self.length, self.next].pack("N2")
+    return unless self.data
+    return unless self.data.respond_to?(:set_ipaddr)
+    self.data.set_ipaddr(self.src, self.dst)
   end
 
   def inspect

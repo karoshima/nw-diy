@@ -127,9 +127,9 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
 
   # 値が代わったときなどに TCP や UDP のチェックサムを計算し直す
   def set_pseudo_header
-    return unless self.data && self.data.respond_to?(:pseudo_header=)
-    self.data.pseudo_header = self.src.to_pkt + self.dst.to_pkt +
-                              [ 0, self.proto, self.data.bytesize ].pack("ccn")
+    return unless self.data
+    return unless self.data.respond_to?(:set_ipaddr)
+    self.data.set_ipaddr(self.src, self.dst)
   end
 
   def to_pkt(head: true, body: true)
@@ -138,7 +138,8 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
     super
   end
   def inspect
-    sprintf("[IPv4 %s => %s %s]",
-            self.src.inspect, self.dst.inspect, self.data)
+    sprintf("[IPv4 %s => %s%s]",
+            self.src.inspect, self.dst.inspect,
+            self.data ? " "+self.data.inspect : "")
   end
 end

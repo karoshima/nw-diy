@@ -53,4 +53,20 @@ RSpec.describe Nwdiy::Packet::UDP do
     pkt = Nwdiy::Packet::UDP.new(src + dst + length + cksum + data)
     expect(pkt).to be_a Nwdiy::Packet::UDP
   end
+
+  it "is always calculated (cksum, length)" do
+    udp = Nwdiy::Packet::UDP.new(data: "xxxx")
+    ip = Nwdiy::Packet::IPv4.new(data: udp)
+    expect(udp.length).to be 12
+    expect(udp.cksum).to be 0x0ee6
+    ip.src = "0.0.0.1"
+    expect(udp.length).to be 12
+    expect(udp.cksum).to be 0x0ee5
+    udp.data = "xxxx\x00\x00"
+    expect(udp.length).to be 14
+    expect(udp.cksum).to be 0x0ee1
+    udp.src = 1
+    expect(udp.length).to be 14
+    expect(udp.cksum).to be 0x0ee0
+  end
 end
