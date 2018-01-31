@@ -15,6 +15,7 @@ class Nwdiy::Func
   autoload(:App, 'nwdiy/func/app')
   autoload(:Swc, 'nwdiy/func/swc')
   autoload(:Flt, 'nwdiy/func/flt')
+  autoload(:Ifp, 'nwdiy/func/ifp')
 
   attr_accessor :name
   alias :to_s :name

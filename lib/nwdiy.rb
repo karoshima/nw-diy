@@ -17,6 +17,10 @@ module Nwdiy
   autoload(:Packet,    'nwdiy/packet')
 
   ################
+  # OS itself
+  OS = Nwdiy::Func::Ifp::OS.new('self')
+
+  ################
   # /usr/include on Linux
 
   #include <bits/socket.h>
