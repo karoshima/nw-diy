@@ -22,10 +22,14 @@ class Nwdiy::Func::Ifp::OS < Nwdiy::Func::Ifp
   end
 
   # インターフェースを作る
-  def link(name = nil)
+  def eth(name = nil)
     return @link[name] if name && @link[name]
     newlink = Nwdiy::Func::Ifp::Ethernet.new(name)
     return @link[newlink.to_s] = newlink
+  end
+  def real_eth(name)
+    return @link[name] if name && @link[name]
+    return @link[name] = Nwdiy::Func::Ifp::Ethernet.new(name, real: true)
   end
 
   # OS そのものはパケットのためのものではないので、

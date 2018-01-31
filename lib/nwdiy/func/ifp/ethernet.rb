@@ -14,10 +14,15 @@ class Nwdiy::Func::Ifp::Ethernet < Nwdiy::Func::Ifp
 
   class EtherError < Exception; end
 
-  def initialize(name = nil)
-    super
+  def initialize(name = nil, real: false)
+    super(name)
     # パケットをやりとりするための @sock を作る
-    @sock = self.class.open_pfpacket(self.to_s) || self.class.open_sock(self.to_s)
+    begin
+      @sock = self.class.open_pfpacket(self.to_s)
+    rescue Errno::ENOENT, Errno::EPERM
+      @sock, err = self.class.open_sock(self.to_s)
+      raise err if real && err
+    end
     @sent = @received = 0
     debug "init #{self.to_s} done."
   end
@@ -52,13 +57,8 @@ class Nwdiy::Func::Ifp::Ethernet < Nwdiy::Func::Ifp
   def self.open_pfpacket(name)
     ifindex = self.if_nametoindex(name)
     debug "#{name}(#{ifindex})"
-    return nil unless ifindex   # 実在しない
-    begin
-      return self.open_pfpacket_detail(name, ifindex)
-    rescue Errno::EPERM => e    # 権限がない場合
-      $stderr.puts "open(#{name}) => #{e}"
-      return nil
-    end
+    raise Errno::ENOENT unless ifindex   # 実在しない
+    return self.open_pfpacket_detail(name, ifindex)
   end
   def self.if_nametoindex(name)
     Socket::getifaddrs.each do |ifp|
@@ -122,14 +122,21 @@ class Nwdiy::Func::Ifp::Ethernet < Nwdiy::Func::Ifp
     end
     ifp.autoclose = true
     ifp.extend SockTCP
-    ifp.register(name) # プロキシに登録する
-    ifp
+    errmsg = ifp.register(name) # プロキシに登録する
+    begin
+      err = Errno.const_get(errmsg)
+    rescue NameError
+      err = nil
+    end
+    return ifp, err
   end
 
   module SockTCP
     def register(name)
       Nwdiy::Func::Out::Ethernet.debug self.nwdiy_send(name)
-      Nwdiy::Func::Out::Ethernet.debug self.nwdiy_recv
+      result = self.nwdiy_recv
+      Nwdiy::Func::Out::Ethernet.debug result
+      result
     end
 
     # パケット送受信
@@ -231,17 +238,24 @@ class Nwdiy::Func::Ifp::Ethernet < Nwdiy::Func::Ifp
     debug @@pfpkt
 
     # 可能であれば、PF_PACKET のソケットも用意する
+    errmsg = "OK"
     unless @@pfpkt.has_key?(name)
-      pfpkt = self.open_pfpacket(name)
-      if pfpkt
-        @@pfpkt[name] = pfpkt
-        @@name[pfpkt] = name
+      begin
+        pfpkt = self.open_pfpacket(name)
+        if pfpkt
+          @@pfpkt[name] = pfpkt
+          @@name[pfpkt] = name
+        end
+      rescue Errno::ENOENT
+        errmsg = "ENOENT"
+      rescue Errno::EPERM
+        errmsg = "EPERM"
       end
     end
 
     # 最後に Ack を返す
     debug name
-    acc.nwdiy_send(name)
+    acc.nwdiy_send(errmsg)
 
   end
 
