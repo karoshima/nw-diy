@@ -11,7 +11,7 @@ class Nwdiy::Func
   include Nwdiy::Debug
   #  debugging true
 
-  autoload(:Out, 'nwdiy/func/out')
+#  autoload(:Out, 'nwdiy/func/out')
   autoload(:App, 'nwdiy/func/app')
   autoload(:Swc, 'nwdiy/func/swc')
   autoload(:Flt, 'nwdiy/func/flt')
