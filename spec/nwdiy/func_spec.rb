@@ -5,11 +5,6 @@
 # ネットワーク機能は以下の抽象クラスに分類できます。
 # 以下の抽象クラスはいずれも本クラス (Nwdiy::Func) の子クラスです。
 #
-# Nwdiy::Func::Out (outer)
-#   NW-DIY システムの外部と通信する機能です
-#   具体的には、NW-DIY を動かしている機器についている
-#   イーサネットインターフェースです。
-#
 # Nwdiy::Func::App (application)
 #   アプリケーションとしてパケットを送受信して何かをする機能です。
 #   具体的には ARP や PING などパケットを自動送受信したり、
@@ -17,11 +12,12 @@
 #   トンネル端で鍵交換したり、サーバー負荷を監視したり、
 #   というアプリケーション機能になります。
 #
-# Nwdiy::Func::Spl (splitter)
+# Nwdiy::Func::Ifp (splitter)
 #   ヘッダ情報に沿ってパケットをレイヤ分けして、上位層に渡します。
 #   上位層から来たパケットには、ヘッダを被せて下位層に渡します。
 #   具体的には tagged VLAN による LAN 分割, IP proto や TCP/UDP
 #   ポート番号による各種プロトコルへの紐付けなどがあります。
+#    最下位層には OS があり、装置外部との通信は OS を通して行ないます。
 #
 # Nwdiy::Func::Swc (switcher)
 #   ヘッダ情報に沿ってパケットの行先を決め、交通整理します。
@@ -146,12 +142,12 @@ RSpec.describe Nwdiy::Func do
     foo = Hoge.new
     bar = Hoge.new
 
-    p1, p2 = Nwdiy::Func::Out::Pipe.pair
-    p3, p4 = Nwdiy::Func::Out::Pipe.pair
+    ifp1, ifp2 = Nwdiy::Func::Ifp::Pipe.pair
+    ifp3, ifp4 = Nwdiy::Func::Ifp::Pipe.pair
 
-    [p1, p2, p3, p4].each {|p| p.on }
+    [ifp1, ifp2, ifp3, ifp4].each {|p| p.on }
 
-    p2 | foo | bar | p3
+    ifp2 | foo | bar | ifp3
 
     foo.on
     bar.on
@@ -161,15 +157,15 @@ RSpec.describe Nwdiy::Func do
     inpkt.src = "00:00:0e:00:00:02"
 
     # 右方向に伝播できること
-    expect(p1.send(inpkt)).to eq inpkt.bytesize
-    outpkt = p4.recv
+    expect(ifp1.send(inpkt)).to eq inpkt.bytesize
+    outpkt = ifp4.recv
     expect(outpkt.to_pkt).to eq inpkt.to_pkt
 
     # 左方向に伝播できること
-    expect(p4.send(inpkt)).to eq inpkt.bytesize
-    outpkt = p1.recv
+    expect(ifp4.send(inpkt)).to eq inpkt.bytesize
+    outpkt = ifp1.recv
     expect(outpkt.to_pkt).to eq inpkt.to_pkt
 
-    [p1, p2, p3, p4, foo, bar].each {|p| p.off }
+    [ifp1, ifp2, ifp3, ifp4, foo, bar].each {|p| p.off }
   end
 end

@@ -133,9 +133,9 @@ class Nwdiy::Func::Ifp::Ethernet < Nwdiy::Func::Ifp
 
   module SockTCP
     def register(name)
-      Nwdiy::Func::Out::Ethernet.debug self.nwdiy_send(name)
+      Nwdiy::Func::Ifp::Ethernet.debug self.nwdiy_send(name)
       result = self.nwdiy_recv
-      Nwdiy::Func::Out::Ethernet.debug result
+      Nwdiy::Func::Ifp::Ethernet.debug result
       result
     end
 
@@ -143,11 +143,11 @@ class Nwdiy::Func::Ifp::Ethernet < Nwdiy::Func::Ifp
     def nwdiy_recv
       size = self.sysread(2).unpack("n")[0]
       pkt = self.sysread(size)
-      Nwdiy::Func::Out::Ethernet.debug "#{[self]}.recv = #{pkt.dump}"
+      Nwdiy::Func::Ifp::Ethernet.debug "#{[self]}.recv = #{pkt.dump}"
       pkt
     end
     def nwdiy_send(pkt)
-      Nwdiy::Func::Out::Ethernet.debug "[#{self}].send(#{pkt.dump})"
+      Nwdiy::Func::Ifp::Ethernet.debug "[#{self}].send(#{pkt.dump})"
       self.syswrite([pkt.bytesize].pack("n") + pkt) - 2
     end
   end
@@ -162,7 +162,7 @@ class Nwdiy::Func::Ifp::Ethernet < Nwdiy::Func::Ifp
     # 待ち受けソケット
     @@sock = TCPServer.new("::1", $NWDIY_INTERFACE_PROXY_PORT)
 
-    # インタフェース名ごとの Nwdiy::Func::Out::Ethernet インスタンス配列
+    # インタフェース名ごとの Nwdiy::Func::Ifp::Ethernet インスタンス配列
     @@peer = Hash.new { |hash,key| hash[key] = Array.new }
 
     # ファイルデスクリプタごとの、インタフェース名

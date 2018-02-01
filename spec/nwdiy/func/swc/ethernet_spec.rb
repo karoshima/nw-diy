@@ -29,23 +29,23 @@ Thread.abort_on_exception = true
 RSpec.describe Nwdiy::Func::Swc::Ethernet do
   it "can transfer Ethernet frame" do
 
-    p1, p2 = Nwdiy::Func::Out::Pipe.pair("p1", "p2")
-    p3, p4 = Nwdiy::Func::Out::Pipe.pair("p3", "p4")
+    ifp1, ifp2 = Nwdiy::Func::Ifp::Pipe.pair
+    ifp3, ifp4 = Nwdiy::Func::Ifp::Pipe.pair
 
     sw = Nwdiy::Func::Swc::Ethernet.new("sw")
     
-    p2 | sw | p3
+    ifp2 | sw | ifp3
 
-    [p1, p2, p3, p4, sw].each { |p| p.on }
+    [ifp1, ifp2, ifp3, ifp4, sw].each { |p| p.on }
 
-    # p1 から送った非イーサネットパケットは出てこない
-    # p1 から送ったイーサネットパケットは p4 から出てくる
+    # ifp1 から送った非イーサネットパケットは出てこない
+    # ifp1 から送ったイーサネットパケットは ifp4 から出てくる
     bin = Nwdiy::Packet::Binary.new("hoge")
     eth = Nwdiy::Packet::Ethernet.new(src: { unicast: true } )
-    expect(p1.send(bin)).to eq bin.bytesize
-    expect(p1.send(eth)).to eq eth.bytesize
-    expect(p4.recv.to_pkt).to eq eth.to_pkt
-    expect(p1.ready?).to be false
+    expect(ifp1.send(bin)).to eq bin.bytesize
+    expect(ifp1.send(eth)).to eq eth.bytesize
+    expect(ifp4.recv.to_pkt).to eq eth.to_pkt
+    expect(ifp1.ready?).to be false
   end
 
   it "can set/get timeout" do
@@ -61,67 +61,67 @@ RSpec.describe Nwdiy::Func::Swc::Ethernet do
     ################
     # 二股構成を組む
 
-    p11, p12 = Nwdiy::Func::Out::Pipe.pair("p11", "p12")
+    ifp11, ifp12 = Nwdiy::Func::Ifp::Pipe.pair
     sw1 = Nwdiy::Func::Swc::Ethernet.new("sw1")
-    p12 | sw1
+    ifp12 | sw1
 
-    p21, p22 = Nwdiy::Func::Out::Pipe.pair("p21", "p22")
+    ifp21, ifp22 = Nwdiy::Func::Ifp::Pipe.pair
     sw2 = Nwdiy::Func::Swc::Ethernet.new("sw2")
-    p22 | sw2
+    ifp22 | sw2
 
-    p31, p32 = Nwdiy::Func::Out::Pipe.pair("p31", "p32")
+    ifp31, ifp32 = Nwdiy::Func::Ifp::Pipe.pair
     sw3 = Nwdiy::Func::Swc::Ethernet.new("sw3")
-    p32 | sw3
+    ifp32 | sw3
 
     sw2 | sw1 | sw3
 
-    [ sw1, p11, p12, sw2, p21, p22, sw3, p31, p32 ].each {|p| p.on }
+    [ sw1, ifp11, ifp12, sw2, ifp21, ifp22, sw3, ifp31, ifp32 ].each {|p| p.on }
 
     ################
     # 学習させる
 
-    # p11 配下に 00:00:0e:00:00:11
+    # ifp11 配下に 00:00:0e:00:00:11
     pkt = Nwdiy::Packet::Ethernet.new(dst: { broadcast: true })
     pkt.src = "00:00:0e:00:00:11"
-    expect(p11.send(pkt)).to eq pkt.bytesize
-    expect(p21.recv.to_pkt).to eq pkt.to_pkt
-    expect(p31.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp11.send(pkt)).to eq pkt.bytesize
+    expect(ifp21.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp31.recv.to_pkt).to eq pkt.to_pkt
 
-    # p21 配下に 00:00:0e:00:00:21
+    # ifp21 配下に 00:00:0e:00:00:21
     pkt.src = "00:00:0e:00:00:21"
-    expect(p21.send(pkt)).to eq pkt.bytesize
-    expect(p11.recv.to_pkt).to eq pkt.to_pkt
-    expect(p31.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp21.send(pkt)).to eq pkt.bytesize
+    expect(ifp11.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp31.recv.to_pkt).to eq pkt.to_pkt
 
-    # p31 配下に 00:00:0e:00:00:31
+    # ifp31 配下に 00:00:0e:00:00:31
     pkt.src = "00:00:0e:00:00:31"
-    expect(p31.send(pkt)).to eq pkt.bytesize
-    expect(p11.recv.to_pkt).to eq pkt.to_pkt
-    expect(p21.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp31.send(pkt)).to eq pkt.bytesize
+    expect(ifp11.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp21.recv.to_pkt).to eq pkt.to_pkt
 
-    # p31 配下から p11 配下へ送信
+    # ifp31 配下から p11 配下へ送信
     pkt.dst = "00:00:0e:00:00:11"
-    expect(p31.send(pkt)).to eq pkt.bytesize
-    expect(p11.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp31.send(pkt)).to eq pkt.bytesize
+    expect(ifp11.recv.to_pkt).to eq pkt.to_pkt
 
-    # p31 配下から p31 配下へ送信
+    # ifp31 配下から p31 配下へ送信
     pkt.dst = "00:00:0e:00:00:31"
-    expect(p31.send(pkt)).to eq pkt.bytesize
+    expect(ifp31.send(pkt)).to eq pkt.bytesize
 
     # 他のインターフェースに余計なパケットは飛んでない
     # (最後のこのブロードキャストが届くこと)
     pkt.dst = "ff:ff:ff:ff:ff:ff"
     pkt.src = "00:00:0e:00:00:ff"
     pkt.data = "xxxx"
-    expect(p11.send(pkt)).to eq pkt.bytesize
-    expect(p21.recv.to_pkt).to eq pkt.to_pkt
-    expect(p31.recv.to_pkt).to eq pkt.to_pkt
-    expect(p21.send(pkt)).to eq pkt.bytesize
-    expect(p11.recv.to_pkt).to eq pkt.to_pkt
-    expect(p31.recv.to_pkt).to eq pkt.to_pkt
-    expect(p31.send(pkt)).to eq pkt.bytesize
-    expect(p21.recv.to_pkt).to eq pkt.to_pkt
-    expect(p11.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp11.send(pkt)).to eq pkt.bytesize
+    expect(ifp21.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp31.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp21.send(pkt)).to eq pkt.bytesize
+    expect(ifp11.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp31.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp31.send(pkt)).to eq pkt.bytesize
+    expect(ifp21.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp11.recv.to_pkt).to eq pkt.to_pkt
 
     ################
     # 学習テーブルの ageout はテストに時間かかるので、、、略

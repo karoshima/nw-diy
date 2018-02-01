@@ -11,7 +11,8 @@ class Nwdiy::Func::Ifp < Nwdiy::Func
   include Nwdiy::Debug
   #  debugging true
 
-  autoload(:OS,       'nwdiy/func/ifp/os')
   autoload(:Ethernet, 'nwdiy/func/ifp/ethernet')
+  autoload(:OS,       'nwdiy/func/ifp/os')
+  autoload(:Pipe,     'nwdiy/func/ifp/pipe')
 
 end

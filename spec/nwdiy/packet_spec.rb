@@ -247,7 +247,7 @@ RSpec.describe Nwdiy::Packet do
 
   it "has from/to interface" do
     pkt = Nwdiy::Packet.new
-    ifp = Nwdiy::Func::Out.new
+    ifp = Nwdiy::Func::Ifp.new
 
     # pkt.from や pkt.to にはインターフェースを設定できる
     pkt.from = ifp

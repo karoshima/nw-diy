@@ -54,15 +54,14 @@ class Nwdiy::Func
     debug "#{self}(#{self.class}) | #{other}(#{other.class})"
     raise "This is not Nwdiy::Func: '#{other}(#{other.class})'" unless
       other.kind_of?(Nwdiy::Func)
-    if self.kind_of?(Nwdiy::Func::Out)
+    if self.kind_of?(Nwdiy::Func::Ifp)
       other.attach_left(self)
-    elsif other.kind_of?(Nwdiy::Func::Out)
+    elsif other.kind_of?(Nwdiy::Func::Ifp)
       self.attach_right(other)
     else
-      p1, p2 = Nwdiy::Func::Out::Pipe.pair.each {|p| p.on }
-      
-      self.attach_right(p1)
-      other.attach_left(p2)
+      ifp1, ifp2 = Nwdiy::Func::Ifp::Pipe.pair.each {|p| p.on }
+      self.attach_right(ifp1)
+      other.attach_left(ifp2)
     end
     other
   end

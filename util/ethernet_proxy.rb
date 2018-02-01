@@ -22,7 +22,7 @@ if $0 == __FILE__
   opt.parse!(ARGV)
 
   begin
-    Nwdiy::Func::Out::Ethernet.start_server.join
+    Nwdiy::Func::Ifp::Ethernet.start_server.join
   rescue Interrupt
   end
 end

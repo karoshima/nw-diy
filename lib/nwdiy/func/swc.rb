@@ -38,7 +38,7 @@ class Nwdiy::Func::Swc < Nwdiy::Func
   end
 
   def attach(ifp)
-    raise NotInterfaceError.new "attach(#{ifp}(#{ifp.class})) requires Nwdiy::Func::Out instance)" unless ifp.kind_of?(Nwdiy::Func::Out)
+    raise NotInterfaceError.new "attach(#{ifp}(#{ifp.class})) requires Nwdiy::Func::Ifp instance)" unless ifp.kind_of?(Nwdiy::Func::Ifp)
     if self.power
       unless @interface[ifp].kind_of?(Thread)
         @interface[ifp] = self.thread_start(ifp)
@@ -75,19 +75,19 @@ class Nwdiy::Func::Swc < Nwdiy::Func
         # 受信したパケットを処理する
         *outpkts = self.forward(inpkt)
 
-        # 処理したパケットを送信する
+        # 処理したパケットを複製して送信する
         outpkts.each do |outpkt|
           next unless outpkt
           ifp = outpkt.to
           outpkt.from = nil
           outpkt.to = nil
           case ifp
-          when Nwdiy::Func::Out
+          when Nwdiy::Func::Ifp
             ifp.send(Marshal.load(Marshal.dump(outpkt)))
           when Array
             ifp.each do |ifpp| 
               ifpp.send(Marshal.load(Marshal.dump(outpkt))) if 
-                ifpp.kind_of?(Nwdiy::Func::Out)
+                ifpp.kind_of?(Nwdiy::Func::Ifp)
             end
           end
         end

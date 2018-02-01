@@ -99,8 +99,8 @@ RSpec.describe Nwdiy::Func::Flt do
 
     flt = ARPCounter.new
 
-    p1, p2 = Nwdiy::Func::Out::Pipe.pair
-    p3, p4 = Nwdiy::Func::Out::Pipe.pair
+    p1, p2 = Nwdiy::Func::Ifp::Pipe.pair
+    p3, p4 = Nwdiy::Func::Ifp::Pipe.pair
 
     p2 | flt | p3
 
