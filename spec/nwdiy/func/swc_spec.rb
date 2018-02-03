@@ -85,65 +85,65 @@ RSpec.describe Nwdiy::Func::Swc do
     end
     bc = BC.new
 
-    p1, p2 = Nwdiy::Func::Out::Pipe.pair
-    p3, p4 = Nwdiy::Func::Out::Pipe.pair
-    p5, p6 = Nwdiy::Func::Out::Pipe.pair
-    p7, p8 = Nwdiy::Func::Out::Pipe.pair
+    ifp1, ifp2 = Nwdiy::Func::Ifp::Pipe.pair
+    ifp3, ifp4 = Nwdiy::Func::Ifp::Pipe.pair
+    ifp5, ifp6 = Nwdiy::Func::Ifp::Pipe.pair
+    ifp7, ifp8 = Nwdiy::Func::Ifp::Pipe.pair
 
-    p2 | bc | p4
-    p6 | bc | p8
+    ifp2 | bc | ifp4
+    ifp6 | bc | ifp8
 
-    [p1, p2, p3, p4, p5, p6, p7, p8, bc].each {|p| p.on }
+    [ifp1, ifp2, ifp3, ifp4, ifp5, ifp6, ifp7, ifp8, bc].each {|p| p.on }
 
     pkt = Nwdiy::Packet::Ethernet.new
 
-    # p1 から送ったら、p3, p5, p7 に来る
-    expect(p1.send(pkt)).to eq pkt.bytesize
-    expect(p7.recv.to_pkt).to eq pkt.to_pkt
-    expect(p5.recv.to_pkt).to eq pkt.to_pkt
-    expect(p3.recv.to_pkt).to eq pkt.to_pkt
-    expect(p1.ready?).to be false
+    # ifp1 から送ったら、ifp3, ifp5, ifp7 に来る
+    expect(ifp1.send(pkt)).to eq pkt.bytesize
+    expect(ifp7.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp5.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp3.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp1.ready?).to be false
     # パケットが流れたところの統計は 1
-    expect(p1.sent).to be 1
-    expect(p2.received).to be 1
-    expect(p4.sent).to be 1
-    expect(p6.sent).to be 1
-    expect(p8.sent).to be 1
-    expect(p3.received).to be 1
-    expect(p5.received).to be 1
-    expect(p7.received).to be 1
+    expect(ifp1.sent).to be 1
+    expect(ifp2.received).to be 1
+    expect(ifp4.sent).to be 1
+    expect(ifp6.sent).to be 1
+    expect(ifp8.sent).to be 1
+    expect(ifp3.received).to be 1
+    expect(ifp5.received).to be 1
+    expect(ifp7.received).to be 1
     # 逆方向の統計は 0
-    expect(p1.received).to be 0
-    expect(p2.sent).to be 0
-    expect(p4.received).to be 0
-    expect(p6.received).to be 0
-    expect(p8.received).to be 0
-    expect(p3.sent).to be 0
-    expect(p5.sent).to be 0
-    expect(p7.sent).to be 0
+    expect(ifp1.received).to be 0
+    expect(ifp2.sent).to be 0
+    expect(ifp4.received).to be 0
+    expect(ifp6.received).to be 0
+    expect(ifp8.received).to be 0
+    expect(ifp3.sent).to be 0
+    expect(ifp5.sent).to be 0
+    expect(ifp7.sent).to be 0
 
-    # 逆に p7 から送ったら、p1, p3, p5 に来る
-    expect(p7.send(pkt)).to eq pkt.bytesize
-    expect(p1.recv.to_pkt).to eq pkt.to_pkt
-    expect(p3.recv.to_pkt).to eq pkt.to_pkt
-    expect(p5.recv.to_pkt).to eq pkt.to_pkt
-    expect(p7.ready?).to be false
+    # 逆に ifp7 から送ったら、ifp1, ifp3, ifp5 に来る
+    expect(ifp7.send(pkt)).to eq pkt.bytesize
+    expect(ifp1.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp3.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp5.recv.to_pkt).to eq pkt.to_pkt
+    expect(ifp7.ready?).to be false
     # パケットが流れた数
-    expect(p1.sent).to be 1
-    expect(p1.received).to be 1
-    expect(p2.sent).to be 1
-    expect(p2.received).to be 1
-    expect(p3.sent).to be 0
-    expect(p3.received).to be 2
-    expect(p4.sent).to be 2
-    expect(p4.received).to be 0
-    expect(p5.sent).to be 0
-    expect(p5.received).to be 2
-    expect(p6.sent).to be 2
-    expect(p6.received).to be 0
-    expect(p7.sent).to be 1
-    expect(p7.received).to be 1
-    expect(p8.sent).to be 1
-    expect(p8.received).to be 1
+    expect(ifp1.sent).to be 1
+    expect(ifp1.received).to be 1
+    expect(ifp2.sent).to be 1
+    expect(ifp2.received).to be 1
+    expect(ifp3.sent).to be 0
+    expect(ifp3.received).to be 2
+    expect(ifp4.sent).to be 2
+    expect(ifp4.received).to be 0
+    expect(ifp5.sent).to be 0
+    expect(ifp5.received).to be 2
+    expect(ifp6.sent).to be 2
+    expect(ifp6.received).to be 0
+    expect(ifp7.sent).to be 1
+    expect(ifp7.received).to be 1
+    expect(ifp8.sent).to be 1
+    expect(ifp8.received).to be 1
   end
 end

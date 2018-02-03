@@ -6,11 +6,13 @@
 # 著作権については ./LICENSE もご確認ください
 ################################################################
 
-require "io/wait"
+class Nwdiy::Func::Ifp < Nwdiy::Func
 
-class Nwdiy::Func::Out < Nwdiy::Func
+  include Nwdiy::Debug
+  #  debugging true
 
-  autoload(:Ethernet, 'nwdiy/func/out/ethernet')
-  autoload(:Pipe,     'nwdiy/func/out/pipe')
+  autoload(:Ethernet, 'nwdiy/func/ifp/ethernet')
+  autoload(:OS,       'nwdiy/func/ifp/os')
+  autoload(:Pipe,     'nwdiy/func/ifp/pipe')
 
 end

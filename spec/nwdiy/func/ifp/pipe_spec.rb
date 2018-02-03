@@ -5,7 +5,7 @@
 #
 #【特異メソッド】
 #
-# pair -> [Nwdiy::Func::Out::Pair, Nwdiy::Func::Out::Pair]
+# pair -> [Nwdiy::Func::Ifp::Pair, Nwdiy::Func::Ifp::Pair]
 #    内部で繋がったふたつのインタフェースを返します。
 #    一方からパケットを流し込むと、もう一方から受信できます。
 #
@@ -33,13 +33,13 @@
 
 require "spec_helper"
 
-RSpec.describe Nwdiy::Func::Out::Pipe do
+RSpec.describe Nwdiy::Func::Ifp::Pipe do
   it "has class methods" do
-    expect(Nwdiy::Func::Out::Pipe.respond_to?(:pair)).to be true
+    expect(Nwdiy::Func::Ifp::Pipe.respond_to?(:pair)).to be true
   end
 
   it "has instance methods" do
-    ifps = Nwdiy::Func::Out::Pipe.pair
+    ifps = Nwdiy::Func::Ifp::Pipe.pair
     ifps.each do |ifp|
       expect(ifp.power).to be true
       expect(ifp.respond_to?(:ready?)).to be true
@@ -56,7 +56,7 @@ RSpec.describe Nwdiy::Func::Out::Pipe do
 
     pkt0 = Pkt.new("hoge")
 
-    ifps = Nwdiy::Func::Out::Pipe.pair
+    ifps = Nwdiy::Func::Ifp::Pipe.pair
     expect(ifps[0].ready?).to be false
     expect(ifps[1].ready?).to be false
     expect(ifps[0].sent).to be 0
@@ -78,3 +78,4 @@ RSpec.describe Nwdiy::Func::Out::Pipe do
     expect(ifps[1].received).to be 1
   end
 end
+

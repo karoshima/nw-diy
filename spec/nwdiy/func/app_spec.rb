@@ -41,7 +41,7 @@ RSpec.describe Nwdiy::Func::App do
     expect(hoge.off).to be false
     expect(hoge.power).to be false
 
-    pair = Nwdiy::Func::Out::Pipe.pair
+    pair = Nwdiy::Func::Ifp::Pipe.pair
     expect(hoge.attach(pair[0])).to be hoge
     expect(hoge.attached).to eq [pair[0]]
     expect(hoge.attached).to eq [pair[0]]
@@ -84,7 +84,7 @@ RSpec.describe Nwdiy::Func::App do
     end
 
     ref = Reflector.new
-    p0, p1 = Nwdiy::Func::Out::Pipe.pair.each {|p| p.on }
+    p0, p1 = Nwdiy::Func::Ifp::Pipe.pair.each {|p| p.on }
     p1 | ref
     ref.on
 

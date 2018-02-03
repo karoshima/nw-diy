@@ -284,22 +284,22 @@ class Nwdiy::Packet
   end
   def from=(ifp)
     return @from = ifp if ifp == nil
-    return @from = ifp if ifp.kind_of?(Nwdiy::Func::Out)
-    raise NotInterfaceError.new "#{ifp}(#{ifp.class}) must be Nwdiy::Func::Out instance"
+    return @from = ifp if ifp.kind_of?(Nwdiy::Func::Ifp)
+    raise NotInterfaceError.new "#{ifp}(#{ifp.class}) must be Nwdiy::Func::Ifp instance"
   end
   def to
     @to
   end
   def to=(ifp)
     return @to = ifp if ifp == nil
-    return @to = ifp if ifp.kind_of?(Nwdiy::Func::Out)
+    return @to = ifp if ifp.kind_of?(Nwdiy::Func::Ifp)
     if ifp.kind_of?(Array)
       ifp.compact!
-      if ifp.all? { |ifpp| ifpp.kind_of?(Nwdiy::Func::Out) }
+      if ifp.all? { |ifpp| ifpp.kind_of?(Nwdiy::Func::Ifp) }
         return @to = ifp
       end
     end
-    raise NotInterfaceError.new "#{ifp}(#{ifp.class}) must be Nwdiy::Func::Out instance"
+    raise NotInterfaceError.new "#{ifp}(#{ifp.class}) must be Nwdiy::Func::Ifp instance"
   end
 
   ################

@@ -1,36 +1,42 @@
 #!/usr/bin/env ruby
 # -*- mode: ruby; coding: utf-8 -*-
 ################################################################
-# Copyright (c) 2016 KASHIMA Hiroaki <kashima@jp.fujitsu.com>
+# Copyright (c) 2017 KASHIMA Hiroaki <kashima@jp.fujitsu.com>
 # 本ツールは Apache License 2.0 ライセンスで公開します。
 # 著作権については ./LICENSE もご確認ください
 ################################################################
 
-class Nwdiy::Func::Out::Pipe < Nwdiy::Func::Out
-  def self.pair(a = nil, b = nil)
-    pipea = self.new(a)
-    pipeb = self.new(b)
-    pipea.set_peer(pipeb)
-    pipeb.set_peer(pipea)
-    return pipea, pipeb
-  end
+require "io/wait"
 
+Thread.abort_on_exception = true
+
+class Nwdiy::Func::Ifp::Pipe < Nwdiy::Func::Ifp
+
+  def self.pair(a = nil, b = nil)
+    pipes = [a, b].map {|name| self.new(name) }
+    pipes[0].peer = pipes[1]
+    pipes[1].peer = pipes[0]
+    return pipes
+  end
+  
+  attr_reader :queue
   attr_accessor :sent, :received
 
+  # private
+
+  attr_accessor :peer
+
   def initialize(name)
-    super(name)
+    super
     @queue = Thread::Queue.new
     @sent = @received = 0
+    @peer = nil
   end
   def class_name
     "pipe"
   end
 
-  def set_peer(peer)
-    @peer = peer
-  end
-
-  attr_reader :queue
+  public
 
   def ready?
     !@queue.empty?
@@ -45,10 +51,10 @@ class Nwdiy::Func::Out::Pipe < Nwdiy::Func::Out
   def send(pkt)
     @peer.queue.push(pkt)
     @sent += 1
-    pkt.bytesize
+    return pkt.bytesize
   end
 
-  # どうせ on/off することはないので
+  # on/off されることはない
   def power
     true
   end

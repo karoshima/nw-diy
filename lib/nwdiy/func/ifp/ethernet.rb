@@ -10,43 +10,41 @@ require "io/wait"
 
 Thread.abort_on_exception = true
 
-class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
+class Nwdiy::Func::Ifp::Ethernet < Nwdiy::Func::Ifp
 
-  class EthError < Exception; end
+  class EtherError < Exception; end
 
-  @@name_seed = 0
-
-  attr_accessor :sent, :received
-
-  public
-  def initialize(name = nil)
+  def initialize(name = nil, real: false)
     super(name)
     # パケットをやりとりするための @sock を作る
-    @sock = self.class.open_pfpacket(self.to_s) || self.class.open_sock(self.to_s)
+    begin
+      @sock = self.class.open_pfpacket(self.to_s)
+    rescue Errno::ENOENT, Errno::EPERM
+      @sock, err = self.class.open_sock(self.to_s)
+      raise err if real && err
+    end
     @sent = @received = 0
     debug "init #{self.to_s} done."
   end
+  @@name_seed = 0
   def class_name
     "eth"
   end
+  attr_accessor :sent, :received
 
   def ready?
     @sock.ready?
   end
 
   def recv
-    unless self.power
-      return nil
-    end
+    return nil unless self.power
     pkt = Nwdiy::Packet::Ethernet.new(@sock.nwdiy_recv)
     @received += 1
     return pkt
   end
 
   def send(pkt)
-    unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
-      raise EthError.new "packet #{pkt.inspect}(#{pkt.class}) is not Nwdiy::Packet::Ethernet" 
-    end
+    raise EtherError.new "packet #{pkt.inspect}(#{pkt.class}) is not Nwdiy::Packet::Ethernet" unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
     raise Errno::EWOULDBLOCK.new "#{self} is down" unless self.power
     len = @sock.nwdiy_send(pkt.to_pkt)
     @sent += 1
@@ -59,13 +57,8 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
   def self.open_pfpacket(name)
     ifindex = self.if_nametoindex(name)
     debug "#{name}(#{ifindex})"
-    return nil unless ifindex   # 実在しない
-    begin
-      return self.open_pfpacket_detail(name, ifindex)
-    rescue Errno::EPERM => e    # 権限がない場合
-      $stderr.puts "open(#{name}) => #{e}"
-      return nil
-    end
+    raise Errno::ENOENT unless ifindex   # 実在しない
+    return self.open_pfpacket_detail(name, ifindex)
   end
   def self.if_nametoindex(name)
     Socket::getifaddrs.each do |ifp|
@@ -129,25 +122,32 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
     end
     ifp.autoclose = true
     ifp.extend SockTCP
-    ifp.register(name) # プロキシに登録する
-    ifp
+    errmsg = ifp.register(name) # プロキシに登録する
+    begin
+      err = Errno.const_get(errmsg)
+    rescue NameError
+      err = nil
+    end
+    return ifp, err
   end
 
   module SockTCP
     def register(name)
-      Nwdiy::Func::Out::Ethernet.debug self.nwdiy_send(name)
-      Nwdiy::Func::Out::Ethernet.debug self.nwdiy_recv
+      Nwdiy::Func::Ifp::Ethernet.debug self.nwdiy_send(name)
+      result = self.nwdiy_recv
+      Nwdiy::Func::Ifp::Ethernet.debug result
+      result
     end
 
     # パケット送受信
     def nwdiy_recv
       size = self.sysread(2).unpack("n")[0]
       pkt = self.sysread(size)
-      Nwdiy::Func::Out::Ethernet.debug "#{[self]}.recv = #{pkt.dump}"
+      Nwdiy::Func::Ifp::Ethernet.debug "#{[self]}.recv = #{pkt.dump}"
       pkt
     end
     def nwdiy_send(pkt)
-      Nwdiy::Func::Out::Ethernet.debug "[#{self}].send(#{pkt.dump})"
+      Nwdiy::Func::Ifp::Ethernet.debug "[#{self}].send(#{pkt.dump})"
       self.syswrite([pkt.bytesize].pack("n") + pkt) - 2
     end
   end
@@ -162,7 +162,7 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
     # 待ち受けソケット
     @@sock = TCPServer.new("::1", $NWDIY_INTERFACE_PROXY_PORT)
 
-    # インタフェース名ごとの Nwdiy::Func::Out::Ethernet インスタンス配列
+    # インタフェース名ごとの Nwdiy::Func::Ifp::Ethernet インスタンス配列
     @@peer = Hash.new { |hash,key| hash[key] = Array.new }
 
     # ファイルデスクリプタごとの、インタフェース名
@@ -238,17 +238,24 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
     debug @@pfpkt
 
     # 可能であれば、PF_PACKET のソケットも用意する
+    errmsg = "OK"
     unless @@pfpkt.has_key?(name)
-      pfpkt = self.open_pfpacket(name)
-      if pfpkt
-        @@pfpkt[name] = pfpkt
-        @@name[pfpkt] = name
+      begin
+        pfpkt = self.open_pfpacket(name)
+        if pfpkt
+          @@pfpkt[name] = pfpkt
+          @@name[pfpkt] = name
+        end
+      rescue Errno::ENOENT
+        errmsg = "ENOENT"
+      rescue Errno::EPERM
+        errmsg = "EPERM"
       end
     end
 
     # 最後に Ack を返す
     debug name
-    acc.nwdiy_send(name)
+    acc.nwdiy_send(errmsg)
 
   end
 
@@ -274,5 +281,6 @@ class Nwdiy::Func::Out::Ethernet < Nwdiy::Func::Out
       end
     end
   end
+
 
 end
