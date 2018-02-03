@@ -12,7 +12,7 @@
 #   トンネル端で鍵交換したり、サーバー負荷を監視したり、
 #   というアプリケーション機能になります。
 #
-# Nwdiy::Func::Ifp (splitter)
+# Nwdiy::Func::Ifp (Interface)
 #   ヘッダ情報に沿ってパケットをレイヤ分けして、上位層に渡します。
 #   上位層から来たパケットには、ヘッダを被せて下位層に渡します。
 #   具体的には tagged VLAN による LAN 分割, IP proto や TCP/UDP
