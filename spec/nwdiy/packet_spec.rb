@@ -245,26 +245,26 @@ RSpec.describe Nwdiy::Packet do
     expect(smpl.bytesize).to eq(pkt.bytesize)
   end
 
-  it "has from/to interface" do
-    pkt = Nwdiy::Packet.new
-    ifp = Nwdiy::Func::Ifp.new
+  # it "has from/to interface" do
+  #   pkt = Nwdiy::Packet.new
+  #   ifp = Nwdiy::Func::Ifp.new
 
-    # pkt.from や pkt.to にはインターフェースを設定できる
-    pkt.from = ifp
-    expect(pkt.from).to be ifp
-    pkt.to = ifp
-    expect(pkt.to).to be ifp
+  #   # pkt.from や pkt.to にはインターフェースを設定できる
+  #   pkt.from = ifp
+  #   expect(pkt.from).to be ifp
+  #   pkt.to = ifp
+  #   expect(pkt.to).to be ifp
 
-    # pkt.from や pkt.to は nil で打ち消し
-    pkt.from = nil
-    expect(pkt.from).to be nil
-    pkt.to = nil
-    expect(pkt.to).to be nil
+  #   # pkt.from や pkt.to は nil で打ち消し
+  #   pkt.from = nil
+  #   expect(pkt.from).to be nil
+  #   pkt.to = nil
+  #   expect(pkt.to).to be nil
 
-    # pkt.from や pkt.to にインターフェース以外は入れらんない
-    expect { pkt.from = pkt }.to raise_error(Nwdiy::Packet::NotInterfaceError)
-    expect { pkt.to = pkt }.to raise_error(Nwdiy::Packet::NotInterfaceError)
-  end
+  #   # pkt.from や pkt.to にインターフェース以外は入れらんない
+  #   expect { pkt.from = pkt }.to raise_error(Nwdiy::Packet::NotInterfaceError)
+  #   expect { pkt.to = pkt }.to raise_error(Nwdiy::Packet::NotInterfaceError)
+  # end
 
   it "creates an packet which include Nwdiy::Packet parts" do
 

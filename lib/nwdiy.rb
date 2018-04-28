@@ -13,12 +13,9 @@ require "nwdiy/config"
 module Nwdiy
 
   autoload(:Debug,     'nwdiy/debug')
-  autoload(:Func,      'nwdiy/func')
+  autoload(:OS,        'nwdiy/os')
   autoload(:Packet,    'nwdiy/packet')
-
-  ################
-  # OS itself
-  OS = Nwdiy::Func::Ifp::OS.new('self')
+  autoload(:Func,      'nwdiy/func')
 
   ################
   # /usr/include on Linux
