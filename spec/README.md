@@ -42,11 +42,11 @@ eth0.vlan(16).ipv6 は VLAN id 16 上で IPv6 を扱うインスタンスです�
 eth2 のセグメントを、EtherIP を使って、eth1 の先のXXXと繋ぐ。
 
 ```
-  +----------+      +------+
-  | etherip  | ---- | eth2 |
-  +----------+      +------+
-  |   ipv4   |      |  OS  |
-  +----------+      +------+
+  +----------+    +------+
+  | etherip  | -- | eth2 |
+  +----------+    +------+
+  |   ipv4   |    |  OS  |
+  +----------+    +------+
   |   eth1   |
   +----------+
   |    OS    |
@@ -54,7 +54,7 @@ eth2 のセグメントを、EtherIP を使って、eth1 の先のXXXと繋ぐ�
 ```
 
 ```ruby
-  irb> OS.eth("eth1").ip("192.0.2.1/24").etherip | OS.eth("eth2")
+  irb> Nwdiy::OS.eth("eth1").ip("192.0.2.1/24").etherip | Nwdiy::OS.eth("eth2")
 ```
 
 - 例
@@ -74,12 +74,12 @@ EtherIP にファイアウォールと QoS を導入して、eth2 を守る。
 ```
 
 ```ruby
-  irb> fwA = Firewall.new(some settings)
-  irb> fwB = Firewall.new(some settings)
-  irb> qosB = QOS.new(some settings)
-  irb> ethA = Ethernet.new("ethA")
-  irb> OS.eth("eth1") | fwA | ethA
-  irb> ethA.ip("192.0.2.1/24").ethip | fwB | qosB | OS.eth("eth2")
+  irb> fwA = Nwdiy::Func::Firewall.new(some settings)
+  irb> fwB = Nwdiy::Func::Firewall.new(some settings)
+  irb> qosB = Nwdiy::Func::QOS.new(some settings)
+  irb> ethA = Nwdiy::Func::Ethernet.new("ethA")
+  irb> Nwdiy::OS.eth("eth1") | fwA | ethA
+  irb> ethA.ip("192.0.2.1/24").ethip | fwB | qosB | Nwdiy::OS.eth("eth2")
 ```
 
 - 例
@@ -102,16 +102,16 @@ EtherIP にファイアウォールと QoS を導入して、eth2 を守る。
 ```
 
 ```ruby
-  irb> ethA = Ethernet.new("ethA")
-  irb> ethB = Ethernet.new("ethB")
-  irb> bridge = Bridge.new
+  irb> ethA = Nwdiy::Func::Ethernet.new("ethA")
+  irb> ethB = Nwdiy::Func::Ethernet.new("ethB")
+  irb> bridge = Nwdiy::Func::Bridge.new
   irb> ethA | bridge.eth[0]
-  irb> bridge.eth[1] = OS.eth("eth0")
+  irb> bridge.eth[1] = Nwdiy::OS.eth("eth0")
   irb> bridge.eth[2] | ethB
-  irb> brwser = Browser.new
-  irb> httpd = Httpd.new
-  irb> resolv = Resolver.new
-  irb> dns = DNS.new
+  irb> brwser = Nwdiy::Func::Browser.new
+  irb> httpd = Nwdiy::Func::Httpd.new
+  irb> resolv = Nwdiy::Func::Resolver.new
+  irb> dns = Nwdiy::Func::DNS.new
   irb> ethA.ip[0] = "192.0.2.1/24"
   irb> ethA.ip[0].tcp.bind(brwser)
   irb> ethA.ip[0].udp.bind(resolv)
@@ -142,20 +142,20 @@ IPv4 インスタンスをパイプで繋いだりイーサネットインスタ
 ```
 
 ```ruby
-  irb> ipv4A = IPv4.new("192.0.2.2/24")
-  irb> ipv4B = IPv4.new("203.0.113.2/24")
-  irb> router = Router.new
+  irb> ipv4A = Nwdiy::Func::IPv4.new("192.0.2.2/24")
+  irb> ipv4B = Nwdiy::Func::IPv4.new("203.0.113.2/24")
+  irb> router = Nwdiy::Func::Router.new
   irb> router.ip[0] = "192.0.2.1/24"
   irb> router.ip[1] = "198.51.100.1/24"
   irb> router.ip[2] = "203.0.113.1/24"
   irb> ipv4A | router.ip[0]
-  irb> router.ip[1] = OS.eth("eth1").ip("198.51.100.2/24")
+  irb> router.ip[1] = Nwdiy::OS.eth("eth1").ip("198.51.100.2/24")
   irb> router.ip[2] | ipv4B
   irb> router.ospf.routerId = "192.0.2.1"
-  irb> brwser = Browser.new
-  irb> httpd = Httpd.new
-  irb> resolv = Resolver.new
-  irb> dns = Dns.new
+  irb> brwser = Nwdiy::Func::Browser.new
+  irb> httpd = Nwdiy::Func::Httpd.new
+  irb> resolv = Nwdiy::Func::Resolver.new
+  irb> dns = Nwdiy::Func::DNS.new
   irb> ipv4A.tcp.bind(brwser)
   irb> ipv4B.tcp.bind(httpd, 80)
   irb> ipv4A.udp.bind(resolv)
@@ -179,8 +179,8 @@ IPv4 インスタンスをパイプで繋いだりイーサネットインスタ
 ```
 
 ```ruby
-  irb> router = Router.new
-  irb> snat = Snat.new
+  irb> router = Nwdiy::Func::Router.new
+  irb> snat = Nwdiy::Func::Snat.new
   irb> snat.xxx = xxx (いろいろ設定)
   irb> OS.eth("eth1").ipv4 = router.ip[0] = "192.0.2.1/24"
   irb> OS.eth("eth2").ipv4 = router.ip[1] = snat
@@ -203,8 +203,8 @@ IPv4 インスタンスをパイプで繋いだりイーサネットインスタ
 ```
 
 ```ruby
-  irb> router = Router.new
-  irb> dnat = Dnat.new
+  irb> router = Nwdiy::Func::Router.new
+  irb> dnat = Nwdiy::Func::Dnat.new
   irb> dnat.xxx = xxx (いろいろ設定)
   irb> OS.eth("eth1").ipv4 = router.ip[0] = dnat
   irb> OS.eth("eth2").ipv4 = router.ip[1] = "198.51.100.1/24"
@@ -219,9 +219,7 @@ IPv4 インスタンスをパイプで繋いだりイーサネットインスタ
 	- グローバル変数として、起動時から 1 個だけ存在する。生成/削除しない。
 	- 上位に eth のインスタンスを持つ
 		- 実在する eth インターフェースと PF_PACKET でパケットを交換する。
-		- 将来どっかの LKM 製品と連携するとき、tap を使う。
-	- eth 以外のインターフェース。ATM/FrameRelay はもうないかな。
-		でもトンネル系の POINTOPOINT インターフェースはあり得る。
+		- tun, tap, veth など生成する。
 
 - eth
 	- 概要
@@ -243,6 +241,18 @@ IPv4 インスタンスをパイプで繋いだりイーサネットインスタ
 			宛先種別 (自分宛, BC/MC, 他人宛) とフレームデータを、
 			フレームタイプ毎の上位層に渡す。
 			- 他人宛は上位層に渡さず破棄する。
+	- パイプ演算子での接続
+		- 概要
+			- ひとつの他インスタンスと接続する。
+			- 対向できるのはひとつだけ。
+			- 接続を切り替えるときは、まず抜いてから。
+			- 上位層がある eth だと、パイプは下位層になる
+			- 下位層がある eth だと、パイプは上位層になる
+			- 上位層も下位層もある eth だと、パイプは付かない
+		- 接続対象
+			- L2 インターフェース (eth, vlan など)
+			- bridge
+			- L2 フィルター (firewall, qos など)
 
 - vlan
 	- 上位層との接続
@@ -256,6 +266,14 @@ IPv4 インスタンスをパイプで繋いだりイーサネットインスタ
 		- 接続対象
 			- eth
 			- vlan
+	- パイプ演算子での接続
+		- 概要
+			- 各 vlan-id は、上位層あるいはパイプどっちかを持てる。
+			- 下位層にはパイプは付かない
+		- 接続対象
+			- L2 インターフェース (eth, vlan など)
+			- bridge
+			- L2 filter
 	- 備考
 		- 802.1Q vlan, 802.1ad の外側タグなどを扱う。
 
