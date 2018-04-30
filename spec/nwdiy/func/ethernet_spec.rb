@@ -14,12 +14,12 @@ RSpec.describe Nwdiy::Func::Ethernet do
     expect(eth0).not_to be nil
     pkt1 = Nwdiy::Packet::Ethernet.new
     expect(pkt1).not_to be nil
-    expect(eth0.respond_to?(:sendup)).to eq true
-    eth0.sendup(pkt1)
-    pkt2 = eth0.recvup
+    expect(eth0.respond_to?(:send)).to eq true
+    eth0.send(pkt1)
+    pkt2 = eth0.pop
     expect(pkt2).to be pkt1
-    eth0.senddown(pkt1)
-    pkt2 = eth0.recvdown
+    eth0.push(pkt1)
+    pkt2 = eth0.recv
     expect(pkt2).to be pkt1
   end
 end
