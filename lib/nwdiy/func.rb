@@ -18,6 +18,7 @@ module Nwdiy
 
     private
     def initialize(name)
+      @to_s = name
       pktq_init
     end
 
