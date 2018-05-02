@@ -15,6 +15,8 @@ class Nwdiy::Packet::MacAddr < Nwdiy::Packet
 
   def initialize(data)
     case data
+    when Nwdiy::Packet::MacAddr
+      super(data.addr)
     when Hash
       if data[:broadcast]
         if data[:unicast]
@@ -23,7 +25,8 @@ class Nwdiy::Packet::MacAddr < Nwdiy::Packet
         if data[:local]
           raise TypeError.new("Broadcast MAC cannot be local")
         end
-        return super("\xff\xff\xff\xff\xff\xff")
+        super("\xff\xff\xff\xff\xff\xff")
+        return
       end
       if data[:multicast]
         if data[:unicast]
@@ -37,15 +40,16 @@ class Nwdiy::Packet::MacAddr < Nwdiy::Packet
         raise TypeError.new("MAC cannot be global & local")
       end
       gl = data[:local] ? 2 : 0
-      return super(([um+gl] + (1..5).map { rand(256) }).pack("C6"))
+      super(([um+gl] + (1..5).map { rand(256) }).pack("C6"))
     when /^......$/
-      return super(data)
+      super(data)
     when /^(\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)$/
-      return super([$1,$2,$3,$4,$5,$6].map{|c|c.hex}.pack("C6"))
+      super([$1,$2,$3,$4,$5,$6].map{|c|c.hex}.pack("C6"))
     when nil
-      return super("\x00\x00\x00\x00\x00\x00")
+      super("\x00\x00\x00\x00\x00\x00")
+    else
+      raise TypeError.new("Invalid Mac address '#{data.dump}'")
     end
-    raise TypeError.new("Invalid Mac address '#{data.dump}'")
   end
 
   def bytesize
@@ -72,7 +76,7 @@ class Nwdiy::Packet::MacAddr < Nwdiy::Packet
       othermac = Nwdiy::Packet::MacAddr.new(other)
       return self.addr == othermac.addr
     else
-      raise TypeError.new("Invalid Mac address '#{data.dump}'")
+      return false
     end
   end
 

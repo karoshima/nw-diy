@@ -15,8 +15,27 @@ class Nwdiy::OS
     def initialize(name)
       super
       @ifindex, @ifp = self.class.init_pfpkt(name)
-      Thread.start { recv_pfpkt(so) }
-      Thread.start { send_pfpkt(so) }
+      Thread.start do
+        begin
+          loop do
+            push(@ifp.sysread(65536))
+          end
+        rescue EOFError
+        end
+      end
+    end
+    def close
+      super
+      @ifp.close
+    end
+
+    protected
+    def pushdown(pkt)
+      @ifp.syswrite(pkt)
+    end
+    public
+    def pop
+      return nil
     end
 
     protected

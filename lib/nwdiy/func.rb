@@ -19,7 +19,6 @@ module Nwdiy
     private
     def initialize(name)
       @to_s = name
-      pktq_init
     end
 
     ################################################################
@@ -44,13 +43,8 @@ module Nwdiy
     #    get a received packet from the lower layer.
     ################################################################
 
-    def pktq_init
-      @pktq = Hash.new
-      @pktq[:up] = Queue.new
-      @pktq[:down] = Queue.new
-    end
-
     def enque_pkt(dir, pkt)
+      @pktq = Hash.new { |hash,key| hash[key] = Queue.new } unless @pktq
       @pktq[dir].push(pkt)
       if MAXQLEN < @pktq[dir].length
         deque_pkt(dir)
