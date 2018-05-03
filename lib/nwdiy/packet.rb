@@ -185,7 +185,7 @@ class Nwdiy::Packet
       raise "value #{value.inspect} is not a kind of #{@@types[self.class][field]}"
 
     # Nwdiy::Packet 型のときは、nil 初期化や Hash 初期化もあり得る
-    elsif (value == nil || value.kind_of?(Hash)) && type < Nwdiy::Packet
+    elsif (value == nil || value.kind_of?(Hash)) && type.kind_of?(Class) && type < Nwdiy::Packet
       return @nwdiy_field[field] = type.new(value)
     # 文字列のときは型ごとの解釈
     elsif ! value.kind_of?(String)
@@ -226,8 +226,8 @@ class Nwdiy::Packet
       type = @@classes[self][field][arg.class]
       return type if type
       type = @@classes[self][field][arg.class.to_s]
-      return type unless type
-      return @@classes[self][field][arg.class] =
+      return 0 unless type
+     return @@classes[self][field][arg.class] =
         @@classes[self][field].delete(arg.class.to_s)
     end
   end

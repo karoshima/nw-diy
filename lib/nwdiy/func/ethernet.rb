@@ -89,29 +89,32 @@ module Nwdiy
       def send(dst=nil, pkt)
         @stat[:tx] += 1
 
-        eth = Nwdiy::Packet::Ethernet.new(pkt)
-        eth.dst = Nwdiy::Packet::MacAddr.new(dst)
-        eth.src = @mac if @mac
-        eth.data = pkt
+        unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
+          eth = Nwdiy::Packet::Ethernet.new(pkt)
+          eth.dst = Nwdiy::Packet::MacAddr.new(dst)
+          eth.src = @mac if @mac
+          eth.data = pkt
+          pkt = eth
+        end
 
         if pkt.dst == @mac
           @stat[:rx] += 1
-          if @type[eth.type]
-            @type[eth.type].push(pkt)
+          if @type[pkt.type]
+            @type[pkt.type].push(pkt)
           else
-            @upq.push([pkt, []])
+            @upq.push([pkt.data, []])
           end
           return pkt.bytesize
         end
         if @join[pkt.dst]
-          if @type[eth.type]
-            @type[eth.type].push(pkt)
+          if @type[pkt.type]
+            @type[pkt.type].push(pkt.data)
           else
-            @upq.push([pkt, []])
+            @upq.push([pkt.data, []])
           end
         end
 
-        pushdown(eth)
+        pushdown(pkt)
         return pkt.bytesize
       end
 

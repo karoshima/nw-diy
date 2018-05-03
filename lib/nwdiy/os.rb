@@ -18,7 +18,7 @@ class Nwdiy::OS
       Thread.start do
         begin
           loop do
-            push(@ifp.sysread(65536))
+            push(Nwdiy::Packet::Ethernet.new(@ifp.sysread(65536)))
           end
         rescue EOFError
         end
@@ -31,7 +31,10 @@ class Nwdiy::OS
 
     protected
     def pushdown(pkt)
-      @ifp.syswrite(pkt)
+      data = pkt.to_pkt
+      puts data
+      @ifp.syswrite(data)
+      return data.length
     end
     public
     def pop
