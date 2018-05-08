@@ -15,7 +15,8 @@
 #
 # eth.send(dst=nil, pkt)
 #    1. You can send an Ethernet frame.
-#       In this case, you must fill all of the Ethenret fields.
+#       In this case, you must fill all of the Ethernet fields.
+#       (you can get the instance MAC address via "eth.addr")
 #    2. You can send an L3 frame.
 #       In this case, you must say "dst" mac address.
 #
@@ -43,7 +44,7 @@ module Nwdiy
       def initialize(name)
         super
         # my address
-        @mac = Nwdiy::Packet::MacAddr.new(:global)
+        @addr = Nwdiy::Packet::MacAddr.new(:global)
         # my joined group addresses
         @join = Hash.new
         # upper layers
@@ -62,22 +63,22 @@ module Nwdiy
         @downq.close
       end
 
-      def mac=(addr)
-        @mac = Nwdiy::Packet::MacAddr.new(addr)
+      def addr=(mac)
+        @addr = Nwdiy::Packet::MacAddr.new(mac)
       end
-      attr_reader :mac
+      attr_reader :addr
 
-      def join(addr = nil)
-        if addr != nil
-          raise Errno::EINVAL unless addr.kind_of?(Nwdiy::Packet::MacAddr)
-          raise Errno::EINVAL unless addr.multicast?
-          raise Errno::EINVAL if     addr.broadcast?
-          @join[addr] = true
+      def join(group = nil)
+        if group != nil
+          raise Errno::EINVAL unless group.kind_of?(Nwdiy::Packet::MacAddr)
+          raise Errno::EINVAL unless group.multicast?
+          raise Errno::EINVAL if     group.broadcast?
+          @join[group] = true
         end
         return @join
       end
-      def leave(addr)
-        @join.delete(addr)
+      def leave(group)
+        @join.delete(group)
       end
 
       attr_accessor :qlen
@@ -86,7 +87,7 @@ module Nwdiy
         raise Errno::EINVAL unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
         upper = @type[pkt.type]
         if upper
-          if pkt.dst == @mac || @join[pkt.dst]
+          if pkt.dst == @addr || @join[pkt.dst]
             @stat[:rx] += 1
             upper.push(pkt.data, list + [pkt])
           elsif upper.respond_to?(:push_others)
@@ -111,12 +112,12 @@ module Nwdiy
         unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
           eth = Nwdiy::Packet::Ethernet.new(pkt)
           eth.dst = Nwdiy::Packet::MacAddr.new(dst)
-          eth.src = @mac if @mac
+          eth.src = @addr
           eth.data = pkt
           pkt = eth
         end
 
-        if pkt.dst == @mac
+        if pkt.dst == @addr
           @stat[:rx] += 1
           if @type[pkt.type]
             @type[pkt.type].push(pkt)
