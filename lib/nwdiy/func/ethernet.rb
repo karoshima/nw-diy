@@ -6,12 +6,31 @@
 ################################################################
 # Ethernet interface
 #
-# handle packet from the upper layer
+# You can send/recv a packet with this instance.
 #
 # pkt = eth.recv()
-#    you can get a packet from the eth instance.
-#    if you have an upper layer instance such as eth.ip,
+#    You can get a packet received with this Ethernet instance.
+#    If you have an upper layer instance such as eth.ip,
 #    you can get IP packet from the ip instance (not the eth instance).
+#
+# eth.send(dst=nil, pkt)
+#    1. You can send an Ethernet frame.
+#       In this case, you must fill all of the Ethenret fields.
+#    2. You can send an L3 frame.
+#       In this case, you must say "dst" mac address.
+#
+# You can create an ethernet driver.
+#
+# eth.push(pkt, lower=[])
+#    You can push an Ethernet frame.
+#    If the packet has the underlying headers, you should set it
+#    in "lower" arg.
+#
+# pkt = eth.pop
+#    You can get an Ethernet frame which is registered to be sent
+#    from this Ethernet instance.
+#
+################################################################
 
 require 'thread'
 
