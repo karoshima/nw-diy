@@ -14,9 +14,13 @@ class Nwdiy::Packet::MacAddr < Nwdiy::Packet
   def_head :byte6, :addr
 
   def initialize(data)
+    super(self.class.seed(data))
+  end
+
+  def self.seed(data)
     case data
     when Nwdiy::Packet::MacAddr
-      super(data.addr)
+      return data.addr
     when Hash
       if data[:broadcast]
         if data[:unicast]
@@ -25,8 +29,7 @@ class Nwdiy::Packet::MacAddr < Nwdiy::Packet
         if data[:local]
           raise TypeError.new("Broadcast MAC cannot be local")
         end
-        super("\xff\xff\xff\xff\xff\xff")
-        return
+        return "\xff\xff\xff\xff\xff\xff"
       end
       if data[:multicast]
         if data[:unicast]
@@ -40,13 +43,16 @@ class Nwdiy::Packet::MacAddr < Nwdiy::Packet
         raise TypeError.new("MAC cannot be global & local")
       end
       gl = data[:local] ? 2 : 0
-      super(([um+gl] + (1..5).map { rand(256) }).pack("C6"))
+      return ([um+gl] + (1..5).map { rand(256) }).pack("C6")
+    when Symbol
+      hash = { data => true }
+      return self.seed(hash)
     when /^......$/
-      super(data)
+      return data
     when /^(\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)$/
-      super([$1,$2,$3,$4,$5,$6].map{|c|c.hex}.pack("C6"))
+      return [$1,$2,$3,$4,$5,$6].map{|c|c.hex}.pack("C6")
     when nil
-      super("\x00\x00\x00\x00\x00\x00")
+      return "\x00\x00\x00\x00\x00\x00"
     else
       raise TypeError.new("Invalid Mac address '#{data.dump}'")
     end
@@ -75,6 +81,8 @@ class Nwdiy::Packet::MacAddr < Nwdiy::Packet
     when /^(\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)[:\.-](\h\h?)$/
       othermac = Nwdiy::Packet::MacAddr.new(other)
       return self.addr == othermac.addr
+    when MacAddr
+      return self.addr == other.addr
     else
       return false
     end

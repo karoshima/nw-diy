@@ -21,12 +21,12 @@ RSpec.describe Nwdiy::OS do
   # otherwise,  raise Errno::EPERM.
   it "can create an Ethernet device" do
     begin
-      so = Nwdiy::OS::Ethernet.__send__(:open_pfpkt, 1)
+      ifindex, ifp = Nwdiy::OS::Pfpkt.__send__(:init_pfpkt, "lo")
     rescue Errno::EPERM
       skip "you have no permission to test PF_PACKET"
     end
-    expect(so).to be_a Socket
-    so.close
-    expect(Nwdiy::OS.ether('lo')).to be_a(Nwdiy::Func::Ethernet)
+    expect(ifp).to be_a Socket
+    ifp.close
+    expect(Nwdiy::OS.ethernet('lo')).to be_a(Nwdiy::Func::Ethernet)
   end
 end

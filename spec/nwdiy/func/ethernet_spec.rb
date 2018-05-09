@@ -21,7 +21,8 @@ RSpec.describe Nwdiy::Func::Ethernet do
     expect(pkt2.data).to be pkt1
     pkt2.dst = pkt2.src
     eth0.push(pkt2)
-    pkt3 = eth0.recv
+    puts pkt2.inspect
+    pkt3, lower = eth0.recv
     expect(pkt3).to eq pkt2
   end
 end
