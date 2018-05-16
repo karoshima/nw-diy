@@ -21,12 +21,15 @@ module Nwdiy
 
     # create an VLAN from the Ethernet
     class Ethernet
-      protect
+      protected
       def vlan_type(type, name)
-        vl = VLAN.new(self.to_s + ":" + name)
-        vl.type = type
-        vl.lower = self
-        self.upper[type] = vl
+        unless self.upper(type)
+          vl = VLAN.new(self.to_s + ":" + name)
+          vl.type = type
+          vl.lower = self
+          self.upper(type, vl)
+        end
+        return self.upper(type)
       end
       public
       def vlan
@@ -66,3 +69,6 @@ module Nwdiy
         @join = Hash.new
       end
 
+    end
+  end
+end

@@ -278,11 +278,9 @@ module Nwdiy
 
       ################################################################
       # upper layers
-      def upper_set(type, func)
-        @instance_upper[type] = func
-      end
-      def upper_get(type)
-        @instance_upper[type]
+      def upper(type, func = nil)
+        @instance_upper[type] = func if func
+        return @instance_upper[type]
       end
     end
   end
