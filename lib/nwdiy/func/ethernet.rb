@@ -75,16 +75,16 @@ module Nwdiy
     module EthernetReceiver
       def ethernet
         eth = Ethernet.new(self.to_s + ":eth")
-        eth.lower_set(self)
+        eth.lower = self
         return eth
       end
     end
 
     class Ethernet
       public
-      def lower_set(lower)
-        if lower
-          @lower_instance = lower
+      def lower=(instance)
+        if instance
+          @lower_instance = instance
           self.thread_start
         else
           self.thread_stop
@@ -93,20 +93,20 @@ module Nwdiy
       end
     end
 
-    # close the instance
     class Ethernet
+
+      # close the instance
       public
       def close
         self.thread_stopall
-        lower = @lower_instance
-        @lower_instance = nil
-        if lower
-          lower.close
+        self.close_lower
+      end
+      protected
+      def close_lower
+        if @lower_instance
+          @lower_instance = nil
         end
       end
-    end
-
-    class Ethernet
 
       ################################################################
       # MAC address configuration
@@ -205,8 +205,6 @@ module Nwdiy
       def flowup
         pkt, lower = @upq_lower.pop
         # check the upper layer to pass
-        puts pkt.inspect
-        puts pkt.type
         upper = @instance_upper[pkt.type]
         if upper
           if self.forme?(pkt)
@@ -276,6 +274,15 @@ module Nwdiy
         @upq_upper.max = n
         @upq_lower.max = n
         @downq_upper.max = n
+      end
+
+      ################################################################
+      # upper layers
+      def upper_set(type, func)
+        @instance_upper[type] = func
+      end
+      def upper_get(type)
+        @instance_upper[type]
       end
     end
   end

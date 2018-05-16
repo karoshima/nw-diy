@@ -16,13 +16,16 @@ RSpec.describe Nwdiy::Func::Ethernet do
     expect(pkt1).not_to be nil
     expect(eth0.respond_to?(:send)).to eq true
     eth0.send(pkt1)
+    puts pkt1.inspect
     pkt2 = eth0.pop
+    puts pkt2.inspect
     expect(pkt2).to be_kind_of(Nwdiy::Packet::Ethernet)
     expect(pkt2.data).to be pkt1
     pkt2.dst = pkt2.src
-    eth0.push(pkt2)
     puts pkt2.inspect
+    eth0.push(pkt2)
     pkt3, lower = eth0.recv
+    puts pkt3.inspect
     expect(pkt3).to eq pkt2
   end
 end
