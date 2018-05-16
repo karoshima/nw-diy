@@ -18,24 +18,22 @@ module Nwdiy
       def initialize(max = MAXQLEN)
         super()
         @max = max
-        @cutter = Thread.new do
-          loop do
-            sleep 0.1
-            return if self.closed?
-            while @max < self.size do
-              self.pop # drop the oldest one
-            end
-          end
-        end
+        @mutex = Mutex.new
       end
 
       attr_accessor :max
 
-      def close
+      def <<(value)
+        @mutex.lock
         super
-        @cutter.kill
-        @cutter = nil
+        while @max < self.length
+          self.pop
+        end
+        @mutex.unlock
       end
+      alias :enq :<<
+      alias :push :<<
+
     end
   end
 end 

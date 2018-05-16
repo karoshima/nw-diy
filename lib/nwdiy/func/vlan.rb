@@ -14,10 +14,6 @@ module Nwdiy
   module Func
 
     class VLAN < Ethernet
-      def initialize(name)
-        super
-        self.vlanid_init
-      end
     end
 
     ################################################################
@@ -27,13 +23,11 @@ module Nwdiy
     class Ethernet
       protected
       def vlan_type(type, name)
-        unless self.upper(type)
-          vl = VLAN.new(self.to_s + ":" + name)
-          vl.type = type
-          vl.lower = self
-          self.upper(type, vl)
-        end
-        return self.upper(type)
+        return self[type] if self[type]
+        vl = VLAN.new(self.to_s + ":" + name)
+        vl.type = type
+        vl.lower = self
+        return self[type] = vl
       end
       public
       def vlan
@@ -65,20 +59,10 @@ module Nwdiy
     # create VLANID (VLAN[x]) instance from a VLAN
 
     class VLAN
-
-      protected
-      def vlanid_init
-        @vlanid = Array.new
+      def newid(id)
+        self[id] = VLANID.new(self, id)
       end
-
-      public
-      def [](id)
-        @vlanid[id] = VLANID.new(self, id) unless @vlanid[id]
-        return @vlanid[id]
-      end
-
     end
-
     class VLANID < Ethernet
       def initialize(vlan, id)
         super("[#{id}]")
@@ -107,10 +91,30 @@ module Nwdiy
 
     class VLANID
       # overwrite one of flowdown functions
+      protected
       def capsule(pkt)
         vlan = Nwdiy::Packet::VLAN.new(vid: @vlanid, data: pkt.data)
         pkt.data = vlan
         return pkt
+      end
+    end
+
+    # overwrite the flowup function
+    class VLAN
+      public
+      def upper_for_packet(pkt)
+        return nil unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
+        return nil unless pkt.data.kind_of?(Nwdiy::Packet::VLAN)
+        return self[pkt.data.vid]
+      end
+    end
+    class VLANID
+      def push_others(pkt, lower=[])
+        raise Errno::EINVAL unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
+        raise Errno::EINVAL unless pkt.data.kind_of?(Nwdiy::Packet::VLAN)
+        vlan = pkt.data
+        pkt.data = vlan.data
+        @upq_lower.push([pkt, lower + [vlan]])
       end
     end
 

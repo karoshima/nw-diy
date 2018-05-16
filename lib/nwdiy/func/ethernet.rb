@@ -57,8 +57,8 @@ module Nwdiy
         super(name)
 
         self.addr_init
-        self.thread_init
         self.pktflow_init
+        self.thread_init
 
       end
     end
@@ -221,18 +221,23 @@ module Nwdiy
       def flowup
         pkt, lower = @upq_lower.pop
         # check the upper layer to pass
-        upper = @instance_upper[pkt.type]
+        upper = self.upper_for_packet(pkt)
+        debug "#{self}.upper = #{upper.class}"
         if upper
           if self.forme?(pkt)
+            debug "#{self}.upper = #{upper.class}"
             @stat[:rx] += 1
-            upper.push(pkt.data, list + [pkt])
+            upper.push(pkt.data, lower + [pkt])
           elsif upper.respond_to?(:push_others)
+            debug "#{self}.upper = #{upper.class}"
             @stat[:rx] += 1
-            upper.push_others(pkt.data, list + [pkt])
+            upper.push_others(pkt, lower)
           else
+            debug "#{self}.upper = #{upper.class}"
             @stat[:drop] += 1
           end
         else
+          debug "#{self}.upper = #{upper.class}"
           @stat[:rx] += 1
           @upq_upper.push([pkt, lower])
         end
@@ -305,9 +310,17 @@ module Nwdiy
 
       ################################################################
       # upper layers
-      def upper(type, func = nil)
-        @instance_upper[type] = func if func
-        return @instance_upper[type]
+      def []=(type, func)
+        @instance_upper[type] = func
+      end
+      def [](type)
+        @instance_upper[type]
+      end
+      def upper_for_packet(pkt)
+        debug "#{self}: #{pkt.class}"
+        return nil unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
+        debug "#{self}: #{pkt.class}"
+        return self[pkt.type]
       end
     end
   end

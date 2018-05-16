@@ -15,7 +15,8 @@ RSpec.describe Nwdiy::Func::VLAN do
     vlan = Nwdiy::Func::VLAN.new("vlanX")
     pkt11 = Nwdiy::Packet::Ethernet.new(data: Nwdiy::Packet::IPv4.new)
     expect(pkt11).not_to be nil
-    expect(vlan[1].respond_to?(:send)).to eq true
+    expect(vlan.newid(1)).to be_kind_of(Nwdiy::Func::VLANID)
+    expect(vlan[1].respond_to?(:recv)).to eq true
     # flow down
     vlan[1].send(pkt11)
     pkt12 = vlan.pop
@@ -26,9 +27,7 @@ RSpec.describe Nwdiy::Func::VLAN do
     expect(pkt12.data.data).to be_kind_of(Nwdiy::Packet::IPv4)
     # flow up
     vlan.push(pkt12)
-    puts (pkt12.inspect)
     pkt13, = vlan[1].recv
-    puts (pkt13.inspect)
     expect(pkt13).to be_kind_of(Nwdiy::Packet::Ethernet)
     expect(pkt13.data).to be_kind_of(Nwdiy::Packet::IPv4)
   end
