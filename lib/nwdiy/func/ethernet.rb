@@ -49,7 +49,9 @@ module Nwdiy
     # create an Ethernet instance
 
     class Ethernet
+
       include Nwdiy::Func
+      include Nwdiy::Debug
 
       def initialize(name)
         super(name)
@@ -83,13 +85,17 @@ module Nwdiy
     class Ethernet
       public
       def lower=(instance)
+        debug "#{self.to_s}.lower = #{instance.to_s}"
         if instance
-          @lower_instance = instance
+          @instance_lower = instance
           self.thread_start
         else
           self.thread_stop
-          @lower_instance = nil
+          @instance_lower = nil
         end
+      end
+      def lower
+        @instance_lower
       end
     end
 
@@ -103,8 +109,8 @@ module Nwdiy
       end
       protected
       def close_lower
-        if @lower_instance
-          @lower_instance = nil
+        if @instance_lower
+          @instance_lower = nil
         end
       end
 
@@ -114,15 +120,22 @@ module Nwdiy
       protected
       def addr_init
         # my address
-        @addr = Nwdiy::Packet::MacAddr.new(:global)
+        @addr = self.addr_default
         # my joined group addresses
         @join = Hash.new
+      end
+      def addr_default
+        Nwdiy::Packet::MacAddr.new(:global)
       end
 
       public
       # unicast MAC address
       def addr=(mac)
-        @addr = Nwdiy::Packet::MacAddr.new(mac)
+        if mac == nil
+          @addr = nil
+        else
+          @addr = Nwdiy::Packet::MacAddr.new(mac)
+        end
       end
       attr_reader :addr
 
@@ -158,6 +171,7 @@ module Nwdiy
       end
 
       def thread_start
+        debug "#{self.to_s}.thread_start"
         @thread_flowdown = Thread.new do
           loop do
             self.flowdown
@@ -165,6 +179,7 @@ module Nwdiy
         end
       end
       def thread_stop
+        debug "#{self.to_s}.thread_stop"
         @thread_flowdown.kill.join if @thread_flowdown
         @thread_flowdown = nil
       end
@@ -181,6 +196,7 @@ module Nwdiy
     ################################################################
     # packet flow
     class Ethernet
+      protected
       def pktflow_init
         @instance_upper = Array.new
         @instance_lower = nil
@@ -235,10 +251,12 @@ module Nwdiy
       def send(dst=nil, pkt)
         @stat[:tx] += 1
 
+        debug "#{self.to_s}.send(#{pkt.inspect})"
+
         unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
           pkt = Nwdiy::Packet::Ethernet.new(dst: dst,data: pkt)
         end
-        if pkt.src == "00:00:00:00:00:00"
+        if pkt.src == "00:00:00:00:00:00" && @addr != nil
           pkt.src = self.addr
         end
 
@@ -246,6 +264,7 @@ module Nwdiy
         if self.forme?(pkt)
           @upq_lower.push([pkt, []])
         else
+          debug "#{self.to_s}.downq_upper.push(#{pkt.inspect})"
           @downq_upper.push(pkt)
         end
         return pkt.bytesize
@@ -254,14 +273,22 @@ module Nwdiy
       protected
       def flowdown
         pkt = @downq_upper.pop
+        debug "#{self.to_s}.flowdown() #{pkt.inspect}"
+        pkt = self.capsule(pkt)
+        debug "#{self.to_s}.flowdown() #{pkt.inspect}"
         lower = @instance_lower
+        debug "#{self.to_s}.flowdown <- @downq_upper.pop (#{@downq_upper.length} entries) -> #{lower}"
         if lower
           lower.send(pkt)
         end
       end
+      def capsule(pkt)
+        return pkt
+      end
 
       public
       def pop
+        debug "#{self.to_s}.pop <- @downq_upper.pop (#{@downq_upper.length} entries)"
         @downq_upper.pop
       end
 

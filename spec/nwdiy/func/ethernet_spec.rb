@@ -8,6 +8,8 @@
 
 require "spec_helper"
 
+Thread.abort_on_exception = true
+
 RSpec.describe Nwdiy::Func::Ethernet do
   it '#initialize' do
     eth0 = Nwdiy::Func::Ethernet.new("eth0")

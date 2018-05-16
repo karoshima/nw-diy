@@ -11,6 +11,7 @@ class Nwdiy::Packet
   autoload(:Binary,   'nwdiy/packet/binary')
   autoload(:Ethernet, 'nwdiy/packet/ethernet')
   autoload(:MacAddr,  'nwdiy/packet/macaddr')
+  autoload(:VLAN,     'nwdiy/packet/vlan')
   autoload(:IPv4,     'nwdiy/packet/ipv4')
   autoload(:IPv4Addr, 'nwdiy/packet/ipv4addr')
   autoload(:ARP,      'nwdiy/packet/arp')
