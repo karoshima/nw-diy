@@ -102,6 +102,11 @@ module Nwdiy
     # overwrite the flowup function
     class VLAN
       public
+      def push_others(pkt, lower=[])
+        raise Errno::EINVAL unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
+        raise Errno::EINVAL unless pkt.data.kind_of?(Nwdiy::Packet::VLAN)
+        @upq_lower.push([pkt, lower])
+      end
       def upper_for_packet(pkt)
         return nil unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
         return nil unless pkt.data.kind_of?(Nwdiy::Packet::VLAN)

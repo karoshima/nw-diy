@@ -21,7 +21,8 @@ class Nwdiy::Packet::Ethernet < Nwdiy::Packet
   def_body :data
   def_body_type :data,
                 0x0800 => "Nwdiy::Packet::IPv4",
-                0x0806 => "Nwdiy::Packet::ARP"
+                0x0806 => "Nwdiy::Packet::ARP",
+                0x8100 => "Nwdiy::Packet::VLAN"
   def data=(seed)
     case seed
     when String

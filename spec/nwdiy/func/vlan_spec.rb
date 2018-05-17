@@ -37,18 +37,22 @@ RSpec.describe Nwdiy::Func::VLAN do
     expect(eth2).not_to be nil
     vlan2 = eth2.vlan
     expect(vlan2).to be_kind_of(Nwdiy::Func::VLAN)
-    # # # flow down
-    # # vlan[2].send(pkt21)
-    # # pkt22 = eth2.pop
-    # # expect(pkt12).to be_kind_of(Nwdiy::Packet::Ethernet)
-    # # expect(pkt12.src.addr).to eq eth2.addr # different from the above
-    # # expect(pkt12.data).to be_kind_of(Nwdiy::Packet::VLAN)
-    # # expect(pkt12.data.id).to eq 1
-    # # expect(pkt12.data.data).to be_kind_of(Nwdiy::Packet::IPv4)
-    # # # flow up
-    # # eth.push(pkt22)
-    # # pkt23, = vlan[2].pop
-    # # expect(pkt23).to be_kind_of(Nwdiy::Packet::Ethernet)
-    # # expect(pkt23.data).to be_kind_of(Nwdiy::Packet::IPv4)
+    # flow down
+    pkt21 = Nwdiy::Packet::Ethernet.new(
+      data: Nwdiy::Packet::IPv4.new)
+    vlan2.newid(2)
+    expect(vlan2[2]).to be_kind_of(Nwdiy::Func::VLANID)
+    vlan2[2].send(pkt21)
+    pkt22 = eth2.pop
+    expect(pkt22).to be_kind_of(Nwdiy::Packet::Ethernet)
+    expect(pkt22.src).to eq eth2.addr # different from the above
+    expect(pkt22.data).to be_kind_of(Nwdiy::Packet::VLAN)
+    expect(pkt22.data.vid).to eq 2
+    expect(pkt22.data.data).to be_kind_of(Nwdiy::Packet::IPv4)
+    # flow up
+    eth2.push(pkt22)
+    pkt23, = vlan2[2].recv
+    expect(pkt23).to be_kind_of(Nwdiy::Packet::Ethernet)
+    expect(pkt23.data).to be_kind_of(Nwdiy::Packet::IPv4)
   end
 end

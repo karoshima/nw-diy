@@ -213,6 +213,7 @@ module Nwdiy
       public 
       def push(pkt, lower=[])
         raise Errno::EINVAL unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
+        debug pkt.inspect
         @upq_lower.push([pkt, lower])
       end
 
@@ -220,6 +221,7 @@ module Nwdiy
       protected
       def flowup
         pkt, lower = @upq_lower.pop
+        debug pkt.inspect, lower
         # check the upper layer to pass
         upper = self.upper_for_packet(pkt)
         debug "#{self}.upper = #{upper.class}"
