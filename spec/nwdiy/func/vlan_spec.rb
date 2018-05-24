@@ -16,9 +16,9 @@ RSpec.describe Nwdiy::Func::VLAN do
     pkt11 = Nwdiy::Packet::Ethernet.new(data: Nwdiy::Packet::IPv4.new)
     expect(pkt11).not_to be nil
     expect(vlan.newid(1)).to be_kind_of(Nwdiy::Func::VLANID)
-    expect(vlan[1].respond_to?(:recv)).to eq true
+    expect(vlan[1].respond_to?(:recvpkt)).to eq true
     # flow down
-    vlan[1].send(pkt11)
+    vlan[1].sendpkt(pkt11)
     pkt12 = vlan.pop
     expect(pkt12).to be_kind_of(Nwdiy::Packet::Ethernet)
     expect(pkt12.src).to eq "00:00:00:00:00:00"
@@ -27,7 +27,7 @@ RSpec.describe Nwdiy::Func::VLAN do
     expect(pkt12.data.data).to be_kind_of(Nwdiy::Packet::IPv4)
     # flow up
     vlan.push(pkt12)
-    pkt13, = vlan[1].recv
+    pkt13, = vlan[1].recvpkt
     expect(pkt13).to be_kind_of(Nwdiy::Packet::Ethernet)
     expect(pkt13.data).to be_kind_of(Nwdiy::Packet::IPv4)
   end
@@ -42,7 +42,7 @@ RSpec.describe Nwdiy::Func::VLAN do
       data: Nwdiy::Packet::IPv4.new)
     vlan2.newid(2)
     expect(vlan2[2]).to be_kind_of(Nwdiy::Func::VLANID)
-    vlan2[2].send(pkt21)
+    vlan2[2].sendpkt(pkt21)
     pkt22 = eth2.pop
     expect(pkt22).to be_kind_of(Nwdiy::Packet::Ethernet)
     expect(pkt22.src).to eq eth2.addr # different from the above
@@ -51,7 +51,7 @@ RSpec.describe Nwdiy::Func::VLAN do
     expect(pkt22.data.data).to be_kind_of(Nwdiy::Packet::IPv4)
     # flow up
     eth2.push(pkt22)
-    pkt23, = vlan2[2].recv
+    pkt23, = vlan2[2].recvpkt
     expect(pkt23).to be_kind_of(Nwdiy::Packet::Ethernet)
     expect(pkt23.data).to be_kind_of(Nwdiy::Packet::IPv4)
   end

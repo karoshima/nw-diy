@@ -16,8 +16,8 @@ RSpec.describe Nwdiy::Func::Ethernet do
     expect(eth0).not_to be nil
     pkt1 = Nwdiy::Packet::IPv4.new
     expect(pkt1).not_to be nil
-    expect(eth0.respond_to?(:send)).to eq true
-    eth0.send(pkt1)
+    expect(eth0.respond_to?(:sendpkt)).to eq true
+    eth0.sendpkt(pkt1)
     puts pkt1.inspect
     pkt2 = eth0.pop
     puts pkt2.inspect
@@ -26,7 +26,7 @@ RSpec.describe Nwdiy::Func::Ethernet do
     pkt2.dst = pkt2.src
     puts pkt2.inspect
     eth0.push(pkt2)
-    pkt3, lower = eth0.recv
+    pkt3, lower = eth0.recvpkt
     puts pkt3.inspect
     expect(pkt3).to eq pkt2
   end

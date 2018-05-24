@@ -33,7 +33,7 @@ module Nwdiy
       end
 
       def ethernet
-        return @eth if @eth
+        return @eth if defined?(@eth) && @eth
         @eth = super
       end
 

@@ -14,13 +14,13 @@
 #
 # You can send/recv a packet with this instance.
 #
-# pkt, lower = eth.recv()
+# pkt, lower = eth.recvpkt()
 #    You can get a packet received with this Ethernet instance.
 #    If you have an upper layer instance such as eth.ip,
 #    you can get IP packet from the ip instance (not on the eth instance).
 #    return value "lower" is the lower layer header array.
 #
-# eth.send(dst=nil, pkt)
+# eth.sendpkt(dst=nil, pkt)
 #    1. You can send an Ethernet frame.
 #       In this case, you must fill all of the Ethernet fields.
 #       (you can get the instance MAC address via "eth.addr")
@@ -246,7 +246,7 @@ module Nwdiy
       end
 
       public
-      def recv
+      def recvpkt
         @upq_upper.pop
       end
 
@@ -255,10 +255,10 @@ module Nwdiy
       #    down a packet from the upper layer instance
 
       public
-      def send(dst=nil, pkt)
+      def sendpkt(dst=nil, pkt)
         @stat[:tx] += 1
 
-        debug "#{self.to_s}.send(#{pkt.inspect})"
+        debug "#{self.to_s}.sendpkt(#{pkt.inspect})"
 
         unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
           pkt = Nwdiy::Packet::Ethernet.new(dst: dst,data: pkt)
@@ -286,7 +286,7 @@ module Nwdiy
         lower = @instance_lower
         debug "#{self.to_s}.flowdown <- @downq_upper.pop (#{@downq_upper.length} entries) -> #{lower}"
         if lower
-          lower.send(pkt)
+          lower.sendpkt(pkt)
         end
       end
       def capsule(pkt)
