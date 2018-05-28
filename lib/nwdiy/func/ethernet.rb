@@ -173,6 +173,7 @@ module Nwdiy
       def thread_start
         debug "#{self.to_s}.thread_start"
         @thread_flowdown = Thread.new do
+          debug "#{self.to_s}.@thread_flowdown start"
           loop do
             self.flowdown
           end
@@ -279,6 +280,7 @@ module Nwdiy
 
       protected
       def flowdown
+        debug "#{self.to_s}.flowdown: popping a packet"
         pkt = @downq_upper.pop
         debug "#{self.to_s}.flowdown() #{pkt.inspect}"
         pkt = self.capsule(pkt)

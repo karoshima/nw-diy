@@ -37,6 +37,10 @@ module Nwdiy
         @eth = super
       end
 
+      def sendpkt(pkt)
+        @ifp.syswrite(pkt.to_pkt)
+      end
+
       class << self
         def init_pfpkt(name)
           ifindex = if_nametoindex(name)
