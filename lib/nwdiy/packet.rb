@@ -19,6 +19,7 @@ class Nwdiy::Packet
   autoload(:IPv6Addr, 'nwdiy/packet/ipv6addr')
   autoload(:UDP,      'nwdiy/packet/udp')
   autoload(:ICMP4,    'nwdiy/packet/icmp4')
+  autoload(:EtherIP,  'nwdiy/packet/etherip')
 
   include Nwdiy::Debug
 
