@@ -11,13 +11,19 @@ require "spec_helper"
 Thread.abort_on_exception = true
 
 RSpec.describe Nwdiy::Func::Ethernet do
+  # it can create Ethernet device
   it 'init' do
     eth0 = Nwdiy::Func::Ethernet.new("eth0")
     expect(eth0).not_to be nil
+    # it must be able to send/recv packets
+    expect(eth0.respond_to?(:sendpkt)).to eq true
+    expect(eth0.respond_to?(:recvpkt)).to eq true
+    # it must be able to get sent packet, to push a received packets
+    expect(eth0.respond_to?(:sendpkt)).to eq true
     expect(eth0.respond_to?(:sendpkt)).to eq true
   end
 
-  it 'can send ethenet frame' do
+  it 'can send ethenet frame, and pop it' do
     eth1 = Nwdiy::Func::Ethernet.new("eth1")
     pkt11 = Nwdiy::Packet::Ethernet.new(dst: "00:00:11:11:22:22",
                                         data: Nwdiy::Packet::IPv4.new)
@@ -31,7 +37,7 @@ RSpec.describe Nwdiy::Func::Ethernet do
     expect(pkt13).to eq pkt11
   end
 
-  it 'can send data' do
+  it 'can send data, and pop an Ethernet frame' do
     eth2 = Nwdiy::Func::Ethernet.new("eth2")
     pkt21 = Nwdiy::Packet::IPv4.new
     eth2.sendpkt("00:00:11:11:33:33", pkt21)

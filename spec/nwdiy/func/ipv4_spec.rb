@@ -19,5 +19,9 @@ RSpec.describe Nwdiy::Func::IPv4 do
     ip41.sendpkt("192.168.2.2", pkt11)
     pkt12 = ip41.pop
     expect(pkt12).to be_kind_of(Nwdiy::Packet::IPv4)
+    expect(pkt12.dst).to eq "192.168.2.2"
+    expect(pkt12.src).to eq "192.168.1.1"
+    expect(pkt12.proto).to eq 1
+    expect(pkt12.data).to eq pkt41
   end
 end
