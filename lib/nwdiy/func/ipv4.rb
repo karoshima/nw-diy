@@ -4,26 +4,15 @@
 # Copyright (c) 2018 KASHIMA Hiroaki <kashima@jp.fujitsu.com>
 # with Apache-2 license.  check /LICENSE please.
 ################################################################
-# top of NW-DIY functions.
+# Nwdiy::Func::IPv4
+#    IPv4 interface class
+# Nwdiy::Func::IPv4Receiver
+#    instance method for instances under Nwdiy::Func::IPv4
 ################################################################
 
 module Nwdiy
   module Func
-
-    autoload(:PktQueue,         'nwdiy/func/pktq')
-    autoload(:Ethernet,         'nwdiy/func/ethernet')
-    autoload(:EthernetReceiver, 'nwdiy/func/ethernet')
-    autoload(:VLAN,             'nwdiy/func/vlan')
-    autoload(:IPv4,             'nwdiy/func/ipv4')
-
-    MAXQLEN = 16
-
-    attr_accessor :to_s
-
-    private
-    def initialize(name)
-      @to_s = name
+    class IPv4
     end
-
   end
 end
