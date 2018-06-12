@@ -45,6 +45,16 @@ class Nwdiy::Packet::IPv4Addr < Nwdiy::Packet
     (self.addr | self.addr2uint32(mask)) == 0xffffffff
   end
 
+  def classA?
+    (self.addr & 0x80000000) == 0
+  end
+  def classB?
+    (self.addr & 0xc0000000) == 0x80000000
+  end
+  def classC?
+    (self.addr & 0xe0000000) == 0xc0000000
+  end
+
   def included?(address, mask)
     ((self.addr ^ address) & self.addr2uint32(mask)) == 0
   end
@@ -62,20 +72,27 @@ class Nwdiy::Packet::IPv4Addr < Nwdiy::Packet
                 0xfffffff8, 0xfffffffc, 0xfffffffe, 0xffffffff ]
 
   def self.addr2uint32(addr)
-    if addr == nil
+    case addr
+    when nil
       return 0
-    elsif addr.bytesize == 4
-      return addr.unpack("N")[0]
-    elsif addr =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/
-      a = [$1,$2,$3,$4].map{|c|c.to_i}
-      if a[0] > 255 || a[1] > 255 || a[2] > 255 || a[3] > 255
-        raise TypeError.new("Invalid IPv4 addr '#{addr}'")
+    when /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/
+        a = [$1,$2,$3,$4].map{|c|c.to_i}
+        if a[0] > 255 || a[1] > 255 || a[2] > 255 || a[3] > 255
+          raise TypeError.new("Invalid IPv4 addr '#{addr}'")
+        end
+        return a[0] << 24 | a[1] << 16 | a[2] << 8 | a[3]
+    when String
+      if addr.bytesize == 4
+        return addr.unpack("N")[0]
+      else
+        raise "Unknown addr string"
       end
-      return a[0] << 24 | a[1] << 16 | a[2] << 8 | a[3]
-    elsif 0 <= addr && addr <= 32
-      return MLEN2MASK[addr]
-    else
-      return addr
+    when Integer
+      if 0 <= addr && addr <= 32
+        return MLEN2MASK[addr]
+      else
+        raise "Unknown mask length"
+      end
     end
   end
 end
