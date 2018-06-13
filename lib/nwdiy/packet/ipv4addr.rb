@@ -5,8 +5,8 @@
 # 本ツールは Apache License 2.0 ライセンスで公開します。
 # 著作権については ./LICENSE もご確認ください
 ################################################################
-# Nwdiy::Packet::IPv4 は IPv4 アドレスです。
-# 仕様については spec/nwdiy/packet/ipv4_spec.rb を参照してください
+# Nwdiy::Packet::IPv4Addr は IPv4 アドレスです。
+# 仕様については spec/nwdiy/packet/ipv4addr_spec.rb を参照してください
 ################################################################
 
 class Nwdiy::Packet::IPv4Addr < Nwdiy::Packet
@@ -59,6 +59,20 @@ class Nwdiy::Packet::IPv4Addr < Nwdiy::Packet
     ((self.addr ^ address) & self.addr2uint32(mask)) == 0
   end
 
+  def ==(obj)
+    case obj
+    when self.class
+      return self.addr == obj.addr
+    when Integer
+      return self.addr == obj
+    when String
+      addr = self.class.new(obj)
+      return self.addr == addr.addr
+    else
+      return false
+    end
+  end
+
   private
 
   MLEN2MASK = [ 0x00000000, 
@@ -91,7 +105,7 @@ class Nwdiy::Packet::IPv4Addr < Nwdiy::Packet
       if 0 <= addr && addr <= 32
         return MLEN2MASK[addr]
       else
-        raise "Unknown mask length"
+        return addr
       end
     end
   end
