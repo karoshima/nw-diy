@@ -56,13 +56,12 @@ RSpec.describe Nwdiy::Func::IPv4 do
     expect(ip44.forme?(pkt4)).to be true
   end
 
-  # it 'can send IPv4 packet, and pop it from the lower side' do
-  #   ip45 = Nwdiy::Func::IPv4.new("ip45", local: "192.168.5.1/24")
-  #   pkt51 = Nwdiy::Packet::IPv4.new
-  #   ip45.sendpkt(pkt51)
-  #   pkt52 = ip45.pop
-  #   expect(pkt52).to be pkt51
-  # end
+  it 'can send IPv4 packet, and pop it from the lower side' do
+    ip45 = Nwdiy::Func::IPv4.new("ip45", local: "192.168.5.1/24")
+    pkt51 = Nwdiy::Packet::IPv4.new(dst: "1.1.1.1")
+    ip45.sendpkt(pkt51)
+    pkt52 = ip45.pop
+  end
 
   # it 'can send IPv4 data, and pop an IPv4 packet from the lower side' do
   #   ip46 = Nwdiy::Func::IPv4.new("ip46", local: "192.168.6.1/24")

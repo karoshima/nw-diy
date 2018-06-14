@@ -20,8 +20,8 @@ module Nwdiy
       def initialize(name, **param)
         super(name)
         self.addr_init(param[:local])
-        @group = Hash.new { |hash,key| hash[key] = 0 }
-        @group[0xe0000001] = 0x100000000 # almost infinity
+        self.pktflow_init
+        self.thread_init
       end
     end
 
@@ -59,6 +59,8 @@ module Nwdiy
       protected
       def addr_init(addr)
         @addr = IPv4AddrMask.new(addr)
+        @group = Hash.new { |hash,key| hash[key] = 0 }
+        @group[0xe0000001] = 0x100000000 # almost infinity
       end
     end
 
@@ -94,6 +96,7 @@ module Nwdiy
         @broadcast = Nwdiy::Packet::IPv4Addr.new(@addr.addr | (0xffffffff ^ @mask.addr))
       end
 
+      attr_accessor :addr
       def inspect
         "#{@addr.inspect}/#{@mlen}"
       end
@@ -126,11 +129,115 @@ module Nwdiy
       end
     end
 
+    ################################################################
+    # packet handler
+
     class IPv4
-      def sendpkt(pkt)
+      protected
+      def pktflow_init
+        @instance_upper = Array.new
+        @instance_lower = nil
+        @stat = Hash.new { |hash,key| hash[key] = 0 }
+        @upq_upper = Nwdiy::Func::PktQueue.new
+        @upq_lower = Nwdiy::Func::PktQueue.new
+        @downq_upper = Nwdiy::Func::PktQueue.new
       end
+
+      ################
+      # flow up
+      #    flow up a packet from the lower layer instance
+      public
       def recvpkt
       end
+
+      protected
+      def flowup
+      end
+
+      ################
+      # flow down
+      #    flow down a packet from the upper layer instance
+      public
+      def sendpkt(dst=nil, pkt)
+        @stat[:tx] += 1
+
+        debug "#{self.to_s}.sendpkt(#{pkt.inspect})"
+
+        unless pkt.kind_of?(Nwdiy::Packet::IPv4)
+          pkt = Nwdiy::Packet::IPv4.new(dst: dst, data: pkt)
+        end
+        if pkt.src == "0.0.0.0" and @addr != nil
+          pkt.src = @addr.addr
+        end
+
+        # do not flow down the packet for me
+        if self.forme?(pkt)
+          debug "#{self.to_s}.upq_lower.push([#{pkt.inspect}, []])"
+          @upq_lower.push([pkt, []])
+        else
+          debug "#{self.to_s}.downq_upper.push(#{pkt.inspect})"
+          @downq_upper.push(pkt)
+        end
+        return pkt.bytesize
+      end
+
+      protected
+      def flowdown
+        pkt = @downq_upper.pop
+        pkt = self.capsule(pkt)
+        lower = @instance_lower
+        if lower
+          lower.sendpkt(pkt)
+        end
+      end
+      def capsule(pkt)
+        return pkt
+      end
+
+      public
+      def pop
+        @downq_upper.pop
+      end
+
+      ################################################################
+      # internal threads
+      protected
+      def thread_init
+        # threads that flow the packet up & down
+        @thread_flowup = Thread.new do
+          loop do
+            self.flowup
+          end
+        end
+        @thread_flowdown = nil
+      end
+
+      def thread_start
+        debug "#{self.to_s}.thread_start"
+        @thread_flowdown = Thread.new do
+          debug "#{self.to_s}.@thread_flowdown start"
+          loop do
+            self.flowdown
+          end
+        end
+      end
+
+      def thread_stop
+        debug "#{self.to_s}.thread_stop"
+        @thread_flowdown.kill.join if @thread_flowdown
+        @thread_flowdown = nil
+      end
+
+      public
+      def thread_stopall
+        @thread_flowdown.kill if @thread_flowdown
+        @thread_flowup.kill   if @thread_flowup
+        @thread_flowdown.join if @thread_flowdown
+        @thread_flowup.join   if @thread_flowup
+        @thread_flowdown = nil
+        @thread_flowup = nil
+      end
+
     end
   end
 end
