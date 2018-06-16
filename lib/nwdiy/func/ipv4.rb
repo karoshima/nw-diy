@@ -193,12 +193,16 @@ module Nwdiy
       protected
       def flowdown
         pkt = @downq_upper.pop
+        pkt = self.capsule(pkt)
         lower = @instance_lower
         unless lower
           return
         end
         XXX resolve arp Here!
         lower.sendpkt(pkt)
+      end
+      def capsule(pkt)
+        return pkt
       end
 
       public
