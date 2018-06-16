@@ -152,6 +152,7 @@ module Nwdiy
 
       protected
       def flowup
+        sleep(1)
       end
 
       ################
