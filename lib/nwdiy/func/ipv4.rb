@@ -22,8 +22,10 @@ module Nwdiy
         self.addr_init(param[:local])
         self.pktflow_init
         self.thread_init
+        @arp = param.has_key?(:arp) ? param[:arp] : true
       end
     end
+    attr_accessor :arp
 
     # create an IPv4 instance from the lower layer
     # same as ethernet.rb
@@ -38,6 +40,10 @@ module Nwdiy
 
     class Ethernet
       include IPv4Receiver
+      def ipv4(name = nil, **param)
+        param[:arp] = true
+        super(name, **param)
+      end
     end
 
     class IPv4
@@ -45,7 +51,9 @@ module Nwdiy
       def lower=(instance)
         if instance
           @instance_lower = instance
+          self.thread_start
         else
+          self.thread_stop
           @instance_lower = nil
         end
       end
@@ -186,9 +194,11 @@ module Nwdiy
       def flowdown
         pkt = @downq_upper.pop
         lower = @instance_lower
-        if lower
-          lower.sendpkt(pkt)
+        unless lower
+          return
         end
+        XXX resolve arp Here!
+        lower.sendpkt(pkt)
       end
 
       public
