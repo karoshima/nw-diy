@@ -63,16 +63,17 @@ RSpec.describe Nwdiy::Func::IPv4 do
     pkt52 = ip45.pop
   end
 
-  # it 'can send IPv4 data, and pop an IPv4 packet from the lower side' do
-  #   ip46 = Nwdiy::Func::IPv4.new("ip46", local: "192.168.6.1/24")
-  #   pkt61 = Nwdiy::Packet::ICMP4.new
-  #   ip46.sendpkt("192.168.6.2", pkt61)
-  #   pkt62 = ip46.pop
-  #   expect(pkt62.src).to eq "192.168.6.1"
-  #   expect(pkt62.dst).to eq "192.168.6.2"
-  #   expect(pkt62.proto).to eq 1
-  #   expect(pkt62.data).to be pkt61
-  # end
+  it 'can send IPv4 data, and pop an IPv4 packet from the lower side' do
+    ip46 = Nwdiy::Func::IPv4.new("ip46", local: "192.168.6.1/24")
+    pkt61 = Nwdiy::Packet::UDP.new
+    ip46.sendpkt("192.168.6.2", pkt61)
+    pkt62 = ip46.pop
+    expect(pkt62).to be_kind_of(Nwdiy::Packet::IPv4)
+    expect(pkt62.src).to eq "192.168.6.1"
+    expect(pkt62.dst).to eq "192.168.6.2"
+    expect(pkt62.proto).to eq 17
+    expect(pkt62.data).to be pkt61
+  end
 
   # it 'can send IPv4 packets, and pop an ARP and Ethernet Frame from the lower side of Ethernet' do
   # end
