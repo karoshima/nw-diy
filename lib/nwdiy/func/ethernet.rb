@@ -280,13 +280,8 @@ module Nwdiy
 
       protected
       def flowdown
-        debug "#{self.to_s}.flowdown: popping a packet"
         pkt = @downq_upper.pop
-        debug "#{self.to_s}.flowdown() #{pkt.inspect}"
-        pkt = self.capsule(pkt)
-        debug "#{self.to_s}.flowdown() #{pkt.inspect}"
         lower = @instance_lower
-        debug "#{self.to_s}.flowdown <- @downq_upper.pop (#{@downq_upper.length} entries) -> #{lower}"
         if lower
           lower.sendpkt(pkt)
         end

@@ -184,14 +184,10 @@ module Nwdiy
       protected
       def flowdown
         pkt = @downq_upper.pop
-        pkt = self.capsule(pkt)
         lower = @instance_lower
         if lower
           lower.sendpkt(pkt)
         end
-      end
-      def capsule(pkt)
-        return pkt
       end
 
       public
