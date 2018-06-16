@@ -266,6 +266,9 @@ class Nwdiy::Packet
     bodies = @@bodies[cls].map {|b| "#{b}="+@nwdiy_field[b].inspect }
     "[#{self.class.to_s} " + (headers + bodies).join(", ") + "]"
   end
+  def hexdump(**arg)
+    self.to_pkt(**arg).unpack("C*").map{|x|format("%02x",x)}.join(" ")
+  end
   # パケットを Hash 化する
   def to_hash
     cls = self.class
