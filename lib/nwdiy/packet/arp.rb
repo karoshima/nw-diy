@@ -36,4 +36,8 @@ class Nwdiy::Packet::ARP < Nwdiy::Packet
     return self.new(htype: 1, ptype: 0x0800, hlen: 6, plen: 4, op: 1,
                     hsnd: smac, psnd: sender, ptgt: target)
   end
+  def self.response(target, tmac, sender, smac)
+    return self.new(htype: 1, ptype: 0x0800, hlen: 6, plen: 4, op: 1,
+                    hsnd: smac, psnd: sender, htgt: tmac, ptgt: target)
+  end
 end

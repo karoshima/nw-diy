@@ -137,7 +137,14 @@ module Nwdiy
       end
       public
       def forme?(pkt)
-        @addr.forme?(pkt.dst) || @group[pkt.dst.addr] > 0
+        case pkt
+        when Nwdiy::Packet::ARP
+          @addr.forme?(pkt.ptgt)
+        when Nwdiy::Packet::IPv4
+          @addr.forme?(pkt.dst) || @group[pkt.dst.addr] > 0
+        else
+          false
+        end
       end
     end
 
@@ -155,21 +162,44 @@ module Nwdiy
         @arp = use_arp ? Hash.new : nil
         @arp_mutex = Mutex.new
       end
-      def resolve(pkt)
+      def arp_resolve(pkt)
         gw = gateway(pkt.dst)
         @arp_mutex.synchronize do
           now = Time.now
           if @arp.has_key?(gw.addr)
             arpentry = @arp[gw.addr]
-            if now + 300 < arpentry[:time]
+            if now + 300 < arpentry[:time] && arpentry[:dst] != nil
               return Nwdiy::Packet::Ethernet.new(dst: arpentry[:dst],
                                                  data: pkt)
             end
+          else
+            @arp[gw.addr] = { time: now, dst: nil, packet: [] }
           end
-          @arp[gw.addr] = { time: now }
+          arp[gw.addr][:packet].push(pkt)
           arp = Nwdiy::Packet::ARP.request(gw, self.addr.addr, @instance_lower.addr)
           return Nwdiy::Packet::Ethernet.new(dst: "ff:ff:ff:ff:ff:ff",
                                              data: arp)
+        end
+      end
+      def arp_recv_request(req)
+        rsp = Nwdiy::Packet::ARP.response(pkt.psnd, pkt.hsnd, self.addr.addr, @instance_lower.addr)
+        eth = Nwdiy::Packet::Ethernet.new(dst: pkt.hsnd, data: rsp)
+        @instance_lower.sendpkt(eth)
+      end
+      def arp_recv_response(rsp)
+        @arp_mutex.synchronize do
+          debug "ARP response: #{@arp}"
+          debug "ARP response: @arp[#{rsp.psnd.addr}]"
+          debug "ARP response: @#{@arp[rsp.psnd.addr]}"
+          if @arp.has_key?(rsp.psnd.addr) && @arp[rsp.psnd.addr][:dst] == nil
+            arp = @arp[rsp.psnd.addr]
+            arp[:dst] = rsp.hsnd
+            que, arp[:packet] = arp[:packet], []
+            que.each do |pkt|
+              eth = Nwdiy::Packet::Ethernet.new(dst: arp[:dst], data: pkt)
+              @instance_lower.sendpkt(eth)
+            end
+          end
         end
       end
     end
@@ -191,6 +221,26 @@ module Nwdiy
       ################
       # flow up
       #    flow up a packet from the lower layer instance
+      public
+      def push(pkt, lower=[])
+        case pkt
+        when Nwdiy::Packet::ARP
+          return unless self.forme?(pkt)
+          case pkt.op
+          when 1
+            arp_recv_request(pkt)
+          when 2
+            arp_recv_response(pkt)
+          else
+            return
+          end
+        when Nwdiy::Packet::IPv4
+          raise Errno::EINAL # to be implemented
+        else
+          raise Errno::EINVAL
+        end
+      end
+
       public
       def recvpkt
       end
@@ -236,7 +286,7 @@ module Nwdiy
           return
         end
         if @arp
-          pkt = resolve(pkt)
+          pkt = arp_resolve(pkt)
         end
         lower.sendpkt(pkt)
       end

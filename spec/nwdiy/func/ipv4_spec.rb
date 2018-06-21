@@ -107,7 +107,9 @@ RSpec.describe Nwdiy::Func::IPv4 do
     eth8.push(pkt82)
     pkt83 = eth8.pop
     expect(pkt83).to be_kind_of(Nwdiy::Packet::Ethernet)
-    expect(pkt83.data).to be pkt81
+    expect(pkt83.dst).to eq arp82.hsnd
+    expect(pkt83.data).to be_kind_of(Nwdiy::Packet::IPv4)
+    expect(pkt83.data.data).to be pkt81
   end
 
   # it 'can recv IPv4 packets which are pushed from the lower side' do
