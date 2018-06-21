@@ -31,4 +31,9 @@ class Nwdiy::Packet::ARP < Nwdiy::Packet
             hsnd.inspect, psnd.inspect,
             htgt.inspect, ptgt.inspect)
   end
+
+  def self.request(target, sender, smac)
+    return self.new(htype: 1, ptype: 0x0800, hlen: 6, plen: 4, op: 1,
+                    hsnd: smac, psnd: sender, ptgt: target)
+  end
 end

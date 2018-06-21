@@ -75,25 +75,28 @@ RSpec.describe Nwdiy::Func::IPv4 do
     expect(pkt62.data).to be pkt61
   end
 
-  # it 'can send IPv4 packets, and pop an ARP and Ethernet Frame from the lower side of Ethernet' do
-  #   eth7 = Nwdiy::Func::Ethernet.new("eth7")
-  #   ip47 = eth7.ipv4("ip47", local: "192.168.7.1/24")
-  #   pkt71 = Nwdiy::Packet::UDP.new
-  #   ip47.sendpkt("192.168.7.2", pkt71)
-  #   pkt72 = eth7.pop
-  #   expect(pkt72).to be_kind_of(Nwdiy::Packet::Ethernet)
-  #   expect(pkt72.dst).to eq "ff:ff:ff:ff:ff:ff"
-  #   expect(pkt72.type).to eq 0x0806
-  #   expect(pkt72.data).to be_kind_of(Nwdiy::Packet::ARP)
-  #   expect(pkt72.data.op).to eq 1
-  #   expect(pkt72.data.psnd).to eq "192.168.7.1"
-  #   expect(pkt72.data.ptgt).to eq "192.168.7.2"
-  # end
+  it 'can send IPv4 packets, and pop an ARP and Ethernet Frame from the lower side of Ethernet' do
+    eth7 = Nwdiy::Func::Ethernet.new("eth7")
+    ip47 = eth7.ipv4("ip47", local: "192.168.7.1/24")
+    pkt71 = Nwdiy::Packet::UDP.new
+    ip47.sendpkt("192.168.7.2", pkt71)
+    pkt72 = eth7.pop
+    expect(pkt72).to be_kind_of(Nwdiy::Packet::Ethernet)
+    expect(pkt72.dst).to eq "ff:ff:ff:ff:ff:ff"
+    expect(pkt72.type).to eq 0x0806
+    expect(pkt72.data).to be_kind_of(Nwdiy::Packet::ARP)
+    expect(pkt72.data.op).to eq 1
+    expect(pkt72.data.psnd).to eq "192.168.7.1"
+    expect(pkt72.data.ptgt).to eq "192.168.7.2"
+  end
 
   # it 'can recv IPv4 packets which are pushed from the lower side' do
   # end
 
   # it 'can recv IPv4 packets which are pushed from the lower side of the Ethernet device' do
+  # end
+
+  # it 'can get the gateway for a destination' do
   # end
 
 end

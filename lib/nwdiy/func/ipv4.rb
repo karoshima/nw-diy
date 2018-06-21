@@ -20,9 +20,9 @@ module Nwdiy
       def initialize(name, **param)
         super(name)
         self.addr_init(param[:local])
+        self.arp_init(param[:arp])
         self.pktflow_init
         self.thread_init
-        @arp = param.has_key?(:arp) ? param[:arp] : true
       end
     end
     attr_accessor :arp
@@ -34,6 +34,8 @@ module Nwdiy
       def ipv4(name=nil, **param)
         ipv4 = IPv4.new(name || (self.to_s + ":ipv4"), **param)
         ipv4.lower = self
+        self[0x0800] = ipv4
+        self[0x0806] = ipv4
         return ipv4
       end
     end
@@ -41,6 +43,7 @@ module Nwdiy
     class Ethernet
       include IPv4Receiver
       def ipv4(name = nil, **param)
+        debug "eth.ipv4(#{name}, #{param})"
         param[:arp] = true
         super(name, **param)
       end
@@ -50,6 +53,7 @@ module Nwdiy
       public
       def lower=(instance)
         if instance
+          debug "@instance_lower = #{instance}"
           @instance_lower = instance
           self.thread_start
         else
@@ -137,6 +141,39 @@ module Nwdiy
       end
     end
 
+    class IPv4
+      ################################################################
+      # Routing table
+      def gateway(dst)
+        return dst
+      end
+
+      ################################################################
+      # ARP handler
+      protected
+      def arp_init(use_arp)
+        @arp = use_arp ? Hash.new : nil
+        @arp_mutex = Mutex.new
+      end
+      def resolve(pkt)
+        gw = gateway(pkt.dst)
+        @arp_mutex.synchronize do
+          now = Time.now
+          if @arp.has_key?(gw.addr)
+            arpentry = @arp[gw.addr]
+            if now + 300 < arpentry[:time]
+              return Nwdiy::Packet::Ethernet.new(dst: arpentry[:dst],
+                                                 data: pkt)
+            end
+          end
+          @arp[gw.addr] = { time: now }
+          arp = Nwdiy::Packet::ARP.request(gw, self.addr.addr, @instance_lower.addr)
+          return Nwdiy::Packet::Ethernet.new(dst: "ff:ff:ff:ff:ff:ff",
+                                             data: arp)
+        end
+      end
+    end
+
     ################################################################
     # packet handler
 
@@ -198,7 +235,9 @@ module Nwdiy
         unless lower
           return
         end
-        XXX resolve arp Here!
+        if @arp
+          pkt = resolve(pkt)
+        end
         lower.sendpkt(pkt)
       end
       def capsule(pkt)
