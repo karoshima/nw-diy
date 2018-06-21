@@ -90,6 +90,26 @@ RSpec.describe Nwdiy::Func::IPv4 do
     expect(pkt72.data.ptgt).to eq "192.168.7.2"
   end
 
+  it 'can send unresolved IPv4 packets when it receives ARP response' do
+    eth8 = Nwdiy::Func::Ethernet.new("eth8")
+    ip48 = eth8.ipv4("ip48", local: "192.168.8.1/24")
+    pkt81 = Nwdiy::Packet::UDP.new
+    ip48.sendpkt("192.168.8.2", pkt81)
+    pkt82 = eth8.pop
+    expect(pkt82).to be_kind_of(Nwdiy::Packet::Ethernet)
+    arp82 = pkt82.data
+    expect(arp82).to be_kind_of(Nwdiy::Packet::ARP)
+    pkt82.src, pkt82.dst = pkt82.dst, pkt82.src
+    arp82.op = 2
+    arp82.htgt = arp82.hsnd
+    arp82.hsnd = Nwdiy::Packet::MacAddr.new(global: true)
+    arp82.psnd, arp82.ptgt = arp82.ptgt, arp82.psnd
+    eth8.push(pkt82)
+    pkt83 = eth8.pop
+    expect(pkt83).to be_kind_of(Nwdiy::Packet::Ethernet)
+    expect(pkt83.data).to be pkt81
+  end
+
   # it 'can recv IPv4 packets which are pushed from the lower side' do
   # end
 
