@@ -129,11 +129,18 @@ module Nwdiy
         end
         @group[group.addr] += 1
       end
+      def joined?(group)
+        unless group.kind_of?(Nwdiy::Packet::IPv4Addr)
+          group = Nwdiy::Packet::IPv4Addr.new(group)
+        end
+        @group[group.addr] > 0
+      end
       def leave(group)
         unless group.kind_of?(Nwdiy::Packet::IPv4Addr)
           group = Nwdiy::Packet::IPv4Addr.new(group)
         end
-        @group[group.addr] -= 1
+        @group[group.addr] -= 1 if self.joined?(group)
+
       end
       public
       def forme?(pkt)
@@ -141,7 +148,7 @@ module Nwdiy
         when Nwdiy::Packet::ARP
           @addr.forme?(pkt.ptgt)
         when Nwdiy::Packet::IPv4
-          @addr.forme?(pkt.dst) || @group[pkt.dst.addr] > 0
+          @addr.forme?(pkt.dst) || self.joined?(pkt.dst)
         else
           false
         end

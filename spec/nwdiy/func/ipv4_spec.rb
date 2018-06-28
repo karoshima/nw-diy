@@ -120,8 +120,13 @@ RSpec.describe Nwdiy::Func::IPv4 do
     expect(pkt92).to eq pkt91
   end
 
-  # it 'ignore IPv4 packet not to me, which are pushed from the lower side' do
-  # end
+  it 'ignore IPv4 packet not to me, which are pushed from the lower side' do
+    ip10 = Nwdiy::Func::IPv4.new("ip10", local: "192.168.10.1/24")
+    pkt101 = Nwdiy::Packet::IPv4.new(src: "192.168.10.2", dst: "192.168.10.3")
+    ip10.push(pkt101)
+    pkt102, lower = ip10.recvpkt
+    expect(pkt102).to eq pkt101
+  end
 
   # it 'can recv IPv4 packet to us(broadcast), which are pushed from the lower side' do
   # end

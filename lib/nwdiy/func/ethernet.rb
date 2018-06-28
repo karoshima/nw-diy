@@ -122,7 +122,7 @@ module Nwdiy
         # my address
         @addr = self.addr_default
         # my joined group addresses
-        @join = Hash.new
+        @group = Hash.new { |hash,key| hash[key] = 0 }
       end
       def addr_default
         Nwdiy::Packet::MacAddr.new(:global)
@@ -142,20 +142,31 @@ module Nwdiy
       # multicast MAC group addresses
       def join(group = nil)
         if group != nil
-          raise Errno::EINVAL unless group.kind_of?(Nwdiy::Packet::MacAddr)
+          unless group.kind_of?(Nwdiy::Packet::MacAddr)
+            group = Nwdiy::Packet::MacAddr.new(group)
+          end
           raise Errno::EINVAL unless group.multicast?
           raise Errno::EINVAL if     group.broadcast?
-          @join[group] = true
+          @group[group.hash] += 1
         end
-        return @join
+        return @group
       end
-      def forme?(pkt)
-        pkt.dst == @addr || @join[pkt.dst]
+      def joined?(group)
+          unless group.kind_of?(Nwdiy::Packet::MacAddr)
+            group = Nwdiy::Packet::MacAddr.new(group)
+          end
+        @group[group.hash] > 0
       end
       def leave(group)
-        @join.delete(group)
+          unless group.kind_of?(Nwdiy::Packet::MacAddr)
+            group = Nwdiy::Packet::MacAddr.new(group)
+          end
+        @group[group.hash] -= 1 if self.joined?(group)
       end
-
+      def forme?(pkt)
+        return false unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
+        pkt.dst == @addr || pkt.dst.broadcast? || self.joined?(pkt.dst) || false
+      end
 
       ################################################################
       # internal threads

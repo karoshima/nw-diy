@@ -23,6 +23,23 @@ RSpec.describe Nwdiy::Func::Ethernet do
     expect(eth0.respond_to?(:sendpkt)).to eq true
   end
 
+  it 'can check whether the packet comes to me or not' do
+    eth = Nwdiy::Func::Ethernet.new("eth")
+    pkt = Nwdiy::Packet::Ethernet.new
+    pkt.dst = Nwdiy::Packet::MacAddr.new(global: true)
+    expect(eth.forme?(pkt)).to be false
+    pkt.dst = eth.addr
+    expect(eth.forme?(pkt)).to be true
+    pkt.dst = "ff:ff:ff:ff:ff:ff"
+    expect(eth.forme?(pkt)).to be true
+    pkt.dst = "ff:ee:dd:cc:bb:aa"
+    expect(eth.forme?(pkt)).to be false
+    eth.join("ff:ee:dd:cc:bb:aa")
+    expect(eth.forme?(pkt)).to be true
+    eth.leave("ff:ee:dd:cc:bb:aa")
+    expect(eth.forme?(pkt)).to be false
+  end
+
   it 'can send ethenet frame, and pop it' do
     eth1 = Nwdiy::Func::Ethernet.new("eth1")
     pkt11 = Nwdiy::Packet::Ethernet.new(dst: "00:00:11:11:22:22",
