@@ -240,7 +240,7 @@ module Nwdiy
             @stat[:drop] += 1
           end
         else
-          debug "#{self}.upper = #{upper.class}"
+          debug "#{self}.upper = nil"
           @stat[:rx] += 1
           @upq_upper.push([pkt, lower])
         end

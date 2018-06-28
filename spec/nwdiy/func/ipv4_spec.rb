@@ -116,7 +116,7 @@ RSpec.describe Nwdiy::Func::IPv4 do
     ip9 = Nwdiy::Func::IPv4.new("ip9", local: "192.168.9.1/24")
     pkt91 = Nwdiy::Packet::IPv4.new(src: "192.168.9.2", dst: "192.168.9.1")
     ip9.push(pkt91)
-    pkt92 = ip9.recvpkt
+    pkt92, lower = ip9.recvpkt
     expect(pkt92).to eq pkt91
   end
 

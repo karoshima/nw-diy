@@ -181,6 +181,17 @@ module Nwdiy
                                              data: arp)
         end
       end
+      def arp_recv(pkt)
+        return unless self.forme?(pkt)
+        case pkt.op
+        when 1
+          arp_recv_request(pkt)
+        when 2
+          arp_recv_response(pkt)
+        else
+          return
+        end
+      end
       def arp_recv_request(req)
         rsp = Nwdiy::Packet::ARP.response(pkt.psnd, pkt.hsnd, self.addr.addr, @instance_lower.addr)
         eth = Nwdiy::Packet::Ethernet.new(dst: pkt.hsnd, data: rsp)
@@ -218,6 +229,45 @@ module Nwdiy
         @downq_upper = Nwdiy::Func::PktQueue.new
       end
 
+      ################################################################
+      # internal threads
+      protected
+      def thread_init
+        # threads that flow the packet up & down
+        @thread_flowup = Thread.new do
+          loop do
+            self.flowup
+          end
+        end
+        @thread_flowdown = nil
+      end
+
+      def thread_start
+        debug "#{self.to_s}.thread_start"
+        @thread_flowdown = Thread.new do
+          debug "#{self.to_s}.@thread_flowdown start"
+          loop do
+            self.flowdown
+          end
+        end
+      end
+
+      def thread_stop
+        debug "#{self.to_s}.thread_stop"
+        @thread_flowdown.kill.join if @thread_flowdown
+        @thread_flowdown = nil
+      end
+
+      public
+      def thread_stopall
+        @thread_flowdown.kill if @thread_flowdown
+        @thread_flowup.kill   if @thread_flowup
+        @thread_flowdown.join if @thread_flowdown
+        @thread_flowup.join   if @thread_flowup
+        @thread_flowdown = nil
+        @thread_flowup = nil
+      end
+
       ################
       # flow up
       #    flow up a packet from the lower layer instance
@@ -225,29 +275,47 @@ module Nwdiy
       def push(pkt, lower=[])
         case pkt
         when Nwdiy::Packet::ARP
-          return unless self.forme?(pkt)
-          case pkt.op
-          when 1
-            arp_recv_request(pkt)
-          when 2
-            arp_recv_response(pkt)
-          else
-            return
-          end
+          arp_recv(pkt)
         when Nwdiy::Packet::IPv4
-          raise Errno::EINAL # to be implemented
+          ip_recv(pkt, lower)
         else
           raise Errno::EINVAL
         end
       end
 
-      public
-      def recvpkt
+      protected
+      def ip_recv(pkt, lower)
+        @upq_lower.push([pkt, lower])
       end
 
-      protected
       def flowup
-        sleep(1)
+        pkt, lower = @upq_lower.pop
+        debug pkt.inspect, lower
+        upper = self.upper_for_packet(pkt)
+        debug "#{self}.upper = #{upper.class}"
+        if upper
+          if self.forme?(pkt)
+            debug "#{self}.upper = #{upper.class}"
+            @stat[:rx] += 1
+            upper.push(pkt.data, lower + [pkt])
+          elsif upper.respon_to?(:push_others)
+            debug #{self}.upper = #{upper.class}"
+            @stat[:rx] += 1
+            upper.push_others(pkt, lower)
+          else
+            debug #{self}.upper = #{upper.class}"
+            @stat[:drop] += 1
+          end
+        else
+          debug #{self}.upper = nil"
+          @stat[:rx] += 1
+          @upq_upper.push([pkt, lower])
+        end
+      end
+
+      public
+      def recvpkt
+        @upq_upper.pop
       end
 
       ################
@@ -300,44 +368,18 @@ module Nwdiy
       end
 
       ################################################################
-      # internal threads
-      protected
-      def thread_init
-        # threads that flow the packet up & down
-        @thread_flowup = Thread.new do
-          loop do
-            self.flowup
-          end
-        end
-        @thread_flowdown = nil
+      # upper layers
+      def []=(type, func)
+        @instance_upper[type] = func
       end
-
-      def thread_start
-        debug "#{self.to_s}.thread_start"
-        @thread_flowdown = Thread.new do
-          debug "#{self.to_s}.@thread_flowdown start"
-          loop do
-            self.flowdown
-          end
-        end
+      def [](type)
+        @instance_upper[type]
       end
-
-      def thread_stop
-        debug "#{self.to_s}.thread_stop"
-        @thread_flowdown.kill.join if @thread_flowdown
-        @thread_flowdown = nil
+      def upper_for_packet(pkt)
+        debug "#{self}: #{pkt.class}"
+        return nil unless pkt.kind_of?(Nwdiy::Packet::IPv4)
+        return self[pkt.proto]
       end
-
-      public
-      def thread_stopall
-        @thread_flowdown.kill if @thread_flowdown
-        @thread_flowup.kill   if @thread_flowup
-        @thread_flowdown.join if @thread_flowdown
-        @thread_flowup.join   if @thread_flowup
-        @thread_flowdown = nil
-        @thread_flowup = nil
-      end
-
     end
   end
 end
