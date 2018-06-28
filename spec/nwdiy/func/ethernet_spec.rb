@@ -80,18 +80,35 @@ RSpec.describe Nwdiy::Func::Ethernet do
     eth = Nwdiy::Func::Ethernet.new("eth")
     pkt1 = Nwdiy::Packet::Ethernet.new(dst: Nwdiy::Packet::MacAddr.new(global: true))
     eth.push(pkt1)
-    eth.upq_upper.push(1)
+    eth.upq_upper.push(nil)
     pkt2, lower = eth.recvpkt
-    expect(pkt2).to eq 1 # pkt1 is gone away, and 1 comes.
+    expect(pkt2).to be nil # pkt1 is gone away, and 1 comes.
   end
 
-  # it 'can recv Ethernet frame to us(broadcast)' do
-  # end
+  it 'can recv Ethernet frame to us(broadcast)' do
+    eth = Nwdiy::Func::Ethernet.new("eth")
+    pkt1 = Nwdiy::Packet::Ethernet.new(dst: "ff:ff:ff:ff:ff:ff")
+    eth.push(pkt1)
+    pkt2, lower = eth.recvpkt
+    expect(pkt2).to be pkt1
+  end
 
-  # it 'can recv Ethernet frame to us(multicast)' do
-  # end
+  it 'ignores Ethernet frame not to me(multicast)' do
+    eth = Nwdiy::Func::Ethernet.new("eth")
+    pkt1 = Nwdiy::Packet::Ethernet.new(dst: "ff:ee:dd:cc:bb:aa")
+    eth.push(pkt1)
+    eth.upq_upper.push(nil)
+    pkt2, lower = eth.recvpkt
+    expect(pkt2).to be nil # pkt1 is gone away, and 1 comes.
+  end
 
-  # it 'ignores Ethernet frame not to me(multicast)' do
-  # end
+  it 'can recv Ethernet frame to us(multicast)' do
+    eth = Nwdiy::Func::Ethernet.new("eth")
+    pkt1 = Nwdiy::Packet::Ethernet.new(dst: "ff:ee:dd:cc:bb:aa")
+    eth.join("ff:ee:dd:cc:bb:aa")
+    eth.push(pkt1)
+    pkt2, lower = eth.recvpkt
+    expect(pkt2).to be pkt1
+  end
 
 end
