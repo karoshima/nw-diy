@@ -251,9 +251,14 @@ module Nwdiy
             @stat[:drop] += 1
           end
         else
-          debug "#{self}.upper = nil"
-          @stat[:rx] += 1
-          @upq_upper.push([pkt, lower])
+          if self.forme?(pkt)
+            debug "#{self}.upper = nil"
+            @stat[:rx] += 1
+            @upq_upper.push([pkt, lower])
+          else
+            debug "#{self}.upper = nil"
+            @stat[:drop] += 1
+          end
         end
       end
 

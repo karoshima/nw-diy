@@ -67,5 +67,31 @@ RSpec.describe Nwdiy::Func::Ethernet do
     expect(pkt23.data).to eq pkt21
   end
 
-  
+  it 'can recv Ethernet frame to me, which are pushed from the lower side' do
+    eth = Nwdiy::Func::Ethernet.new("eth")
+    pkt1 = Nwdiy::Packet::Ethernet.new(dst: eth.addr)
+    eth.push(pkt1)
+    pkt2, lower = eth.recvpkt
+    expect(pkt2).to eq pkt1
+  end
+
+  it 'ignores Ethernet frame not to me' do
+    class Nwdiy::Func::Ethernet; attr_reader :upq_upper; end
+    eth = Nwdiy::Func::Ethernet.new("eth")
+    pkt1 = Nwdiy::Packet::Ethernet.new(dst: Nwdiy::Packet::MacAddr.new(global: true))
+    eth.push(pkt1)
+    eth.upq_upper.push(1)
+    pkt2, lower = eth.recvpkt
+    expect(pkt2).to eq 1 # pkt1 is gone away, and 1 comes.
+  end
+
+  # it 'can recv Ethernet frame to us(broadcast)' do
+  # end
+
+  # it 'can recv Ethernet frame to us(multicast)' do
+  # end
+
+  # it 'ignores Ethernet frame not to me(multicast)' do
+  # end
+
 end
