@@ -285,7 +285,8 @@ module Nwdiy
         end
 
         # do not flow-down the packet to me
-        if self.forme?(pkt)
+        debug "pkt #{pkt.inspect}"
+        if pkt.dst == @addr
           @upq_lower.push([pkt, []])
         else
           debug "#{self.to_s}.downq_upper.push(#{pkt.inspect})"

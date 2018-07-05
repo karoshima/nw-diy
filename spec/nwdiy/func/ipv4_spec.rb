@@ -10,6 +10,12 @@ require "spec_helper"
 
 Thread.abort_on_exception = true
 
+class Nwdiy::Func::IPv4
+  def recvpktqlen
+    @upq_upper.length
+  end
+end
+
 RSpec.describe Nwdiy::Func::IPv4 do
 
   it 'can create IPv4 device' do
@@ -120,15 +126,26 @@ RSpec.describe Nwdiy::Func::IPv4 do
     expect(pkt92).to eq pkt91
   end
 
-  it 'ignore IPv4 packet not to me, which are pushed from the lower side' do
+  it 'monitors IPv4 packet with unknown proto, and not to me, which are pushed from the lower side' do
     ip10 = Nwdiy::Func::IPv4.new("ip10", local: "192.168.10.1/24")
     pkt101 = Nwdiy::Packet::IPv4.new(src: "192.168.10.2", dst: "192.168.10.3")
     ip10.push(pkt101)
     pkt102, lower = ip10.recvpkt
-    expect(pkt102).to eq pkt101
+    expect(pkt102).to be pkt101
+  end
+
+  it 'monitors IPv4 packet with known proto, and not to me, which are pushed from the lower side' do
+    ip11 = Nwdiy::Func::IPv4.new("ip10", local: "192.168.10.1/24")
+    ip11[17] = 1 # dummy (Nwdiy::Packet::UDP is not yet implemented)
+    pkt111 = Nwdiy::Packet::IPv4.new(src: "192.168.10.2", dst: "192.168.10.3")
+    pkt111.data = Nwdiy::Packet::UDP.new
+    ip11.push(pkt111)
+    sleep 0.1
+    expect(ip11.recvpktqlen).to be 0
   end
 
   # it 'can recv IPv4 packet to us(broadcast), which are pushed from the lower side' do
+  #   $VERBOSE = 1
   # end
 
   # it 'can recv IPv4 packet to us(multicast), which are pushed from the lower side' do

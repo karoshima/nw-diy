@@ -305,7 +305,7 @@ module Nwdiy
             debug "#{self}.upper = #{upper.class}"
             @stat[:rx] += 1
             upper.push(pkt.data, lower + [pkt])
-          elsif upper.respon_to?(:push_others)
+          elsif upper.respond_to?(:push_others)
             debug #{self}.upper = #{upper.class}"
             @stat[:rx] += 1
             upper.push_others(pkt, lower)
@@ -357,6 +357,7 @@ module Nwdiy
         pkt = @downq_upper.pop
         pkt = self.capsule(pkt)
         lower = @instance_lower
+        debug "pkt #{pkt.inspect} to #{lower}"
         unless lower
           return
         end
@@ -385,6 +386,7 @@ module Nwdiy
       def upper_for_packet(pkt)
         debug "#{self}: #{pkt.class}"
         return nil unless pkt.kind_of?(Nwdiy::Packet::IPv4)
+        debug "#{self}: proto #{pkt.proto}"
         return self[pkt.proto]
       end
     end
