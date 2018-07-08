@@ -144,15 +144,31 @@ RSpec.describe Nwdiy::Func::IPv4 do
     expect(ip11.recvpktqlen).to be 0
   end
 
-  # it 'can recv IPv4 packet to us(broadcast), which are pushed from the lower side' do
-  #   $VERBOSE = 1
-  # end
+  it 'can recv IPv4 packet to us(broadcast), which are pushed from the lower side' do
+    ip12 = Nwdiy::Func::IPv4.new("ip12", local: "192.168.12.1/24")
+    pkt121 = Nwdiy::Packet::IPv4.new(src: "192.168.12.2", dst: "192.168.12.255")
+    ip12.push(pkt121)
+    pkt122, lower = ip12.recvpkt
+    expect(pkt122).to eq pkt121
+   end
 
-  # it 'can recv IPv4 packet to us(multicast), which are pushed from the lower side' do
-  # end
+  it 'can recv IPv4 packet to us(multicast), which are pushed from the lower side' do
+    ip13 = Nwdiy::Func::IPv4.new("ip13", local: "192.168.13.1/24")
+    ip13.join("224.0.0.5")
+    pkt131 = Nwdiy::Packet::IPv4.new(src: "192.168.13.2", dst: "224.0.0.5")
+    ip13.push(pkt131)
+    pkt132, lower = ip13.recvpkt
+    expect(pkt132).to eq pkt131
+  end
 
-  # it 'ignores IPv4 packet not to me(multicast), which are pushed from the lower side' do
-  # end
+  it 'ignores IPv4 packet not to me(multicast), which are pushed from the lower side' do
+    ip14 = Nwdiy::Func::IPv4.new("ip14", local: "192.168.14.1/24")
+    ip14.join("224.0.0.5")
+    pkt141 = Nwdiy::Packet::IPv4.new(src: "192.168.14.2", dst: "224.0.0.6")
+    ip14.push(pkt141)
+    pkt142, lower = ip14.recvpkt
+    expect(pkt142).to eq pkt141
+  end
 
   # it 'can recv IPv4 packets which are pushed from the lower side of the Ethernet device' do
   # end
