@@ -63,111 +63,111 @@ RSpec.describe Nwdiy::Func::IPv4 do
   end
 
   it 'can send IPv4 packet, and pop it from the lower side' do
-    ip5 = Nwdiy::Func::IPv4.new("ip5", local: "192.168.5.1/24")
-    pkt51 = Nwdiy::Packet::IPv4.new(dst: "1.1.1.1")
-    ip5.sendpkt(pkt51)
-    pkt52 = ip5.pop
+    ip11 = Nwdiy::Func::IPv4.new("ip11", local: "192.168.11.1/24")
+    pkt11a = Nwdiy::Packet::IPv4.new(dst: "1.1.1.1")
+    ip11.sendpkt(pkt11a)
+    pkt11b = ip11.pop
   end
 
   it 'can send IPv4 data, and pop an IPv4 packet from the lower side' do
-    ip6 = Nwdiy::Func::IPv4.new("ip6", local: "192.168.6.1/24")
-    pkt61 = Nwdiy::Packet::UDP.new
-    ip6.sendpkt("192.168.6.2", pkt61)
-    pkt62 = ip6.pop
-    expect(pkt62).to be_kind_of(Nwdiy::Packet::IPv4)
-    expect(pkt62.src).to eq "192.168.6.1"
-    expect(pkt62.dst).to eq "192.168.6.2"
-    expect(pkt62.proto).to eq 17
-    expect(pkt62.data).to be pkt61
+    ip12 = Nwdiy::Func::IPv4.new("ip12", local: "192.168.12.1/24")
+    pkt12a = Nwdiy::Packet::UDP.new
+    ip12.sendpkt("192.168.12.2", pkt12a)
+    pkt12b = ip12.pop
+    expect(pkt12b).to be_kind_of(Nwdiy::Packet::IPv4)
+    expect(pkt12b.src).to eq "192.168.12.1"
+    expect(pkt12b.dst).to eq "192.168.12.2"
+    expect(pkt12b.proto).to eq 17
+    expect(pkt12b.data).to be pkt12a
   end
 
   it 'can send IPv4 packets, and pop an ARP and Ethernet Frame from the lower side of Ethernet' do
-    eth7 = Nwdiy::Func::Ethernet.new("eth7")
-    ip7 = eth7.ipv4("ip7", local: "192.168.7.1/24")
-    pkt71 = Nwdiy::Packet::UDP.new
-    ip7.sendpkt("192.168.7.2", pkt71)
-    pkt72 = eth7.pop
-    expect(pkt72).to be_kind_of(Nwdiy::Packet::Ethernet)
-    expect(pkt72.dst).to eq "ff:ff:ff:ff:ff:ff"
-    expect(pkt72.type).to eq 0x0806
-    expect(pkt72.data).to be_kind_of(Nwdiy::Packet::ARP)
-    expect(pkt72.data.op).to eq 1
-    expect(pkt72.data.psnd).to eq "192.168.7.1"
-    expect(pkt72.data.ptgt).to eq "192.168.7.2"
+    eth13 = Nwdiy::Func::Ethernet.new("eth13")
+    ip13 = eth13.ipv4("ip13", local: "192.168.13.1/24")
+    pkt13a = Nwdiy::Packet::UDP.new
+    ip13.sendpkt("192.168.13.2", pkt13a)
+    pkt13b = eth13.pop
+    expect(pkt13b).to be_kind_of(Nwdiy::Packet::Ethernet)
+    expect(pkt13b.dst).to eq "ff:ff:ff:ff:ff:ff"
+    expect(pkt13b.type).to eq 0x0806
+    expect(pkt13b.data).to be_kind_of(Nwdiy::Packet::ARP)
+    expect(pkt13b.data.op).to eq 1
+    expect(pkt13b.data.psnd).to eq "192.168.13.1"
+    expect(pkt13b.data.ptgt).to eq "192.168.13.2"
   end
 
   it 'can send unresolved IPv4 packets when it receives ARP response' do
-    eth8 = Nwdiy::Func::Ethernet.new("eth8")
-    ip8 = eth8.ipv4("ip8", local: "192.168.8.1/24")
-    pkt81 = Nwdiy::Packet::UDP.new
-    ip8.sendpkt("192.168.8.2", pkt81)
-    pkt82 = eth8.pop
-    expect(pkt82).to be_kind_of(Nwdiy::Packet::Ethernet)
-    arp82 = pkt82.data
-    expect(arp82).to be_kind_of(Nwdiy::Packet::ARP)
-    pkt82.src, pkt82.dst = pkt82.dst, pkt82.src
-    arp82.op = 2
-    arp82.htgt = arp82.hsnd
-    arp82.hsnd = Nwdiy::Packet::MacAddr.new(global: true)
-    arp82.psnd, arp82.ptgt = arp82.ptgt, arp82.psnd
-    eth8.push(pkt82)
-    pkt83 = eth8.pop
-    expect(pkt83).to be_kind_of(Nwdiy::Packet::Ethernet)
-    expect(pkt83.dst).to eq arp82.hsnd
-    expect(pkt83.data).to be_kind_of(Nwdiy::Packet::IPv4)
-    expect(pkt83.data.data).to be pkt81
+    eth14 = Nwdiy::Func::Ethernet.new("eth14")
+    ip14 = eth14.ipv4("ip14", local: "192.168.14.1/24")
+    pkt14a = Nwdiy::Packet::UDP.new
+    ip14.sendpkt("192.168.14.2", pkt14a)
+    pkt14b = eth14.pop
+    expect(pkt14b).to be_kind_of(Nwdiy::Packet::Ethernet)
+    arp142 = pkt14b.data
+    expect(arp142).to be_kind_of(Nwdiy::Packet::ARP)
+    pkt14b.src, pkt14b.dst = pkt14b.dst, pkt14b.src
+    arp142.op = 2
+    arp142.htgt = arp142.hsnd
+    arp142.hsnd = Nwdiy::Packet::MacAddr.new(global: true)
+    arp142.psnd, arp142.ptgt = arp142.ptgt, arp142.psnd
+    eth14.push(pkt14b)
+    pkt14c = eth14.pop
+    expect(pkt14c).to be_kind_of(Nwdiy::Packet::Ethernet)
+    expect(pkt14c.dst).to eq arp142.hsnd
+    expect(pkt14c.data).to be_kind_of(Nwdiy::Packet::IPv4)
+    expect(pkt14c.data.data).to be pkt14a
   end
 
   it 'can recv IPv4 packet to me, which are pushed from the lower side' do
-    ip9 = Nwdiy::Func::IPv4.new("ip9", local: "192.168.9.1/24")
-    pkt91 = Nwdiy::Packet::IPv4.new(src: "192.168.9.2", dst: "192.168.9.1")
-    ip9.push(pkt91)
-    pkt92, lower = ip9.recvpkt
-    expect(pkt92).to eq pkt91
+    ip21 = Nwdiy::Func::IPv4.new("ip21", local: "192.168.21.1/24")
+    pkt21a = Nwdiy::Packet::IPv4.new(src: "192.168.21.2", dst: "192.168.21.1")
+    ip21.push(pkt21a)
+    pkt21b, lower = ip21.recvpkt
+    expect(pkt21b).to eq pkt21a
   end
 
   it 'monitors IPv4 packet with unknown proto, and not to me, which are pushed from the lower side' do
-    ip10 = Nwdiy::Func::IPv4.new("ip10", local: "192.168.10.1/24")
-    pkt101 = Nwdiy::Packet::IPv4.new(src: "192.168.10.2", dst: "192.168.10.3")
-    ip10.push(pkt101)
-    pkt102, lower = ip10.recvpkt
-    expect(pkt102).to be pkt101
+    ip22 = Nwdiy::Func::IPv4.new("ip22", local: "192.168.22.1/24")
+    pkt22a = Nwdiy::Packet::IPv4.new(src: "192.168.22.2", dst: "192.168.22.3")
+    ip22.push(pkt22a)
+    pkt22b, lower = ip22.recvpkt
+    expect(pkt22b).to be pkt22a
   end
 
   it 'monitors IPv4 packet with known proto, and not to me, which are pushed from the lower side' do
-    ip11 = Nwdiy::Func::IPv4.new("ip10", local: "192.168.10.1/24")
-    ip11[17] = 1 # dummy (Nwdiy::Packet::UDP is not yet implemented)
-    pkt111 = Nwdiy::Packet::IPv4.new(src: "192.168.10.2", dst: "192.168.10.3")
-    pkt111.data = Nwdiy::Packet::UDP.new
-    ip11.push(pkt111)
+    ip23 = Nwdiy::Func::IPv4.new("ip10", local: "192.168.23.1/24")
+    ip23[17] = 1 # dummy (Nwdiy::Packet::UDP is not yet implemented)
+    pkt23a = Nwdiy::Packet::IPv4.new(src: "192.168.23.2", dst: "192.168.23.3")
+    pkt23a.data = Nwdiy::Packet::UDP.new
+    ip23.push(pkt23a)
     sleep 0.1
-    expect(ip11.recvpktqlen).to be 0
+    expect(ip23.recvpktqlen).to be 0
   end
 
   it 'can recv IPv4 packet to us(broadcast), which are pushed from the lower side' do
-    ip12 = Nwdiy::Func::IPv4.new("ip12", local: "192.168.12.1/24")
-    pkt121 = Nwdiy::Packet::IPv4.new(src: "192.168.12.2", dst: "192.168.12.255")
-    ip12.push(pkt121)
-    pkt122, lower = ip12.recvpkt
-    expect(pkt122).to eq pkt121
+    ip24 = Nwdiy::Func::IPv4.new("ip24", local: "192.168.24.1/24")
+    pkt24a = Nwdiy::Packet::IPv4.new(src: "192.168.24.2", dst: "192.168.24.255")
+    ip24.push(pkt24a)
+    pkt24b, lower = ip24.recvpkt
+    expect(pkt24b).to eq pkt24a
    end
 
   it 'can recv IPv4 packet to us(multicast), which are pushed from the lower side' do
-    ip13 = Nwdiy::Func::IPv4.new("ip13", local: "192.168.13.1/24")
-    ip13.join("224.0.0.5")
-    pkt131 = Nwdiy::Packet::IPv4.new(src: "192.168.13.2", dst: "224.0.0.5")
-    ip13.push(pkt131)
-    pkt132, lower = ip13.recvpkt
-    expect(pkt132).to eq pkt131
+    ip25 = Nwdiy::Func::IPv4.new("ip25", local: "192.168.25.1/24")
+    ip25.join("224.0.0.5")
+    pkt25a = Nwdiy::Packet::IPv4.new(src: "192.168.25.2", dst: "224.0.0.5")
+    ip25.push(pkt25a)
+    pkt25b, lower = ip25.recvpkt
+    expect(pkt25b).to eq pkt25a
   end
 
   it 'ignores IPv4 packet not to me(multicast), which are pushed from the lower side' do
-    ip14 = Nwdiy::Func::IPv4.new("ip14", local: "192.168.14.1/24")
-    ip14.join("224.0.0.5")
-    pkt141 = Nwdiy::Packet::IPv4.new(src: "192.168.14.2", dst: "224.0.0.6")
-    ip14.push(pkt141)
-    pkt142, lower = ip14.recvpkt
-    expect(pkt142).to eq pkt141
+    ip26 = Nwdiy::Func::IPv4.new("ip26", local: "192.168.26.1/24")
+    ip26.join("224.0.0.5")
+    pkt26a = Nwdiy::Packet::IPv4.new(src: "192.168.26.2", dst: "224.0.0.6")
+    ip26.push(pkt26a)
+    pkt26b, lower = ip26.recvpkt
+    expect(pkt26b).to eq pkt26a
   end
 
   # it 'can recv IPv4 packets which are pushed from the lower side of the Ethernet device' do
