@@ -170,8 +170,18 @@ RSpec.describe Nwdiy::Func::IPv4 do
     expect(pkt26b).to eq pkt26a
   end
 
-  # it 'can recv IPv4 packets which are pushed from the lower side of the Ethernet device' do
-  # end
+  it 'can recv IPv4 packets which are pushed from the lower side of the Ethernet device' do
+    eth27 = Nwdiy::Func::Ethernet.new("eth27")
+    ip27 = eth27.ipv4("ip27", local: "192.168.27.1/24")
+    pkt27a = Nwdiy::Packet::Ethernet.new(
+      dst: eth27.addr,
+      data: Nwdiy::Packet::IPv4.new(
+        dst: ip27.addr.addr,
+        data: Nwdiy::Packet::UDP.new))
+    eth27.push(pkt27a)
+    pkt27b, lower = ip27.recvpkt
+    expect(pkt27b).to eq pkt27a.data
+  end
 
   # it 'can get the gateway for a destination' do
   # end
