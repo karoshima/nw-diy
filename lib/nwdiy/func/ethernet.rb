@@ -54,6 +54,7 @@ module Nwdiy
       include Nwdiy::Debug
 
       def initialize(name)
+        debug name
         super(name)
 
         self.addr_init
@@ -165,7 +166,7 @@ module Nwdiy
       end
       def forme?(pkt)
         return false unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
-        pkt.dst == @addr || pkt.dst.broadcast? || self.joined?(pkt.dst) || false
+        pkt.dst == self.addr || pkt.dst.broadcast? || self.joined?(pkt.dst) || false
       end
 
       ################################################################
@@ -222,7 +223,7 @@ module Nwdiy
       # flow up
       #    up a packet from the lower layer instance
 
-      public 
+      public
       def push(pkt, lower=[])
         raise Errno::EINVAL unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
         debug pkt.inspect
@@ -239,15 +240,16 @@ module Nwdiy
         debug "#{self}.upper = #{upper.class}"
         if upper
           if self.forme?(pkt)
-            debug "#{self}.upper = #{upper.class}"
+            debug "it is for me."
             @stat[:rx] += 1
-            upper.push(pkt.data, lower + [pkt])
+            lower.push(pkt)
+            upper.push(pkt.data, lower)
           elsif upper.respond_to?(:push_others)
-            debug "#{self}.upper = #{upper.class}"
+            debug "it is for upper"
             @stat[:rx] += 1
             upper.push_others(pkt, lower)
           else
-            debug "#{self}.upper = #{upper.class}"
+            debug "it is not for me"
             @stat[:drop] += 1
           end
         else
@@ -340,7 +342,7 @@ module Nwdiy
       def upper_for_packet(pkt)
         debug "#{self}: #{pkt.class}"
         return nil unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
-        debug "#{self}: #{pkt.class}"
+        debug "#{self}: 0x#{pkt.type.to_s(16)}"
         return self[pkt.type]
       end
     end

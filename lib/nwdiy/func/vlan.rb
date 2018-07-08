@@ -14,6 +14,9 @@ module Nwdiy
   module Func
 
     class VLAN < Ethernet
+      def initialize(name)
+        super(name)
+      end
     end
 
     ################################################################
@@ -65,7 +68,7 @@ module Nwdiy
     end
     class VLANID < Ethernet
       def initialize(vlan, id)
-        super("[#{id}]")
+        super("#{vlan}[#{id}]")
         @vlanid = id
         self.lower = vlan
       end
@@ -78,11 +81,26 @@ module Nwdiy
       def addr_default
         nil
       end
+      public
+      def addr
+        return @addr if @addr
+        return @instance_lower.addr if @instance_lower
+        return nil
+      end
     end
     class VLANID
       protected
       def addr_default
         nil
+      end
+      public
+      def addr
+        return @addr if @addr
+        return @instance_lower.addr if @instance_lower
+        return nil
+      end
+      def forme?(pkt)
+        true
       end
     end
 
@@ -102,6 +120,10 @@ module Nwdiy
     # overwrite the flowup function
     class VLAN
       public
+      def push(pkt, lower=[])
+        pkt = lower.pop if 1 <= lower.length
+        @upq_lower.push([pkt, lower])
+      end
       def push_others(pkt, lower=[])
         raise Errno::EINVAL unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
         raise Errno::EINVAL unless pkt.data.kind_of?(Nwdiy::Packet::VLAN)
@@ -114,6 +136,10 @@ module Nwdiy
       end
     end
     class VLANID
+      def push(pkt, lower=[])
+        raise Errno::EINVAL unless pkt.kind_of?(Nwdiy::Packet::VLAN)
+        @upq_lower.push([pkt, lower])
+      end
       def push_others(pkt, lower=[])
         raise Errno::EINVAL unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
         raise Errno::EINVAL unless pkt.data.kind_of?(Nwdiy::Packet::VLAN)

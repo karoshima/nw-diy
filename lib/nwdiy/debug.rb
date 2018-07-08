@@ -18,7 +18,7 @@ module Nwdiy::Debug
       return unless $VERBOSE
       caller(1)[0] =~ %r{(lib/nwdiy/.*)$}
       tm = Time.now.strftime "%T.%6N"
-      puts "#{tm}: #{$1}: " + msg.join(", ")
+      puts "#{tm}: #{$1} in #{self}: " + msg.join(", ")
     end
   end
 
