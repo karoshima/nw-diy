@@ -183,7 +183,8 @@ RSpec.describe Nwdiy::Func::IPv4 do
     expect(pkt27b).to eq pkt27a.data
   end
 
-  # it 'can get the gateway for a destination' do
-  # end
+  it 'can get the gateway for a destination' do
+    skip "It should have the routing function"
+  end
 
 end
