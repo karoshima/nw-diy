@@ -76,8 +76,8 @@ module Nwdiy
     # end
 
     module EthernetReceiver
-      def ethernet
-        eth = Ethernet.new(self.to_s + ":eth")
+      def ethernet(name = self.to_s + ":eth")
+        eth = Ethernet.new(name)
         eth.lower = self
         return eth
       end
@@ -100,9 +100,10 @@ module Nwdiy
       end
     end
 
+    # close the instance
+
     class Ethernet
 
-      # close the instance
       public
       def close
         self.thread_stopall
@@ -233,21 +234,21 @@ module Nwdiy
       # flow up the incoming packets
       protected
       def flowup
-        pkt, lower = @upq_lower.pop
-        debug pkt.inspect, lower
+        pkt, lower_pkt = @upq_lower.pop
+        debug pkt.inspect, lower_pkt.inspect
         # check the upper layer to pass
-        upper = self.upper_for_packet(pkt)
-        debug "#{self}.upper = #{upper.class}"
-        if upper
+        upper_instance = self.upper_for_packet(pkt)
+        debug "#{self}.upper = #{upper_instance.class}"
+        if upper_instance
           if self.forme?(pkt)
             debug "it is for me."
             @stat[:rx] += 1
-            lower.push(pkt)
-            upper.push(pkt.data, lower)
-          elsif upper.respond_to?(:push_others)
+            lower_pkt.push(pkt)
+            upper_instance.push(pkt.data, lower_pkt)
+          elsif upper_instance.respond_to?(:push_others)
             debug "it is for upper"
             @stat[:rx] += 1
-            upper.push_others(pkt, lower)
+            upper_instance.push_others(pkt, lower_pkt)
           else
             debug "it is not for me"
             @stat[:drop] += 1
@@ -256,7 +257,7 @@ module Nwdiy
           if self.forme?(pkt)
             debug "#{self}.upper = nil"
             @stat[:rx] += 1
-            @upq_upper.push([pkt, lower])
+            @upq_upper.push([pkt, lower_pkt])
           else
             debug "#{self}.upper = nil"
             @stat[:drop] += 1
@@ -280,7 +281,7 @@ module Nwdiy
         debug "#{self.to_s}.sendpkt(#{pkt.inspect})"
 
         unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
-          pkt = Nwdiy::Packet::Ethernet.new(dst: dst,data: pkt)
+          pkt = Nwdiy::Packet::Ethernet.new(dst: dst, data: pkt)
         end
         if pkt.src == "00:00:00:00:00:00" && @addr != nil
           pkt.src = self.addr

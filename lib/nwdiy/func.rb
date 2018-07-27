@@ -12,9 +12,9 @@ module Nwdiy
 
     autoload(:PktQueue,         'nwdiy/func/pktq')
     autoload(:Ethernet,         'nwdiy/func/ethernet')
-    autoload(:EthernetReceiver, 'nwdiy/func/ethernet')
     autoload(:VLAN,             'nwdiy/func/vlan')
     autoload(:IPv4,             'nwdiy/func/ipv4')
+    autoload(:EtherIP,          'nwdiy/func/etherip')
 
     MAXQLEN = 16
 

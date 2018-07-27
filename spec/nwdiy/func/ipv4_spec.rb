@@ -24,8 +24,8 @@ RSpec.describe Nwdiy::Func::IPv4 do
     expect(ip1.respond_to?(:sendpkt)).to eq true
     expect(ip1.respond_to?(:recvpkt)).to eq true
     # it must be able to get sent packet, to push a received packets
-    expect(ip1.respond_to?(:sendpkt)).to eq true
-    expect(ip1.respond_to?(:sendpkt)).to eq true
+    expect(ip1.respond_to?(:push)).to eq true
+    expect(ip1.respond_to?(:pop)).to eq true
   end
 
   it 'can create IPv4 device from an Ethernet' do
