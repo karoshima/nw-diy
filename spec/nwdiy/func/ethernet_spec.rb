@@ -61,10 +61,6 @@ RSpec.describe Nwdiy::Func::Ethernet do
     pkt22 = eth2.pop
     expect(pkt22).to be_kind_of(Nwdiy::Packet::Ethernet)
     expect(pkt22.data).to be pkt21
-    pkt22.dst, pkt22.src = pkt22.src, pkt22.dst
-    eth2.push(pkt22)
-    pkt23, lower = eth2.recvpkt
-    expect(pkt23.data).to eq pkt21
   end
 
   it 'can recv Ethernet frame to me, which are pushed from the lower side' do

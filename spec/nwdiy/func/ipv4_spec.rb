@@ -67,6 +67,7 @@ RSpec.describe Nwdiy::Func::IPv4 do
     pkt11a = Nwdiy::Packet::IPv4.new(dst: "1.1.1.1")
     ip11.sendpkt(pkt11a)
     pkt11b = ip11.pop
+    expect(pkt11b).to be pkt11a
   end
 
   it 'can send IPv4 data, and pop an IPv4 packet from the lower side' do
