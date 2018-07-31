@@ -54,7 +54,7 @@ eth2 のセグメントを、EtherIP を使って、eth1 の先のXXXと繋ぐ�
 ```
 
 ```ruby
-  irb> Nwdiy::OS.eth("eth1").ip("192.0.2.1/24").etherip | Nwdiy::OS.eth("eth2")
+  irb> Nwdiy::OS.ethernet("eth1").ipv4(local: "192.0.2.1/24").etherip(peer: "192.0.2.2") | Nwdiy::OS.ethernet("eth2")
 ```
 
 - 例
@@ -78,8 +78,8 @@ EtherIP にファイアウォールと QoS を導入して、eth2 を守る。
   irb> fwB = Nwdiy::Func::Firewall.new(some settings)
   irb> qosB = Nwdiy::Func::QOS.new(some settings)
   irb> ethA = Nwdiy::Func::Ethernet.new("ethA")
-  irb> Nwdiy::OS.eth("eth1") | fwA | ethA
-  irb> ethA.ip("192.0.2.1/24").ethip | fwB | qosB | Nwdiy::OS.eth("eth2")
+  irb> Nwdiy::OS.ethernet("eth1") | fwA | ethA
+  irb> ethA.ipv4(local: "192.0.2.1/24").etherip(peer: "192.0.2.2") | fwB | qosB | Nwdiy::OS.ethernet("eth2")
 ```
 
 - 例
@@ -106,7 +106,7 @@ EtherIP にファイアウォールと QoS を導入して、eth2 を守る。
   irb> ethB = Nwdiy::Func::Ethernet.new("ethB")
   irb> bridge = Nwdiy::Func::Bridge.new
   irb> ethA | bridge.eth[0]
-  irb> bridge.eth[1] = Nwdiy::OS.eth("eth0")
+  irb> bridge.eth[1] = Nwdiy::OS.ethernet("eth0")
   irb> bridge.eth[2] | ethB
   irb> brwser = Nwdiy::Func::Browser.new
   irb> httpd = Nwdiy::Func::Httpd.new
@@ -149,7 +149,7 @@ IPv4 インスタンスをパイプで繋いだりイーサネットインスタ
   irb> router.ip[1] = "198.51.100.1/24"
   irb> router.ip[2] = "203.0.113.1/24"
   irb> ipv4A | router.ip[0]
-  irb> router.ip[1] = Nwdiy::OS.eth("eth1").ip("198.51.100.2/24")
+  irb> router.ip[1] = Nwdiy::OS.ethernet("eth1").ipv4(local: "198.51.100.2/24")
   irb> router.ip[2] | ipv4B
   irb> router.ospf.routerId = "192.0.2.1"
   irb> brwser = Nwdiy::Func::Browser.new
@@ -182,8 +182,8 @@ IPv4 インスタンスをパイプで繋いだりイーサネットインスタ
   irb> router = Nwdiy::Func::Router.new
   irb> snat = Nwdiy::Func::Snat.new
   irb> snat.xxx = xxx (いろいろ設定)
-  irb> OS.eth("eth1").ipv4 = router.ip[0] = "192.0.2.1/24"
-  irb> OS.eth("eth2").ipv4 = router.ip[1] = snat
+  irb> OS.ethernet("eth1").ipv4 = router.ip[0] = "192.0.2.1/24"
+  irb> OS.ethernet("eth2").ipv4 = router.ip[1] = snat
 ```
 
 - 例
@@ -206,8 +206,8 @@ IPv4 インスタンスをパイプで繋いだりイーサネットインスタ
   irb> router = Nwdiy::Func::Router.new
   irb> dnat = Nwdiy::Func::Dnat.new
   irb> dnat.xxx = xxx (いろいろ設定)
-  irb> OS.eth("eth1").ipv4 = router.ip[0] = dnat
-  irb> OS.eth("eth2").ipv4 = router.ip[1] = "198.51.100.1/24"
+  irb> OS.ethernet("eth1").ipv4 = router.ip[0] = dnat
+  irb> OS.ethernet("eth2").ipv4 = router.ip[1] = "198.51.100.1/24"
 ```
 
 - 用語
