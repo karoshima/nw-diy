@@ -73,6 +73,15 @@ class Nwdiy::Packet::IPv4Addr < Nwdiy::Packet
     end
   end
 
+  # for the use of Hash key.
+  def hash
+    self.addr
+  end
+  def eql?(addr)
+    addr = self.class.new(addr) unless addr.kind_of?(self.class)
+    return self.hash == addr.hash
+  end
+
   private
 
   MLEN2MASK = [ 0x00000000, 

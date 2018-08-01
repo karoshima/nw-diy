@@ -79,12 +79,39 @@ module Nwdiy
       end
 
       ################################################################
+      # Peer configuration
+
+      def forme?(pkt, lower_pkt)
+        debug "pkt.kind_of?(Nwdiy::Packet::EtherIP) = #{pkt.kind_of?(Nwdiy::Packet::EtherIP)}"
+        debug "(lower_pkt != nil) = #{lower_pkt != nil}"
+        debug "@node.has_key?(lower_pkt.src) = #{@node.has_key?(lower_pkt.src)}"
+        debug #{@node}"
+        debug "pkt.data.kind_of?(Nwdiy::Packet::Ethernet) = #{pkt.data.kind_of?(Nwdiy::Packet::Ethernet)}" if pkt
+        return pkt.kind_of?(Nwdiy::Packet::EtherIP) &&
+               lower_pkt != nil &&
+               @node.has_key?(lower_pkt.src) &&
+               pkt.data.kind_of?(Nwdiy::Packet::Ethernet)
+      end
+
+      ################################################################
       # upper layers
+      public
       def [](addr)
-        unless addr.kind_of?(@addrClass)
-          addr = @addrClass.new(addr)
-        end
+        addr = self.addr(addr)
         return @node[addr]
+      end
+      def has_key?(addr)
+        addr = self.addr(addr)
+        debug "#{addr.inspect}(#{addr.class}): #{addr.hash}"
+        debug "#{@node.keys[0].inspect}(#{@node.keys[0].class}): #{@node.keys[0].hash}"
+        debug "#{addr.hash} #{(addr.hash==@node.keys[0].hash)?('=='):('!=')} #{@node.keys[0].hash}"
+        return @node.has_key?(addr)
+      end
+      protected
+      def addr(addr)
+        debug "#{addr}(#{addr.class} == #{@addrClass})"
+        return addr if addr.kind_of?(@addrClass)
+        return @addrClass.new(addr)
       end
     end
 

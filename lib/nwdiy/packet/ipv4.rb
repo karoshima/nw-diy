@@ -23,6 +23,7 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
   end
 
   # vhl 詳細
+  undef vhl=
   def vhl=(value)
     @nwdiy_field[:vhl] = 0x40 | (value & 0x0f)
   end
@@ -36,6 +37,7 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
   #   option への代入を詳細するとき検討する
 
   # パケット長は自動算出する
+  undef length
   def length
     self.nwdiy_set(:length,
                    20 + (self.option ? self.option.bytesize : 0) +
@@ -73,6 +75,7 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
     self.frag = (self.frag & 0x6000) | (off & 0x1fff)
   end
 
+  undef proto
   def proto
     self.body_type(:data, self.data) || @nwdiy_field[:proto] || 0
   end
@@ -80,6 +83,7 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
   # チェックサム計算
   #    cksum 部を除いたヘッダ部のバイト列から
   #    チェックサム値を求める
+  undef cksum
   def cksum
     self.length # 参照時に自動算出される
     self.cksum = 0
@@ -87,10 +91,12 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
     self.cksum = self.class.calc_cksum(header)
   end
 
+  undef src=
   def src=(addr)
     self.nwdiy_set(:src, addr)
     self.set_pseudo_header
   end
+  undef dst=
   def dst=(addr)
     self.nwdiy_set(:dst, addr)
     self.set_pseudo_header
