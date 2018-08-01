@@ -37,6 +37,12 @@ RSpec.describe Nwdiy::Func::EtherIP do
   end
 
   it 'can check whether the packet comes to me or not' do
+    # ip.forme?() can check
+    # (1) the packet comes to me?
+    # ip.etherip.forme?() can check
+    # (2) the packet comes from the peer?
+    # (3) the IP packet has EtherIP?
+    # (4) the EtherIP packet has Ethernet?
     ip = Nwdiy::Func::IPv4.new("ip", local: "192.168.1.1/24")
     eip = ip.etherip
     eth = eip["192.168.1.2"]
