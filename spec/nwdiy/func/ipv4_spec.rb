@@ -119,7 +119,7 @@ RSpec.describe Nwdiy::Func::IPv4 do
     expect(pkt14c.data.data).to be pkt14a
   end
 
-  it 'can recv IPv4 packet to me, which are pushed from the lower side' do
+  it 'can recv an IPv4 packet to me, which is pushed from the lower side' do
     ip21 = Nwdiy::Func::IPv4.new("ip21", local: "192.168.21.1/24")
     pkt21a = Nwdiy::Packet::IPv4.new(src: "192.168.21.2", dst: "192.168.21.1")
     ip21.push(pkt21a)

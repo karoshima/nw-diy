@@ -53,9 +53,10 @@ module Nwdiy
       include Nwdiy::Func
       include Nwdiy::Debug
 
-      def initialize(name)
+      def initialize(name, peer=nil)
         debug name
         super(name)
+        @peer = peer
 
         self.addr_init
         self.pktflow_init
@@ -278,7 +279,7 @@ module Nwdiy
       def sendpkt(dst=nil, pkt)
         @stat[:tx] += 1
 
-        debug "#{self.to_s}.sendpkt(#{pkt.inspect})"
+        debug "sendpkt(#{pkt.inspect})"
 
         unless pkt.kind_of?(Nwdiy::Packet::Ethernet)
           pkt = Nwdiy::Packet::Ethernet.new(dst: dst, data: pkt)
@@ -300,15 +301,15 @@ module Nwdiy
 
       protected
       def flowdown
-        debug "#{self.to_s}.flowdown: popping a packet"
+        debug "flowdown: popping a packet"
         pkt = @downq_upper.pop
-        debug "#{self.to_s}.flowdown() #{pkt.inspect}"
+        debug "flowdown() #{pkt.inspect}"
         pkt = self.capsule(pkt)
-        debug "#{self.to_s}.flowdown() #{pkt.inspect}"
+        debug "flowdown() #{pkt.inspect}"
         lower = @instance_lower
-        debug "#{self.to_s}.flowdown <- @downq_upper.pop (#{@downq_upper.length} entries) -> #{lower}"
+        debug "flowdown <- @downq_upper.pop (#{@downq_upper.length} entries) -> #{lower}"
         if lower
-          lower.sendpkt(pkt)
+          lower.sendpkt(@peer, pkt)
         end
       end
       def capsule(pkt)

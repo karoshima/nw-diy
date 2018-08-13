@@ -113,12 +113,17 @@ class Nwdiy::Packet::IPv4 < Nwdiy::Packet
     end
   end
 
+  IPPROTO_UDP = 17
+  IPPROTO_ETHERIP = 97
+
 #  def_body_type :data,
 #                1  => "Nwdiy::Packet::ICMP",
 #                6  => "Nwdiy::Packet::TCP",
 #                14 => "Nwdiy::Packet::UDP"
   def_body_type :data,
-                17 => "Nwdiy::Packet::UDP"
+                IPPROTO_UDP => "Nwdiy::Packet::UDP",
+                IPPROTO_ETHERIP => "Nwdiy::Packet::EtherIP"
+
   def data=(seed)
     case seed
     when String

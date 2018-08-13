@@ -39,8 +39,11 @@ module Nwdiy
         name = 'EtherIP'
         debug(name)
         super(name)
-        @addrClass = klass
-        @node = Hash.new { |hash,key| hash[key] = EtherIPNode.new(self, key) }
+
+        self.peer_init(klass)
+        self.pktflow_init
+        self.thread_init
+
       end
     end
 
@@ -71,9 +74,9 @@ module Nwdiy
         if instance
           debug "@instance_lower = #{instance}"
           @instance_lower = instance
-#          self.thread_start
+          self.thread_start
         else
-#          self.thread_stop
+          self.thread_stop
           @instance_lower = nil
         end
       end
@@ -81,37 +84,42 @@ module Nwdiy
       ################################################################
       # Peer configuration
 
-      def forme?(pkt, lower_pkt)
+      def peer_init(klass)
+        @peerClass = klass
+        @node = Hash.new { |hash,key| hash[key] = EtherIPNode.new(self, key) }
+      end
+
+      def forme?(pkt, lower_header)
         debug "pkt.kind_of?(Nwdiy::Packet::EtherIP) = #{pkt.kind_of?(Nwdiy::Packet::EtherIP)}"
-        debug "(lower_pkt != nil) = #{lower_pkt != nil}"
-        debug "@node.has_key?(lower_pkt.src) = #{@node.has_key?(lower_pkt.src)}"
+        debug "(lower_header != nil) = #{lower_header != nil}"
+        debug "@node.has_key?(lower_header.src) = #{@node.has_key?(lower_header.src)}"
         debug #{@node}"
         debug "pkt.data.kind_of?(Nwdiy::Packet::Ethernet) = #{pkt.data.kind_of?(Nwdiy::Packet::Ethernet)}" if pkt
         return pkt.kind_of?(Nwdiy::Packet::EtherIP) &&
-               lower_pkt != nil &&
-               @node.has_key?(lower_pkt.src) &&
+               lower_header != nil &&
+               @node.has_key?(lower_header.src) &&
                pkt.data.kind_of?(Nwdiy::Packet::Ethernet)
       end
 
       ################################################################
       # upper layers
       public
-      def [](addr)
-        addr = self.addr(addr)
-        return @node[addr]
+      def [](peer)
+        peer = self.peer(peer)
+        return @node[peer]
       end
-      def has_key?(addr)
-        addr = self.addr(addr)
-        debug "#{addr.inspect}(#{addr.class}): #{addr.hash}"
+      def has_key?(peer)
+        peer = self.peer(peer)
+        debug "#{peer.inspect}(#{peer.class}): #{peer.hash}"
         debug "#{@node.keys[0].inspect}(#{@node.keys[0].class}): #{@node.keys[0].hash}"
-        debug "#{addr.hash} #{(addr.hash==@node.keys[0].hash)?('=='):('!=')} #{@node.keys[0].hash}"
-        return @node.has_key?(addr)
+        debug "#{peer.hash} #{(peer.hash==@node.keys[0].hash)?('=='):('!=')} #{@node.keys[0].hash}"
+        return @node.has_key?(peer)
       end
       protected
-      def addr(addr)
-        debug "#{addr}(#{addr.class} == #{@addrClass})"
-        return addr if addr.kind_of?(@addrClass)
-        return @addrClass.new(addr)
+      def peer(peer)
+        debug "#{peer}(#{peer.class} == #{@peerClass})"
+        return peer if peer.kind_of?(@peerClass)
+        return @peerClass.new(peer)
       end
     end
 
@@ -120,12 +128,155 @@ module Nwdiy
 
     class EtherIPNode < Ethernet
 
-      def initialize(etherip, addr)
-        name = "EtherIP(#{addr.inspect})"
+      def initialize(etherip, peer)
+        name = "EtherIP(#{peer.inspect})"
         debug(name)
-        super(name)
-        @etherip = etherip
-        @addr = addr
+        super(name, peer)
+        self.lower = etherip
+      end
+    end
+
+    ################################################################
+    # internal threads
+    class EtherIP
+      protected
+      def thread_init
+        # threads that flow the packet up & down
+        @thread_flowup = Thread.new do
+          loop do
+            self.flowup
+          end
+        end
+        @thread_flowdown = nil
+      end
+
+      def thread_start
+        debug "#{self.to_s}.thread_start"
+        @thread_flowdown = Thread.new do
+          debug "#{self.to_s}.@thread_flowdown start"
+          loop do
+            self.flowdown
+          end
+        end
+      end
+
+      def thread_stop
+        debug "#{self.to_s}.thread_stop"
+        @thread_flowdown.kill.join if @thread_flowdown
+        @thread_flowdown = nil
+      end
+
+      public
+      def thread_stopall
+        @thread_flowdown.kill if @thread_flowdown
+        @thread_flowup.kill   if @thread_flowup
+        @thread_flowdown.join if @thread_flowdown
+        @thread_flowup.join   if @thread_flowup
+        @thread_flowdown = nil
+        @thread_flowup = nil
+      end
+
+    end
+
+    ################################################################
+    # packet flow
+    class EtherIP
+      protected
+      def pktflow_init
+        @stat = Hash.new { |hash,key| hash[key] = 0 }
+        @downq_upper = Nwdiy::Func::PktQueue.new
+        @upq_upper = Nwdiy::Func::PktQueue.new
+        @upq_lower = Nwdiy::Func::PktQueue.new
+      end
+    end
+
+    ################
+    # flow up
+    class EtherIP
+      public
+      def push(pkt, lower_headers=[])
+        unless pkt.kind_of?(Nwdiy::Packet::EtherIP)
+          raise Errno::EINVAL
+        end
+        @upq_lower.push([pkt, lower_headers])
+      end
+
+      protected
+      def flowup
+        pkt, lower_headers = @upq_lower.pop
+        debug pkt.inspect, lower_headers
+        if self.forme?(pkt, lower_headers.last)
+          debug "it is forme"
+          @stat[:rx] += 1
+          self[lower_headers.last.src].push(pkt.data, lower_headers + [pkt])
+        else
+          debug "it is not forme"
+          @stat[:drop] += 1
+        end
+      end
+    end
+
+    class EtherIPNode
+      def push(pkt, lower_headers)
+        @upq_upper.push([pkt, lower_headers])
+      end
+
+      public
+      def recvpkt
+        @upq_upper.pop
+      end
+    end
+
+    ################
+    # flow down
+
+    class EtherIPNode
+      # sendpkt() is defined in Ethernet
+    end
+
+    class EtherIP
+      public
+      def sendpkt(dst = nil, pkt)
+        @stat[:tx] += 1
+
+        debug "#{self.to_s}.sendpkt(#{pkt.inspect})"
+
+        case pkt
+        when Nwdiy::Packet::Ethernet
+          pkt = Nwdiy::Packet::EtherIP.new(data: pkt)
+          pkt = Nwdiy::Packet::IPv4.new(dst: dst,
+                                        proto: Nwdiy::Packet::IPv4::IPPROTO_ETHERIP,
+                                        data: pkt)
+        when Nwdiy::Packet::EtherIP
+          pkt = Nwdiy::Packet::IPv4.new(dst: dst,
+                                        proto: Nwdiy::Packet::IPv4::IPPROTO_ETHERIP,
+                                        data: pkt)
+        when Nwdiy::Packet::IPv4
+          if pkt.dst == nil
+            pkt.dst = dst
+          end
+        end
+
+        debug "downq_upper.push(#{pkt.inspect})"
+        @downq_upper.push(pkt)
+        return pkt.bytesize
+      end
+
+      protected
+      def flowdown
+        pkt = @downq_upper.pop
+        lower = @instance_lower
+        debug "pkt #{pkt.inspect} to #{lower}"
+        unless lower
+          return
+        end
+        lower.sendpkt(pkt)
+      end
+
+      public
+      def pop
+        debug "#{self.to_s}.pop <- @downq_upper.pop ("#{@downq_upper.length} entries)"
+        @downq_upper.pop
       end
     end
   end

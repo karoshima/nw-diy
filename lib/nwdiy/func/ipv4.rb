@@ -384,9 +384,9 @@ module Nwdiy
         @instance_upper[type]
       end
       def upper_for_packet(pkt)
-        debug "#{self}: #{pkt.class}"
+        debug pkt.class
         return nil unless pkt.kind_of?(Nwdiy::Packet::IPv4)
-        debug "#{self}: proto #{pkt.proto}"
+        debug "proto #{pkt.proto}"
         return self[pkt.proto]
       end
     end

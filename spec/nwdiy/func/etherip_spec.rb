@@ -10,6 +10,12 @@ require "spec_helper"
 
 Thread.abort_on_exception = true
 
+class Nwdiy::Func::Ethernet
+  def recvpktqlen
+    @upq_upper.length
+  end
+end
+
 RSpec.describe Nwdiy::Func::EtherIP do
 
   it 'can create EtherIP device' do
@@ -41,7 +47,7 @@ RSpec.describe Nwdiy::Func::EtherIP do
     # (1) the packet comes to me?
     # ip.etherip.forme?() can check
     # (2) the packet comes from the peer?
-    # (3) the IP packet has EtherIP?
+    # (3) the IP packet has EtherIP Header?
     # (4) the EtherIP packet has Ethernet?
     ip = Nwdiy::Func::IPv4.new("ip", local: "192.168.1.1/24")
     eip = ip.etherip
@@ -58,5 +64,49 @@ RSpec.describe Nwdiy::Func::EtherIP do
     expect(eip.forme?(pkt.data, pkt)).to be true
     pkt.src = "192.168.1.3"
     expect(eip.forme?(pkt.data, pkt)).to be false
+  end
+
+  it 'can send Ethernet frame, and pop it from the lower side' do
+    eip01 = Nwdiy::Func::EtherIP.new(Nwdiy::Packet::IPv4Addr)
+    eip02 = eip01["192.168.1.1"]
+    expect(eip02).to be_kind_of(Nwdiy::Func::Ethernet)
+    pkt01a = Nwdiy::Packet::Ethernet.new
+    eip02.sendpkt(pkt01a)
+    pkt01b = eip01.pop
+    expect(pkt01b).to be_kind_of(Nwdiy::Packet::IPv4)
+    expect(pkt01b.dst).to eq "192.168.1.1"
+    expect(pkt01b.data).to be_kind_of(Nwdiy::Packet::EtherIP)
+    expect(pkt01b.data.data).to be pkt01a
+  end
+
+  it 'can recv an Ethernet frame, which is pushd from the lower side' do
+    ip01 = Nwdiy::Func::IPv4.new("ip01", local: "192.168.1.1/24")
+    eip02 = ip01.etherip["192.168.2.2"]
+    pkt = Nwdiy::Packet::IPv4.new
+
+    ip01.push(pkt)
+    sleep 0.1
+    expect(eip02.recvpktqlen).to be 0
+
+    pkt.dst = ip01.addr.addr
+    ip01.push(pkt)
+    sleep 0.1
+    expect(eip02.recvpktqlen).to be 0
+
+    pkt.src = "192.168.2.2"
+    ip01.push(pkt)
+    sleep 0.1
+    expect(eip02.recvpktqlen).to be 0
+
+    pkt.data = Nwdiy::Packet::EtherIP.new
+    ip01.push(pkt)
+    sleep 0.1
+    expect(eip02.recvpktqlen).to be 0
+
+    pkt.data.data = Nwdiy::Packet::Ethernet.new
+    ip01.push(pkt)
+    sleep 0.1
+    expect(eip02.recvpktqlen).to be 1
+    expect(eip02.recvpkt).to eq [pkt.data.data, [pkt, pkt.data]]
   end
 end
