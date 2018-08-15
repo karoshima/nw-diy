@@ -52,7 +52,7 @@ module Nwdiy
         def if_nametoindex(name)
           Socket.getifaddrs.each do |ifp|
             next unless ifp.name == name
-            next unless ifp.respond_to?(:ifindex)
+            raise Errno::EPERM unless ifp.respond_to?(:ifindex)
             return ifp.ifindex
           end
           raise Errno::ENOENT
