@@ -19,14 +19,14 @@ end
 RSpec.describe Nwdiy::Func::EtherIP do
 
   it 'can create EtherIP device' do
-    eip = Nwdiy::Func::EtherIP.new(Nwdiy::Packet::IPv4Addr)
-    skip('メソッドはあとで作る')
-    # it must be able to send/recv packets
-    expect(eip.respond_to?(:sendpkt)).to eq true
-    expect(eip.respond_to?(:recvpkt)).to eq true
     # it must be able to get sent packets, able to push a received packets
+    eip = Nwdiy::Func::EtherIP.new(Nwdiy::Packet::IPv4Addr)
     expect(eip.respond_to?(:push)).to eq true
     expect(eip.respond_to?(:pop)).to eq true
+    # it must be able to send/recv packets
+    eip1 = eip["192.168.254.2"]
+    expect(eip1.respond_to?(:sendpkt)).to eq true
+    expect(eip1.respond_to?(:recvpkt)).to eq true
   end
 
   it 'can create Ethernet device from an EtherIP' do
