@@ -54,7 +54,7 @@ eth2 のセグメントを、EtherIP を使って、eth1 の先のXXXと繋ぐ�
 ```
 
 ```ruby
-  irb> Nwdiy::OS.ethernet("eth1").ipv4(local: "192.0.2.1/24").etherip(peer: "192.0.2.2") | Nwdiy::OS.ethernet("eth2")
+  irb> Nwdiy::OS.ethernet("eth1").ipv4(local: "192.0.2.1/24").etherip["192.0.2.2"] | Nwdiy::OS.ethernet("eth2")
 ```
 
 - 例

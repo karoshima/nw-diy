@@ -109,4 +109,32 @@ RSpec.describe Nwdiy::Func::EtherIP do
     expect(eip02.recvpktqlen).to be 1
     expect(eip02.recvpkt).to eq [pkt.data.data, [pkt, pkt.data]]
   end
+
+  it 'can pipe Ethernet and EtherIP' do
+    #                 Ethernet ------- Ethernet
+    #                    |                |
+    # 192.168.0.1 => 192.168.0.2     192.168.0.3 => 192.168.0.4
+
+    skip "pipe for EtherIP"
+
+    ip2 = Nwdiy::Func::IPv4.new("ip2", local: "192.168.0.2/24")
+    ip3 = Nwdiy::Func::IPv4.new("ip3", local: "192.168.0.3/24")
+    eth21 = ip2.etherip["192.168.0.1"] # Ethernet: EtherIP peer is 192.168.0.1
+    eth34 = ip3.etherip["192.168.0.4"] # Ethernet: Ethernet peer is 192.168.0.4
+    eth21 | eth34
+
+    pkt1 = Nwdiy::Packet::IPv4.new
+    pkt1.src = "192.168.0.1"
+    pkt1.dst = "192.168.0.2"
+    pkt1.data = Nwdiy::Packet::EtherIP.new
+    pkt1.data.data = Nwdiy::Packet::Ethernet.new
+
+    ip2.push(pkt1)
+    pkt2 = ip3.pop
+
+    expect(pkt2.src).to eq "192.168.0.3"
+    expect(pkt2.dst).to eq "192.168.0.4"
+    expect(pkt2.data).to be_kind_of Nwdiy::Packet:EtherIP
+    expect(pkt2.data.data).to be pkt1.data.data
+  end
 end
