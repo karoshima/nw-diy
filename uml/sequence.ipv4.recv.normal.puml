@@ -1,0 +1,27 @@
+@startuml
+
+hide footbox
+
+actor "Upper\nlayer" as up1
+actor "Upper\nlayer" as up2
+box "IP Layer"
+participant "IPv4\nlayer" as ip
+database "Routing\ntable" as rt
+end box
+box "IPv4 Ineterface"
+participant "IPv4\ninterface" as ifp1
+end box
+actor "Lower\nlayer" as lo1
+
+hnote over up1 : IPv4.type=TCP\nIPv4.local=192.0.2.1
+hnote over up2 : IPv4.type=UDP\nIPv4.local=(AllMyIP)
+hnote over ifp1 : Ethernet.type=IPv4
+
+ifp1 <- lo1 : matched
+ip <- ifp1
+ip -> rt: dst=192.0.2.1
+ip <-- rt : oif=ifp1\ngw=192.0.2.1(me)
+up1 <- ip : matched
+up2 X<- ip : not matched
+
+@enduml

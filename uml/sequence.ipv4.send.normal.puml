@@ -1,0 +1,37 @@
+@startuml
+
+hide footbox
+
+database tuple
+actor "Upper\nlayer" as up1
+box "IP Layer"
+participant "IPv4\nlayer" as ip
+database "Routing\ntable" as rt
+end box
+box "IPv4 Ineterface"
+participant "IPv4\ninterface" as ifp1
+database "ARP" as arp1
+end box
+actor "Lower\nlayer" as lo1
+
+note over tuple
+	IPv4.dst=192.0.2.1
+end note
+up1 -> ip : IPdata
+note over ip : Allocate\nIPv4\nheader
+ip -> rt : dst=192.0.2.1
+ip <-- rt
+tuple <[dashed]- ip
+note over tuple : IPv4.oif=ifp1\nIPv4.gw=198.51.100.1
+ip -> ifp1
+tuple <[dashed]- ifp1
+note over tuple : IPv4.src=198.51.100.2
+ifp1 -> arp1 : gw=198.51.100.1
+ifp1 <-- arp1 : mac=00:00:0e:00:00:01
+tuple <-- ifp1
+note over tuple
+	Ether.dst = 00:00:0e:00:00:01
+end note
+ifp1 -> lo1
+
+@enduml

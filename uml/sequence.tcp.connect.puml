@@ -1,0 +1,88 @@
+@startuml
+
+hide footbox
+
+box "SERVER"
+actor "Upper\nlayer" as up1
+participant "socket" as so1
+participant "socket" as listen
+participant "TCP" as tcp1
+participant "IP" as ip1
+end box
+box "CLIENT"
+participant "IP" as ip2
+participant "TCP" as tcp2
+participant "socket" as so2
+actor "Upper\nlayer" as up2
+end box
+
+create listen
+up1 -> listen : bind(SH:SP)
+hnote over listen : local.host=SH\nlocal.port=SP\npeer=*
+
+create so2
+so2 <- up2 : connect(SH:SP)
+hnote over so2 : peer.host=SH\npeer.port=SP
+tcp2 <- so2 : SYN
+ip2 <- tcp2 : TCP SYN
+ip2 --> so2 : local(CH:CP)
+hnote over so2 : local.host=CH\nlocal.port=CP\npeer.host=SH\npeer.port=SP
+
+ip1 <- ip2 : TCP SYN
+tcp1 <- ip1 : SYN
+listen <- tcp1 : matched
+create so1
+so1 <- listen
+hnote over so1 : local.host=SH\nlocal.port=SP\npeer.host=CH\npeer.port=CP
+
+loop
+up1 -> so1 : data
+so1 -> tcp1
+tcp1 -> ip1 : TCP data
+ip1 -> ip2
+ip2 -> tcp2 : data
+tcp2 -> so2 : matched
+so1 <-- so2 : ACK
+so2 -> up2 : data
+end
+
+loop
+so2 <- up2 : data
+tcp2 <- so2
+ip2 <- tcp2 : TCP data
+ip1 <- ip2
+tcp1 <- ip1 : data
+so1 <- tcp1 : matched
+so1 --> so2 : ACK
+up1 <- so1 : data
+end
+
+up1 -> so1 : EOF
+hnote over so1 : local=FIN
+so1 -> tcp1 : FIN
+tcp1 -> ip1 : TCP FIN
+ip1 -> ip2
+ip2 -> tcp2 : FIN
+tcp2 -> so2 : matched
+hnote over so2 : peer=FIN
+so1 <-- so2: ACK
+so2 -> up2 : EOF
+
+so2 <- up2 : EOF
+hnote over so2 : local=FIN\npeer=FIN
+tcp2 <- so2 : FIN
+ip2 <- tcp2 : TCP FIN
+ip1 <- ip2
+tcp1 <- ip1 : FIN
+so1 <- tcp1 : matched
+hnote over so1 : local=FIN\npeer=FIN
+so1 --> so2 : ACK
+up1 <- so1: EOF
+
+up1 -> so1 : close()
+note over so1 : destroyed
+
+up2 -> so2 : close()
+note over so2 : destroyed
+
+@enduml

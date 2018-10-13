@@ -1,0 +1,36 @@
+@startuml
+
+hide footbox
+
+actor "Upper\nlayer" as up1
+box "IP Layer"
+participant "IPv4\nlayer" as ip
+database "Routing\ntable" as rt
+end box
+box "IPv4 Interface"
+participant "IPv4\ninterface" as ifp1
+end box
+actor "Lower\nlayer" as lo1
+box "IPv4 Interface"
+participant "IPv4\ninterface" as ifp2
+end box
+actor "Lower\nlayer" as lo2
+
+ifp2 <- lo2 : IGMP Join\ngroup A\nfrom someone
+ip <- ifp2
+up1 <- ip
+up1 -> ip : add mroute A
+ip -> rt
+ip -> ifp1 : Join group A
+hnote over ifp1
+	join group A
+end hnote
+
+ifp1 <- lo1 : dst=A\nsrc=someone
+ip <- ifp1
+ip -> rt : lookup
+ip <-- rt : oif=ifp2		
+ip -> ifp2
+ifp2 -> lo2
+
+@enduml

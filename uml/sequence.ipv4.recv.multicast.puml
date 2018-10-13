@@ -1,0 +1,30 @@
+@startuml
+
+hide footbox
+
+actor "Upper\nlayer" as up1
+actor "Upper\nlayer" as up2
+box "IP Layer"
+participant "IPv4\nlayer" as ip
+database "Routing\ntable" as rt
+end box
+box "IPv4 Interface"
+participant "IPv4\ninterface" as ifp1
+end box
+actor "Lower\nlayer" as lo1
+
+hnote over up1 : JOIN group A
+up1 -> ip : JOIN group A
+ip -> ifp1
+hnote over ifp1
+	join group A
+end hnote
+ifp1 -> lo1 : IGMP Join\ngroup A
+
+ifp1 X<- lo1 : dst=B
+ifp1 <- lo1 : dst=A
+ip <- ifp1
+up1 <- ip
+up2 X<- ip
+
+@enduml

@@ -1,0 +1,36 @@
+@startuml
+
+hide footbox
+
+box "IP Layer"
+participant "IPv4\nlayer" as ip
+database "Routing\ntable" as rt
+end box
+box "IPv4 Ineterface"
+participant "IPv4\ninterface" as ifp1
+end box
+actor "Lower\nlayer" as lo1
+box "IPv4 Ineterface"
+participant "IPv4\ninterface" as ifp2
+database ARP as arp2
+end box
+actor "Lower\nlayer" as lo2
+
+hnote over ifp1 : Ethernet.type=IPv4
+
+ifp1 <- lo1 : matched
+ip <- ifp1
+ip -> rt: dst=192.0.2.254
+ip <-- rt : oif=ifp2\ngw=192.0.2.254
+ip -> ifp2 : gw=192.0.2.254
+ifp2 -> arp2 : gw=192.0.2.254
+note over arp2 : enqueue
+ifp2 <-- arp2 : ARP request
+ifp2 -> lo2
+ifp2 <- lo2 : ARP response
+ifp2 -> arp2
+ifp2 <-- arp2 : resolved\npackets
+ifp2 -> ifp2 : send as\nsend\nthreads
+ifp2 -> lo2
+
+@enduml

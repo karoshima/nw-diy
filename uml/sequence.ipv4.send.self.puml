@@ -1,0 +1,42 @@
+@startuml
+
+hide footbox
+
+database tuple
+actor "Upper\nlayer" as up1
+actor "Upper\nlayer" as up2
+box "IP Layer"
+participant "IPv4\nlayer" as ip
+database "Routing\ntable" as rt
+end box
+box "IPv4 Ineterface"
+participant "IPv4\ninterface" as ifp2
+end box
+
+hnote over up1 : recv filter:\ntype=udp
+hnote over up2 : recv filter:\ntype=tcp
+
+note over tuple
+	IPv4.dst=198.51.100.2
+end note
+up1 -> ip : TCP
+note over ip
+	Allocate
+	IPv4
+	header
+end note
+ip -> rt : dst=198.51.100.2
+ip <-- rt : oif=ifp2\ngw=198.51.100.2(me)
+tuple <-- ip
+note over tuple
+	IPv4.oif=ifp2
+	IPv4.gw=198.51.100.2(me)
+end note
+tuple <-- ip : register src when assign
+note over tuple
+	IPv4.src=198.51.100.2
+end note
+up1 X<- ip : not matched
+up2 <- ip : matched
+
+@enduml
